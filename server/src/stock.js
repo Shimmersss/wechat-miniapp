@@ -5,11 +5,13 @@ const { cents, money, flags } = require("./validation");
 const { isImei } = require("../../miniprogram/utils/validate");
 const { validateValues } = require("../../miniprogram/utils/template");
 const { signFile } = require("./files");
+/** 敏感字段可见性：按登录时加载的角色配置（roles.visible_fields）判断，未配置时用默认表 */
 function canSee(user, field) {
-  return (
-    !!user &&
-    (!SENSITIVE_FIELDS[field] || SENSITIVE_FIELDS[field].includes(user.role))
-  );
+  if (!user) return false;
+  if (!SENSITIVE_FIELDS[field]) return true;
+  return Array.isArray(user.visibleFields)
+    ? user.visibleFields.includes(field)
+    : SENSITIVE_FIELDS[field].includes(user.role);
 }
 const unitSelect = `SELECT u.*,m.name,m.brand,m.brand_label,m.category_id,m.series,s.name supplier_name FROM units u JOIN models m ON m.id=u.model_id LEFT JOIN suppliers s ON s.id=u.supplier_id`;
 function stockService({ config }) {

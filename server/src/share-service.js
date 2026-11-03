@@ -1,6 +1,6 @@
 const { one } = require("./db");
 const { PERM, fail, json, loadUser, SENSITIVE_FIELDS } = require("./core");
-const { unitSelect } = require("./stock");
+const { unitSelect, canSee } = require("./stock");
 function shareService({ config }) {
   function canPeer(user) {
     return (
@@ -8,7 +8,7 @@ function shareService({ config }) {
       (user.role === "peer" ||
         (!!user.staffNo &&
           user.permissions.includes(PERM.SHARE) &&
-          SENSITIVE_FIELDS.wholesalePrice.includes(user.role)))
+          canSee(user, "wholesalePrice")))
     );
   }
   const isAgent = (user) =>

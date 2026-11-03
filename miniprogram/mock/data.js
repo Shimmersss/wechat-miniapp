@@ -115,10 +115,10 @@ const models = [
 ];
 
 const staff = [
-  { id: 'st1', name: '老板', role: 'boss', wechatBound: true, status: 'active' },
-  { id: 'st2', name: '老王', role: 'manager', wechatBound: true, status: 'active' },
-  { id: 'st3', name: '小李', role: 'sales', wechatBound: true, status: 'active' },
-  { id: 'st4', name: '小周', role: 'engineer', wechatBound: true, status: 'active' }
+  { id: 'st1', userId: 'mock_boss', name: '老板', phone: '13800000001', role: 'boss', wechatBound: true, status: 'active', version: 1, createdAt: '2026-10-01T02:00:00.000Z' },
+  { id: 'st2', userId: 'mock_manager', name: '老王', phone: '13800000002', role: 'manager', wechatBound: true, status: 'active', version: 1, createdAt: '2026-10-02T02:00:00.000Z' },
+  { id: 'st3', userId: 'mock_sales', name: '小李', phone: '13800000003', role: 'sales', wechatBound: true, status: 'active', version: 1, createdAt: '2026-10-03T02:00:00.000Z' },
+  { id: 'st4', userId: 'mock_engineer', name: '小周', phone: '13800000004', role: 'engineer', wechatBound: true, status: 'active', version: 1, createdAt: '2026-10-04T02:00:00.000Z' }
 ];
 
 module.exports = {

@@ -50,6 +50,8 @@ function client(f, role) {
     "share",
     "agent",
     "admin-agent",
+    "staff",
+    "audit",
   ]) {
     const context = { module: { exports: {} }, require: () => ({ http }) };
     vm.runInNewContext(

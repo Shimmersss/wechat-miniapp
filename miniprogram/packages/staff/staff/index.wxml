@@ -1,21 +1,35 @@
-<wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <view class="row-start gap-sm mb">
-    <button class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/staff/roles">角色与字段权限</button>
-    <button class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/audit/index">操作日志</button>
+  <view class="actions mb">
+    <view class="action" bindtap="onCreate"><view class="action-icon"><image src="/assets/icons/plus.svg" /></view><text>新增员工</text></view>
+    <view class="action" bindtap="onNavigate" data-url="/packages/staff/staff/roles"><view class="action-icon"><image src="/assets/icons/users.svg" /></view><text>角色与权限</text></view>
+    <view class="action" bindtap="onNavigate" data-url="/packages/staff/audit/index"><view class="action-icon"><image src="/assets/icons/list.svg" /></view><text>操作日志</text></view>
   </view>
-  <todo-block items="{{todos}}" />
+
+  <view wx:if="{{editor}}" class="card">
+    <view class="row mb"><text class="h2">{{editor.mode === 'create' ? '新增员工' : '编辑员工'}}</text><text class="small muted" bindtap="onCloseEditor">取消</text></view>
+    <view class="field"><view class="field-label required">姓名</view><input class="input" maxlength="50" value="{{editor.name}}" data-field="name" bindinput="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="field"><view class="field-label required">手机号</view><input class="input" type="number" maxlength="11" value="{{editor.phone}}" data-field="phone" bindinput="onEditorInput" disabled="{{saving || editor.mode === 'edit'}}" /></view>
+    <view class="field"><view class="field-label required">角色</view><picker range="{{roles}}" range-key="label" value="{{editor.roleIndex}}" bindchange="onRole" disabled="{{saving}}"><view class="picker">{{roles[editor.roleIndex].label}}</view></picker></view>
+    <view wx:if="{{editor.mode === 'create'}}" class="tiny muted mb">员工用该手机号收短信验证码登录后，自动绑定其微信。</view>
+    <button class="btn btn-primary btn-block" bindtap="onSaveEditor" loading="{{saving}}" disabled="{{saving}}">保存</button>
+  </view>
+
+  <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="姓名 / 手机号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /></view>
+  <view class="chips mb"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
 
   <view wx:for="{{list}}" wx:key="id" class="card">
     <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.name}}</text>
-      
+      <view class="row-start gap-sm flex-1"><text class="h3 ellipsis">{{item.name}}</text><status-pill text="{{item.roleLabel}}" tone="gold" /></view>
+      <status-pill text="{{item.status === 'active' ? '在职' : '已停用'}}" tone="{{item.status === 'active' ? 'green' : 'gray'}}" />
     </view>
-    <view class="row mt-sm">
-      <text class="small muted">{{item.role}} · {{item.wechatBound ? '微信已绑定' : '未绑定微信'}}</text>
-      <text class="small">{{item.status}}</text>
+    <view class="small muted mt-sm">{{item.phone}} · {{item.wechatBound ? '微信已绑定' : '未绑定微信'}}{{item.loginText ? ' · 最近登录 ' + item.loginText : ''}}</view>
+    <view wx:if="{{item.isSelf}}" class="tiny muted mt">这是你自己的账号，不能停用、解绑或更改角色</view>
+    <view wx:elif="{{item.roleKey !== 'boss' || isBoss}}" class="row-start gap-sm mt">
+      <button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onEdit" disabled="{{saving}}">编辑</button>
+      <button class="btn btn-soft btn-sm" data-id="{{item.id}}" bindtap="onToggle" disabled="{{saving}}">{{item.status === 'active' ? '停用' : '恢复'}}</button>
+      <button wx:if="{{item.wechatBound}}" class="btn btn-soft btn-sm" data-id="{{item.id}}" bindtap="onUnbind" disabled="{{saving}}">解绑微信</button>
     </view>
   </view>
-
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无员工" />
 </view>

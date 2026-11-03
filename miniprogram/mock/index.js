@@ -17,6 +17,7 @@ const createCustomerRequests=require('./customer-requests');
 const createRepair=require('./repair');
 const createLoans=require('./loans');
 const createAgents=require('./agents');
+const createStaffAdmin=require('./staff-admin');
 const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM } = require('../constants/roles');
 const { REPAIR_FLOW } = require('../constants/status');
 
@@ -247,12 +248,7 @@ const routes = [
   // ---------- admin agent ----------
 
   // ---------- staff / audit ----------
-  ['GET', '/staff', (d) => paginate(db.staff, d)],
-  ['POST', '/staff', () => ({ id: `st_${Date.now()}` })],
-  ['PUT', '/staff/:id', () => true],
-  ['GET', '/roles', (d) => paginate(Object.keys(ROLE_PERMISSIONS).map((k) => ({ id: k, name: ROLE_LABELS[k], permissions: ROLE_PERMISSIONS[k] })), d)],
-  ['PUT', '/roles/:id', () => true],
-  ['GET', '/audit-logs', (d) => paginate(db.auditLogs, d)]
+  ...createStaffAdmin(db, {fail, currentRole, requirePermission, paginate, clone})
 ];
 
 const compiled = routes.map(([method, pattern, handler]) => {

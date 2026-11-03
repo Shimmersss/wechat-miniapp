@@ -104,7 +104,7 @@ miniprogram/
 - [ ] 标签打印：蓝牙打印机（`staff/inventory/label`）
 - [ ] 收银与销售：顾客信息、优惠改价留痕、退款权限（`staff/pos`、`staff/sales/*`）
 - [ ] 经营统计：趋势图、维度拆分、库龄预警（`staff/stats`）
-- [ ] 员工与权限：新增员工、角色权限点勾选、字段可见性、审计筛选（`staff/staff/*`、`staff/audit`）
+- [x] 员工与权限：新增员工、角色权限点勾选、字段可见性、审计筛选（`staff/staff/*`、`staff/audit`）
 - [ ] 顾客端：搜索页、分类筛选、详情检测报告、咨询预约（`pages/*`、`packages/shop/*`）
 
 ### 阶段 B：业务扩展

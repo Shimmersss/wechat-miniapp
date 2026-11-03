@@ -5,6 +5,7 @@ const {
   ROLE_LABELS,
   SENSITIVE_FIELDS,
   STAFF_ROLES,
+  defaultVisibleFields,
 } = require("../../miniprogram/constants/roles");
 const { one } = require("./db");
 class HttpError extends Error {
@@ -70,19 +71,29 @@ function userView(row, allowStaff = true) {
     : ["customer", "peer", "agent"].includes(row.role)
       ? row.role
       : "customer";
+  // 老板角色固定拥有全部权限与字段，防止误配置锁死后台；其他员工角色按 roles 表实时生效
+  const boss = staff && role === "boss",
+    fields = staff && !boss ? json(row.role_visible_fields) : null;
   return {
     id: row.id,
     nickname: row.nickname,
     role,
-    permissions: staff
-      ? json(row.role_permissions) || []
-      : ROLE_PERMISSIONS[role] || [],
+    permissions: boss
+      ? ROLE_PERMISSIONS.boss
+      : staff
+        ? json(row.role_permissions) || []
+        : ROLE_PERMISSIONS[role] || [],
+    visibleFields: boss
+      ? Object.keys(SENSITIVE_FIELDS)
+      : Array.isArray(fields)
+        ? fields
+        : defaultVisibleFields(role),
     agentStatus: row.agent_status || undefined,
     staffNo: staff ? row.staff_id : undefined,
     storeId: row.store_id || undefined,
   };
 }
-const userSql = `SELECT u.*, s.id staff_id, s.status staff_status, s.role_key staff_role, s.store_id, r.permissions role_permissions
+const userSql = `SELECT u.*, s.id staff_id, s.status staff_status, s.role_key staff_role, s.store_id, r.permissions role_permissions, r.visible_fields role_visible_fields
   FROM users u LEFT JOIN staff s ON s.user_id=u.id LEFT JOIN roles r ON r.role_key=s.role_key WHERE u.id=? AND u.status='active'`;
 async function loadUser(db, userId, allowStaff = true) {
   const row = await one(db, userSql, [userId]);
@@ -110,6 +121,7 @@ async function audit(
   );
 }
 module.exports = {
+  userView,
   PERM,
   ROLE_PERMISSIONS,
   ROLE_LABELS,

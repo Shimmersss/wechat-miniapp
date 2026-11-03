@@ -79,6 +79,7 @@ async function buildApp(config, options = {}) {
     route,
   };
   await require("./auth")(app, dependencies);
+  await require("./staff-admin")(app, dependencies);
   await require("./catalog")(app, dependencies);
   await require("./inventory")(app, dependencies);
   await require("./purchase")(app, dependencies);

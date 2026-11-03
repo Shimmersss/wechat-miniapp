@@ -88,4 +88,25 @@ const SENSITIVE_FIELDS = {
   wholesalePrice: ['boss', 'manager', 'sales', 'peer']
 };
 
-module.exports = { ROLES, ROLE_LABELS, STAFF_ROLES, PERM, ROLE_PERMISSIONS, SENSITIVE_FIELDS };
+/** 权限点中文名与分组（员工与权限页勾选用） */
+const PERM_GROUPS = [
+  { label: '经营', items: [[PERM.DASHBOARD_VIEW, '工作台'], [PERM.STATS_VIEW, '经营统计'], [PERM.PROFIT_VIEW, '毛利与动销率'], [PERM.EXPORT, '导出数据']] },
+  { label: '采购与入库', items: [[PERM.PURCHASE_MANAGE, '采购与快递'], [PERM.SUPPLIER_VIEW, '供应商'], [PERM.ACCEPTANCE, '到货验收与复检'], [PERM.INBOUND, '入库登记'], [PERM.TEMPLATE_MANAGE, '型号模板']] },
+  { label: '库存', items: [[PERM.INVENTORY_VIEW, '查看库存'], [PERM.PRICE_EDIT, '改价'], [PERM.LABEL_PRINT, '打印标签'], [PERM.STOCKTAKE, '盘点'], [PERM.LOAN_MANAGE, '出借 / 借入'], [PERM.SHARE, '分享商品']] },
+  { label: '销售与顾客', items: [[PERM.SALES_CREATE, '收银开单'], [PERM.REFUND, '退款'], [PERM.CONSULT_MANAGE, '顾客咨询跟进']] },
+  { label: '维修', items: [[PERM.REPAIR_HANDLE, '维修处理'], [PERM.REPAIR_QUOTE, '维修报价'], [PERM.REPAIR_ASSIGN, '分派工程师'], [PERM.REPAIR_CASH, '维修收退款'], [PERM.PARTS_MANAGE, '配件管理']] },
+  { label: '代理', items: [[PERM.AGENT_REVIEW, '代理审核与管理'], [PERM.AGENT_SETTLE, '代理收益转账']] },
+  { label: '系统', items: [[PERM.STAFF_MANAGE, '员工管理'], [PERM.AUDIT_VIEW, '操作日志']] }
+];
+
+/** 敏感字段中文名（字段可见性配置用；服务端按角色配置裁剪） */
+const FIELD_LABELS = {
+  cost: '成本价', supplier: '供应商', internalNote: '内部备注', fullImei: '完整串码', profit: '毛利', wholesalePrice: '同行批发价'
+};
+
+/** 角色默认可见的敏感字段 */
+function defaultVisibleFields(role) {
+  return Object.keys(SENSITIVE_FIELDS).filter((k) => SENSITIVE_FIELDS[k].includes(role));
+}
+
+module.exports = { ROLES, ROLE_LABELS, STAFF_ROLES, PERM, ROLE_PERMISSIONS, SENSITIVE_FIELDS, PERM_GROUPS, FIELD_LABELS, defaultVisibleFields };

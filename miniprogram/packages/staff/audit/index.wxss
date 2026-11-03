@@ -1,0 +1,3 @@
+.filters { display: flex; flex-direction: column; gap: 16rpx; }
+.detail { margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--c-line); }
+.code { display: block; white-space: pre-wrap; word-break: break-all; font-family: Menlo, monospace; font-size: 22rpx; color: var(--c-ink-2); background: var(--c-surface-soft); border-radius: var(--radius-sm); padding: 16rpx; margin-top: 8rpx; }

@@ -1,5 +1,7 @@
 const { one } = require("./db");
-const { PERM, SENSITIVE_FIELDS } = require("./core");
+const { PERM } = require("./core");
+// stock 间接依赖本模块，调用时再取 canSee 以避免循环引用拿到空导出
+const canSee = (...args) => require("./stock").canSee(...args);
 async function canReadInternal(db, file, user) {
   if (!user?.staffNo) return false;
   const loanLinked = !!(await one(
@@ -14,10 +16,7 @@ async function canReadInternal(db, file, user) {
     [file.id],
   );
   if (links.some((link) => link.purpose === "expense"))
-    return (
-      user.permissions.includes(PERM.REPAIR_CASH) &&
-      SENSITIVE_FIELDS.cost.includes(user.role)
-    );
+    return user.permissions.includes(PERM.REPAIR_CASH) && canSee(user, "cost");
   if (links.length)
     return links.some((link) =>
       link.purpose === "payment"

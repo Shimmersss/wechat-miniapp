@@ -1,17 +1,20 @@
-<wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <todo-block items="{{todos}}" />
+  <view class="notice">{{canEdit ? '勾选该角色可用的功能和能看到的敏感字段；保存后对该角色所有员工立即生效。' : '只有老板可以修改角色权限，你可以查看当前配置。'}}</view>
+  <scroll-view scroll-x class="mb"><view class="chips nowrap"><view wx:for="{{roles}}" wx:key="key" class="chip {{active === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="onRole">{{item.label}} {{item.staffCount}}</view></view></scroll-view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
 
-  <view wx:for="{{list}}" wx:key="id" class="card">
-    <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.name}}</text>
-      
-    </view>
-    <view class="row mt-sm">
-      <text class="small muted">{{item.permissions.length}} 项权限</text>
-      <text class="small"></text>
-    </view>
-  </view>
-
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <block wx:if="{{draft}}">
+    <view wx:if="{{!activeEditable}}" class="card"><view class="h3">老板角色固定拥有全部权限与字段</view><view class="small muted mt-sm">防止误操作导致无人能管理后台。</view></view>
+    <section-card title="可见的敏感字段" subtitle="看不到的字段服务端直接不返回">
+      <view class="toggles"><view wx:for="{{fields}}" wx:key="key" class="toggle {{draft.fields[item.key] ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onToggleField"><view class="check {{draft.fields[item.key] ? 'on' : ''}}">{{draft.fields[item.key] ? '✓' : ''}}</view><text>{{item.label}}</text></view></view>
+    </section-card>
+    <section-card wx:for="{{groups}}" wx:for-item="group" wx:key="label" title="{{group.label}}">
+      <view class="toggles"><view wx:for="{{group.items}}" wx:key="key" class="toggle {{draft.perms[item.key] ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onTogglePerm"><view class="check {{draft.perms[item.key] ? 'on' : ''}}">{{draft.perms[item.key] ? '✓' : ''}}</view><text>{{item.label}}</text></view></view>
+    </section-card>
+  </block>
+  <view wx:if="{{draft.dirty}}" class="footer-space"></view>
+</view>
+<view wx:if="{{draft.dirty}}" class="footer-bar">
+  <button class="btn btn-soft" bindtap="onReset" disabled="{{saving}}">还原</button>
+  <button class="btn btn-primary" bindtap="onSave" loading="{{saving}}" disabled="{{saving}}">保存</button>
 </view>

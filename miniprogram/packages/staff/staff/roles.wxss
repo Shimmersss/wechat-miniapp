@@ -1,0 +1,7 @@
+.chips.nowrap { flex-wrap: nowrap; } .chip { flex-shrink: 0; }
+.notice.error { background: var(--c-red-soft); color: var(--c-red); }
+.toggles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16rpx; }
+.toggle { display: flex; align-items: center; padding: 20rpx; border-radius: var(--radius); background: var(--c-surface-soft); font-size: 28rpx; color: var(--c-ink-2); }
+.toggle.on { color: var(--c-ink); font-weight: 500; }
+.check { width: 36rpx; height: 36rpx; border-radius: 10rpx; border: 2rpx solid #C7C7CC; margin-right: 14rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22rpx; color: #fff; }
+.check.on { background: var(--c-ink); border-color: var(--c-ink); }

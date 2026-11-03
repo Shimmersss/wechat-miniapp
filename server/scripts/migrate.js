@@ -3,6 +3,7 @@ const path = require("node:path");
 const { createPool, one } = require("../src/db");
 const { config } = require("../src/config");
 const { ROLE_PERMISSIONS, ROLE_LABELS } = require("../src/core");
+const { defaultVisibleFields } = require("../../miniprogram/constants/roles");
 async function migrate(pool) {
   await pool.query(
     `CREATE TABLE IF NOT EXISTS schema_migrations (name VARCHAR(100) PRIMARY KEY, applied_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3))`,
@@ -30,6 +31,11 @@ async function migrate(pool) {
     await pool.execute(
       "INSERT IGNORE INTO roles (role_key,label,permissions) VALUES (?,?,?)",
       [role, ROLE_LABELS[role], JSON.stringify(permissions)],
+    );
+    // 字段可见性首次按默认表初始化，之后以后台配置为准
+    await pool.execute(
+      "UPDATE roles SET visible_fields=? WHERE role_key=? AND visible_fields IS NULL",
+      [JSON.stringify(defaultVisibleFields(role)), role],
     );
   }
   await pool.execute("INSERT IGNORE INTO categories (id,label) VALUES (?,?)", [
