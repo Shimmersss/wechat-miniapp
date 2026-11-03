@@ -19,3 +19,11 @@ node_modules/
 
 # Persistent local data: MySQL data, account passwords, uploaded files
 .local/
+
+# Node logs / runtime (from GitHub template)
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.pid
+*.seed
+coverage/
