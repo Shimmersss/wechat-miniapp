@@ -1,0 +1,27 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <view class="grid-2 mb">
+    <button class="btn btn-primary" data-type="loan_out" bindtap="onCreate">出借给同行</button>
+    <button class="btn btn-line" data-type="borrow_in" bindtap="onCreate">从同行借入</button>
+  </view>
+  <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="单号 / 对方 / 完整 IMEI" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-line btn-sm" bindtap="onScan">扫码</button></view>
+  <scroll-view scroll-x class="mb"><view class="chips nowrap"><view wx:for="{{statuses}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onStatus">{{item.label}}</view></view></scroll-view>
+  <view class="row-start gap-sm mb"><view wx:for="{{types}}" wx:key="value" class="type {{type === item.value ? 'on' : ''}}" data-value="{{item.value}}" bindtap="onType">{{item.label}}</view><text class="small muted total">共 {{total}} 单</text></view>
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="onSearch">重试</button></view>
+
+  <view wx:for="{{list}}" wx:key="id" class="card loan {{item.overdue ? 'overdue' : ''}}" bindtap="onItemTap" data-id="{{item.id}}">
+    <view class="row">
+      <view class="row-start gap-sm flex-1"><status-pill text="{{f.label(typeMap, item.type)}}" tone="{{item.type === 'loan_out' ? 'gold' : 'blue'}}" /><text class="h3 ellipsis flex-1">{{item.counterparty}}</text></view>
+      <status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" />
+    </view>
+    <view class="small mt-sm ellipsis">{{item.items.length}} 台 · {{item.names}}</view>
+    <view class="row mt-sm">
+      <text class="tiny muted">{{item.no}}</text>
+      <text class="small {{item.overdue ? 'price' : 'muted'}}">{{item.overdue ? '已逾期 · ' : ''}}应还 {{item.dueAt}}</text>
+    </view>
+    <view wx:if="{{item.open && item.open < item.items.length}}" class="tiny muted mt-sm">已归还 {{item.items.length - item.open}} 台，待归还 {{item.open}} 台</view>
+  </view>
+
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无借还单" />
+  <view wx:if="{{loading}}" class="small muted">加载中…</view>
+</view>

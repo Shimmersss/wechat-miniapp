@@ -1,0 +1,1 @@
+.repair-photo { width: 160rpx; height: 160rpx; border-radius: var(--radius-sm); }

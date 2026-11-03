@@ -1,0 +1,62 @@
+/** 页面路径集中管理，跳转统一用 utils/router.js，避免散落的字符串 */
+module.exports = {
+  // 顾客端（主包，tabBar）
+  SHOP: '/pages/shop/index',
+  CATEGORY: '/pages/category/index',
+  AGENT_LANDING: '/pages/agent-landing/index',
+  MINE: '/pages/mine/index',
+  LOGIN: '/pages/login/index',
+
+  // 顾客端分包
+  SEARCH: '/packages/shop/search/index',
+  COLLECTION: '/packages/shop/collection/index',
+  PRODUCT: '/packages/shop/product/index',
+  MY_REQUESTS: '/packages/shop/requests/index',
+  MY_REQUEST_DETAIL: '/packages/shop/requests/detail',
+  CUSTOMER_REQUESTS: '/packages/staff/consults/index',
+  CUSTOMER_REQUEST_DETAIL: '/packages/staff/consults/detail',
+  CONSULT: '/packages/shop/consult/index',
+  POSTER: '/packages/shop/poster/index',
+
+  // 代理端
+  AGENT_APPLY: '/packages/agent/apply/index',
+  AGENT_CENTER: '/packages/agent/center/index',
+  AGENT_MARKUP: '/packages/agent/markup/index',
+  AGENT_ORDERS: '/packages/agent/orders/index',
+  AGENT_COMMISSION: '/packages/agent/commission/index',
+  AGENT_INVITE: '/packages/agent/invite/index',
+
+  // 员工经营端
+  DASHBOARD: '/packages/staff/dashboard/index',
+  PURCHASE_LIST: '/packages/staff/purchase/list',
+  PURCHASE_DETAIL: '/packages/staff/purchase/detail',
+  PURCHASE_EDIT: '/packages/staff/purchase/edit',
+  ACCEPTANCE: '/packages/staff/acceptance/index',
+  SUPPLIERS: '/packages/staff/suppliers/index',
+  INBOUND: '/packages/staff/inbound/index',
+  INBOUND_BATCH: '/packages/staff/inbound/batch',
+  TEMPLATES: '/packages/staff/templates/index',
+  TEMPLATE_EDIT: '/packages/staff/templates/edit',
+  INVENTORY: '/packages/staff/inventory/list',
+  INVENTORY_DETAIL: '/packages/staff/inventory/detail',
+  STOCKTAKE: '/packages/staff/inventory/stocktake',
+  INVENTORY_LABEL: '/packages/staff/inventory/label',
+  POS: '/packages/staff/pos/index',
+  SALES_LIST: '/packages/staff/sales/list',
+  SALES_DETAIL: '/packages/staff/sales/detail',
+  REPAIR_BOARD: '/packages/staff/repair/board',
+  REPAIR_DETAIL: '/packages/staff/repair/detail',
+  REPAIR_PARTS: '/packages/staff/repair/parts',
+  REPAIR_EDIT: '/packages/staff/repair/edit',
+  LOANS: '/packages/staff/loans/index',
+  LOAN_DETAIL: '/packages/staff/loans/detail',
+  LOAN_EDIT: '/packages/staff/loans/edit',
+  SHARE: '/packages/staff/share/index',
+  AGENT_REVIEW: '/packages/staff/agents/review',
+  AGENT_SETTLEMENT: '/packages/staff/agents/settlement',
+  STATS: '/packages/staff/stats/index',
+  STAFF: '/packages/staff/staff/index',
+  STAFF_ROLES: '/packages/staff/staff/roles',
+  AUDIT: '/packages/staff/audit/index',
+  STAFF_PROFILE: '/packages/staff/profile/index'
+};

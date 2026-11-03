@@ -1,0 +1,2 @@
+.invite-label { color: var(--c-gold-light); }
+.code { font-size: 64rpx; font-weight: 800; letter-spacing: 12rpx; margin-top: 8rpx; }

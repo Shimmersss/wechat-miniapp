@@ -1,0 +1,10 @@
+{
+  "desc": "只允许公开的顾客端页面被微信索引；员工端与代理端禁止索引",
+  "rules": [
+    { "action": "allow", "page": "pages/shop/index" },
+    { "action": "allow", "page": "pages/category/index" },
+    { "action": "allow", "page": "pages/agent-landing/index" },
+    { "action": "allow", "page": "packages/shop/product/index" },
+    { "action": "disallow", "page": "*" }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "pages": [
+    "pages/shop/index",
+    "pages/category/index",
+    "pages/agent-landing/index",
+    "pages/mine/index",
+    "pages/login/index"
+  ],
+  "subPackages": [
+    {
+      "root": "packages/shop",
+      "name": "shop",
+      "pages": [
+        "search/index",
+        "product/index",
+        "consult/index",
+        "poster/index",
+        "collection/index",
+        "requests/index",
+        "requests/detail"
+      ]
+    },
+    {
+      "root": "packages/agent",
+      "name": "agent",
+      "pages": [
+        "apply/index",
+        "center/index",
+        "markup/index",
+        "orders/index",
+        "commission/index",
+        "invite/index"
+      ]
+    },
+    {
+      "root": "packages/staff",
+      "name": "staff",
+      "pages": [
+        "dashboard/index",
+        "purchase/list",
+        "purchase/detail",
+        "purchase/edit",
+        "acceptance/index",
+        "suppliers/index",
+        "inbound/index",
+        "inbound/batch",
+        "templates/index",
+        "templates/edit",
+        "inventory/list",
+        "inventory/detail",
+        "inventory/label",
+        "pos/index",
+        "sales/list",
+        "sales/detail",
+        "repair/board",
+        "repair/detail",
+        "repair/edit",
+        "loans/index",
+        "loans/detail",
+        "loans/edit",
+        "share/index",
+        "agents/review",
+        "agents/settlement",
+        "stats/index",
+        "staff/index",
+        "staff/roles",
+        "audit/index",
+        "profile/index",
+        "inventory/stocktake",
+        "consults/index",
+        "consults/detail",
+        "repair/parts"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/shop/index": {
+      "network": "all",
+      "packages": [
+        "shop"
+      ]
+    },
+    "pages/login/index": {
+      "network": "all",
+      "packages": [
+        "staff"
+      ]
+    }
+  },
+  "window": {
+    "navigationBarBackgroundColor": "#F5F5F7",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "夏目数码",
+    "backgroundColor": "#F5F5F7",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#8E8E93",
+    "selectedColor": "#1D1D1F",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/shop/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/category/index",
+        "text": "分类"
+      },
+      {
+        "pagePath": "pages/agent-landing/index",
+        "text": "成为代理"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {
+    "brand-header": "/components/brand-header/index",
+    "section-card": "/components/section-card/index",
+    "status-pill": "/components/status-pill/index",
+    "price-tag": "/components/price-tag/index",
+    "metric-item": "/components/metric-item/index",
+    "empty-state": "/components/empty-state/index",
+    "todo-block": "/components/todo-block/index",
+    "product-card": "/components/product-card/index",
+    "staff-tabbar": "/components/staff-tabbar/index"
+  },
+  "permission": {},
+  "requiredPrivateInfos": [],
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

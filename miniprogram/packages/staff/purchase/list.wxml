@@ -1,0 +1,13 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <view class="row-start gap-sm mb"><button wx:if="{{canManage}}" class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/purchase/edit">＋ 新建采购单</button><button wx:if="{{canViewSuppliers}}" class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/suppliers/index">供应商</button></view>
+  <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="搜索采购单号 / 运单号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-soft btn-sm" bindtap="onSearch">搜索</button></view>
+  <scroll-view scroll-x class="mb"><view class="chips nowrap"><view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view></view></scroll-view>
+  <view wx:if="{{summary}}" class="card"><view class="small muted">当前筛选范围</view><view class="grid-3 mt-sm"><view><view class="h2">{{summary.totalQty}}</view><text class="tiny muted">采购台数</text></view><view><view class="h2">{{summary.inTransitQty}}</view><text class="tiny muted">在途待验</text></view><view><view class="h2">{{summary.remainingQty}}</view><text class="tiny muted">尚未验收</text></view></view></view>
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="onSearch">重试</button></view>
+  <view wx:for="{{list}}" wx:key="id" class="card" bindtap="onItemTap" data-id="{{item.id}}">
+    <view class="row"><text class="h3 ellipsis flex-1">{{item.no}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view class="small muted mt-sm">{{item.supplier || '供应商（无权限查看）'}} · {{item.qty}} 台 · {{item.owner}}</view><view class="small mt-sm">预计 {{item.expectedAt}}</view>
+  </view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的采购单" /><view wx:if="{{loading}}" class="small muted">加载中…</view>
+</view>

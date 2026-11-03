@@ -1,0 +1,16 @@
+<view class="container">
+ <view wx:if="{{error}}" class="notice">{{error}}<button wx:if="{{!options && !saving}}" class="btn btn-line mt" bindtap="load">重新加载</button></view>
+ <button wx:if="{{error && !pending && !saving}}" class="btn btn-line mb" bindtap="onBrowseShop">回店铺重新选择</button>
+ <view wx:if="{{result}}" class="card"><view class="h2">{{result.kind === 'appointment' ? '预约意向已提交' : '咨询已提交'}}</view><view class="muted mt">门店确认后可在记录中查看进度。</view><button class="btn btn-primary mt" bindtap="onDetail">查看进度</button></view>
+ <block wx:else>
+  <view class="chips mb"><view class="chip {{mode === 'consult' ? 'active' : ''}}" data-value="consult" bindtap="onMode">商品咨询</view><view class="chip {{mode === 'appointment' ? 'active' : ''}}" data-value="appointment" bindtap="onMode">预约到店</view></view>
+  <view wx:if="{{unit}}" class="card"><view class="h3">{{unit.name}} {{unit.storage}} {{unit.color}}</view><view class="tiny muted mt-sm">{{unit.imeiMasked}} · 提交不锁价、不锁库存</view></view>
+  <view class="card"><view class="field"><view class="field-label">{{mode === 'appointment' ? '称呼（必填）' : '称呼（选填）'}}</view><input class="input" value="{{form.name}}" data-field="name" bindinput="onInput" maxlength="100" disabled="{{saving || pending}}" /></view><view class="field"><view class="field-label required">联系手机号</view><input class="input" type="number" value="{{form.phone}}" data-field="phone" bindinput="onInput" maxlength="11" placeholder="便于门店回复本次咨询/预约" disabled="{{saving || pending}}" /></view><view class="field"><view class="field-label">{{mode === 'appointment' ? '到店需求（选填）' : '咨询内容（必填）'}}</view><textarea class="textarea" value="{{form.content}}" data-field="content" bindinput="onInput" maxlength="2000" placeholder="想了解的机况、配置或其他需求" disabled="{{saving || pending}}" /></view>
+   <block wx:if="{{mode === 'appointment' && options}}"><view class="field"><view class="field-label required">预约日期</view><picker mode="date" start="{{options.minDate}}" end="{{options.maxDate}}" value="{{form.date}}" data-field="date" bindchange="onInput" disabled="{{saving || pending}}"><view class="picker">{{form.date || '选择日期'}}</view></picker></view><view class="field"><view class="field-label required">意向时段</view><picker range="{{options.timeSlots}}" value="{{slotIndex < 0 ? 0 : slotIndex}}" bindchange="onSlot" disabled="{{saving || pending}}"><view class="picker">{{form.timeSlot || '选择时段'}}</view></picker></view></block>
+  </view>
+  <view wx:if="{{options}}" class="notice">{{options.notice}}</view>
+  <view wx:if="{{pending}}" class="notice">提交结果尚未确认，保留原内容重试，避免重复提交。<button class="btn btn-primary mt" loading="{{saving}}" disabled="{{saving}}" bindtap="onRetry">原样重试</button></view>
+  <button wx:else class="btn btn-primary" loading="{{saving}}" disabled="{{loading || saving || !options}}" bindtap="onSubmit">{{mode === 'appointment' ? '提交预约意向' : '提交咨询'}}</button>
+ </block>
+ <button class="btn btn-line mt" bindtap="onHistory">我的咨询与预约</button>
+</view>

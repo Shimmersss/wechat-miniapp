@@ -1,0 +1,2 @@
+.repair-photo { width: 150rpx; height: 150rpx; border-radius: var(--radius-sm); display: block; margin-bottom: 8rpx; }
+.editor-card { border: 2rpx solid var(--c-gold-light); }

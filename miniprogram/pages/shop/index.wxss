@@ -1,0 +1,4 @@
+.brand-scroll { margin: 24rpx 0; white-space: nowrap; }
+.chips.nowrap { flex-wrap: nowrap; }
+.chip { flex-shrink: 0; padding: 12rpx 36rpx; }
+.end { text-align: center; padding: 40rpx 0 10rpx; }

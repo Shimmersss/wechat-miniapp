@@ -1,0 +1,23 @@
+<view class="container has-staff-tabbar">
+  <view class="card row">
+    <view>
+      <view class="h2">{{user.nickname}}</view>
+      <view class="tiny muted">工号 {{user.staffNo || '--'}}</view>
+    </view>
+    <status-pill text="{{roleLabel}}" tone="gold" />
+  </view>
+
+  <section-card title="管理">
+    <view wx:for="{{entries}}" wx:key="url" class="list-item" bindtap="onNavigate" data-url="{{item.url}}">
+      <text>{{item.text}}</text><text class="muted">›</text>
+    </view>
+  </section-card>
+
+  <section-card title="设置">
+    <view class="list-item"><text>金额遮挡</text><switch color="#1D1D1F" checked="{{privacy}}" bindchange="togglePrivacy" /></view>
+    <view class="list-item" bindtap="onCustomerView"><text>切换到顾客端</text><text class="muted">›</text></view>
+  </section-card>
+
+  <button class="btn btn-line btn-block" bindtap="onLogout">退出登录</button>
+</view>
+<staff-tabbar active="profile" />

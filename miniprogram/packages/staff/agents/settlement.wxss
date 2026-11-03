@@ -1,0 +1,2 @@
+.chips.nowrap { flex-wrap: nowrap; }
+.chip { flex-shrink: 0; }

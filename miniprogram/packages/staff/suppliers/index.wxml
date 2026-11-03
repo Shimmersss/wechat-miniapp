@@ -1,0 +1,25 @@
+<view class="container">
+  <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="搜索供应商名称" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-soft btn-sm" bindtap="onSearch">搜索</button></view>
+  <view wx:if="{{selecting}}" class="notice">点选有效供应商，将带回采购单。</view>
+  <button wx:if="{{canManage}}" class="btn btn-primary btn-block mb" bindtap="onAdd">＋ 新增供应商</button>
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="onSearch">重试</button></view>
+  <view wx:for="{{list}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="onSelect">
+    <view class="row"><text class="h3 flex-1">{{item.name}}</text><status-pill text="{{item.active ? (selecting ? '选择' : '启用') : '已停用'}}" tone="{{item.active ? 'green' : 'gray'}}" /></view>
+    <view class="small muted mt-sm">{{item.contact || '未填联系人'}} {{item.phone}}</view>
+    <view wx:if="{{item.settle}}" class="small mt-sm">结算：{{item.settle}}</view>
+    <view wx:if="{{item.note}}" class="small muted mt-sm">{{item.note}}</view>
+    <view class="row-start gap-sm mt"><button wx:if="{{canManage}}" class="btn btn-soft btn-sm" data-id="{{item.id}}" catchtap="onEdit">编辑档案</button><button class="btn btn-line btn-sm" data-id="{{item.id}}" catchtap="onOrders">采购记录</button></view>
+  </view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无供应商，先新增档案" />
+  <view wx:if="{{loading}}" class="muted small">加载中…</view>
+  <view wx:if="{{editor}}" class="card" id="supplier-editor">
+    <view class="h2 mb">{{editor.id ? '编辑供应商' : '新增供应商'}}</view>
+    <view class="field"><view class="field-label required">名称</view><input class="input" value="{{editor.name}}" maxlength="100" data-field="name" bindinput="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="field"><view class="field-label">联系人</view><input class="input" value="{{editor.contact}}" maxlength="100" data-field="contact" bindinput="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="field"><view class="field-label">联系电话</view><input class="input" value="{{editor.phone}}" maxlength="30" data-field="phone" bindinput="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="field"><view class="field-label">结算方式</view><input class="input" value="{{editor.settle}}" maxlength="100" data-field="settle" bindinput="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="field"><view class="field-label">备注</view><textarea class="textarea" value="{{editor.note}}" maxlength="1000" data-field="note" bindinput="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="row mb"><text>启用（停用后不可新建采购）</text><switch checked="{{editor.active}}" data-field="active" bindchange="onEditorInput" disabled="{{saving}}" /></view>
+    <view class="row gap-sm"><button class="btn btn-line" bindtap="onClose" disabled="{{saving}}">取消</button><button class="btn btn-primary" bindtap="onSave" loading="{{saving}}" disabled="{{saving}}">保存档案</button></view>
+  </view>
+</view>

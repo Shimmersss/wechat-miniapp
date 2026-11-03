@@ -1,0 +1,8 @@
+.segment { display: flex; padding: 6rpx; gap: 6rpx; background: #E8E8ED; border-radius: var(--radius); }
+.seg { flex: 1; text-align: center; line-height: 72rpx; font-size: 28rpx; color: var(--c-ink-2); border-radius: var(--radius-sm); }
+.seg.on { background: var(--c-surface); color: var(--c-ink); font-weight: 600; box-shadow: 0 2rpx 8rpx rgba(0,0,0,.08); }
+.notice.error { background: var(--c-red-soft); color: var(--c-red); }
+.device + .device { border-top: 1rpx solid var(--c-line); padding-top: 28rpx; margin-top: 8rpx; }
+.photos { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.photo { display: flex; flex-direction: column; align-items: center; gap: 6rpx; }
+.photo image { width: 140rpx; height: 140rpx; border-radius: var(--radius-sm); background: var(--c-surface-soft); }

@@ -1,0 +1,26 @@
+<view class="container">
+  
+  <view class="card">
+    <view class="field">
+      <view class="field-label required">姓名/昵称</view>
+      <input class="input" type="text" placeholder="请输入姓名/昵称" value="{{form.name}}" data-field="name" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="field-label required">手机号</view>
+      <input class="input" type="number" placeholder="请输入手机号" value="{{form.phone}}" data-field="phone" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="field-label required">所在地区</view>
+      <input class="input" type="text" placeholder="如 深圳·南山" value="{{form.region}}" data-field="region" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="field-label">邀请码</view>
+      <input class="input" type="text" placeholder="选填，由邀请人提供" value="{{form.inviteCode}}" data-field="inviteCode" bindinput="onInput" />
+    </view>
+  </view>
+  <todo-block items="{{todos}}" />
+  <view class="footer-space"></view>
+  <view class="footer-bar">
+    <button class="btn btn-primary" bindtap="onSubmit">提交申请</button>
+  </view>
+</view>

@@ -1,0 +1,10 @@
+.poster { padding: 0; overflow: hidden; }
+.poster-img { width: 100%; height: 600rpx; display: block; background: var(--c-surface-soft); }
+.poster-body { padding: 28rpx; }
+.poster-result { width: 100%; }
+.poster-canvas { position: fixed; left: -3000rpx; top: 0; width: 680rpx; height: 1240rpx; }
+.poster-palette { position: fixed; left: -3000rpx; }
+.poster-surface { color: var(--c-surface); }
+.poster-ink { color: var(--c-ink); }
+.poster-gold { color: var(--c-gold); }
+.poster-muted { color: var(--c-muted); }

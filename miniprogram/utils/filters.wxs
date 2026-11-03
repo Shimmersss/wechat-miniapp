@@ -1,0 +1,53 @@
+// WXML 内使用的格式化函数（WXS 仅支持 ES5 子集：不能调用 Number()，用 parseFloat）
+// 用法（src 必须是相对路径）：<wxs module="f" src="../../../utils/filters.wxs" />  {{f.money(price)}}
+
+function money(n, digits) {
+  if (n === null || n === undefined || n === '') return '--';
+  var num = parseFloat(n);
+  if (isNaN(num) || num === Infinity || num === -Infinity) return '--';
+  if (digits === undefined) digits = Math.round(Math.abs(num) * 100) % 100 ? 2 : 0;
+  var parts = num.toFixed(digits).split('.');
+  var s = parts[0];
+  var neg = s.charAt(0) === '-';
+  if (neg) s = s.slice(1);
+  var out = '';
+  while (s.length > 3) {
+    out = ',' + s.slice(-3) + out;
+    s = s.slice(0, s.length - 3);
+  }
+  return (neg ? '-' : '') + s + out + (digits ? '.' + parts[1] : '');
+}
+
+function maskMoney(n, privacy, digits) {
+  return privacy ? '••••' : money(n, digits);
+}
+
+function percent(n, privacy) {
+  if (privacy) return '••';
+  if (n === null || n === undefined) return '--';
+  return (parseFloat(n) * 100).toFixed(1) + '%';
+}
+
+function maskImei(imei) {
+  if (!imei) return '';
+  var s = imei + '';
+  if (s.indexOf('*') > -1 || s.length <= 6) return s;
+  return s.slice(0, 2) + '****' + s.slice(-4);
+}
+
+function label(map, key) {
+  return (map && map[key] && map[key].label) || key || '--';
+}
+
+function tone(map, key) {
+  return (map && map[key] && map[key].tone) || 'gray';
+}
+
+module.exports = {
+  money: money,
+  maskMoney: maskMoney,
+  percent: percent,
+  maskImei: maskImei,
+  label: label,
+  tone: tone
+};

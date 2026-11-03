@@ -1,0 +1,9 @@
+<view class="container">
+ <view wx:if="{{loading}}" class="notice">正在核验分享资料…</view>
+ <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line mt" bindtap="load">重新加载</button></view>
+ <view wx:if="{{share}}" class="poster card"><image wx:if="{{share.imageUrl}}" class="poster-img" src="{{share.imageUrl}}" mode="aspectFill" /><view class="poster-body"><view class="h2">{{share.title}}</view><view wx:for="{{share.units}}" wx:key="id" class="list-item"><view>{{item.name}} {{item.storage}}<view class="small muted">{{item.desc}}</view></view><price-tag value="{{item.price}}" /></view><view class="tiny muted mt">{{brand.name}} · {{brand.slogan}}</view><view wx:if="{{share.qrcodeStatus !== 'ready'}}" class="notice mt">{{share.message}}</view></view></view>
+ <image wx:if="{{posterPath}}" class="poster-result" src="{{posterPath}}" mode="widthFix" />
+ <view wx:if="{{albumDenied}}" class="card"><button class="btn btn-line" bindtap="onOpenSettings">打开相册权限设置</button></view>
+ <canvas id="poster-canvas" type="2d" class="poster-canvas" /><view class="poster-palette"><text class="poster-surface">色</text><text class="poster-ink">色</text><text class="poster-gold">色</text><text class="poster-muted">色</text></view>
+ <view class="footer-space"></view><view class="footer-bar"><button class="btn btn-line" disabled="{{!share}}" bindtap="onCopy">复制文案</button><button class="btn btn-line" disabled="{{!share}}" open-type="share">发给好友</button><button class="btn btn-primary" disabled="{{!share || drawing || share.qrcodeStatus !== 'ready'}}" loading="{{drawing}}" bindtap="onSave">保存海报</button></view>
+</view>

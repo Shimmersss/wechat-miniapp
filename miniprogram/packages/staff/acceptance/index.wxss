@@ -1,0 +1,1 @@
+.media-list { display: flex; flex-wrap: wrap; gap: 16rpx; } .media { width: 180rpx; } .media image, .media video { width: 180rpx; height: 180rpx; border-radius: var(--radius-sm); }

@@ -1,0 +1,8 @@
+.brand { display: flex; align-items: center; justify-content: space-between; padding: 8rpx 0 28rpx; }
+.left { display: flex; align-items: center; gap: 20rpx; }
+.logo { width: 72rpx; height: 72rpx; border-radius: 20rpx; background: var(--c-ink); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 34rpx; font-weight: 700; }
+.name { font-size: 40rpx; font-weight: 700; letter-spacing: -0.5rpx; color: var(--c-ink); }
+.slogan { font-size: 24rpx; color: var(--c-muted); margin-top: 2rpx; }
+.dark .name { color: #fff; }
+.dark .slogan { color: var(--c-gold-light); }
+.right { display: flex; align-items: center; gap: 16rpx; }

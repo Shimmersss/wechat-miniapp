@@ -1,0 +1,6 @@
+{
+  "navigationStyle": "default",
+  "navigationBarTitleText": "夏目数码",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 100
+}

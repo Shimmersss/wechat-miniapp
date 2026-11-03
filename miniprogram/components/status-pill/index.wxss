@@ -1,0 +1,7 @@
+.pill { display: inline-block; padding: 4rpx 16rpx; border-radius: 999rpx; font-size: 22rpx; font-weight: 500; line-height: 1.6; white-space: nowrap; }
+.green { background: var(--c-green-soft); color: var(--c-green); }
+.orange { background: var(--c-orange-soft); color: var(--c-orange); }
+.red { background: var(--c-red-soft); color: var(--c-red); }
+.blue { background: var(--c-blue-soft); color: var(--c-blue); }
+.gold { background: var(--c-surface-soft); color: var(--c-ink); }
+.gray { background: var(--c-surface-soft); color: var(--c-muted); }

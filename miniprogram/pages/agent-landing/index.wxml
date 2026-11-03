@@ -1,0 +1,31 @@
+<view class="container">
+  <view class="hero">
+    <status-pill text="夏目数码代理计划" tone="gold" />
+    <view class="hero-title">不用囤货，也能卖好机</view>
+    <view class="hero-sub">共享实时机库 · 一键转发 · 总部售后</view>
+    <view class="hero-sub">{{brand.slogan}}</view>
+  </view>
+
+  <section-card title="为什么适合你做">
+    <view wx:for="{{benefits}}" wx:key="no" class="benefit">
+      <view class="no">{{item.no}}</view>
+      <view class="flex-1">
+        <view class="h3">{{item.title}}</view>
+        <view class="small muted">{{item.desc}}</view>
+      </view>
+    </view>
+  </section-card>
+
+  <section-card title="规则说明">
+    <view class="small muted rule">· 首期采用一级代理，可通过邀请码发展直属代理。</view>
+    <view class="small muted rule">· 代理分享价 = 总部代理底价 + 你的加价，加价只能增加且有上限。</view>
+    <view class="small muted rule">· 订单由总部确认成交后统一出库；退款自动冲回未转账收益。</view>
+  </section-card>
+
+  <view class="footer-space"></view>
+  <view class="footer-bar">
+    <button class="btn btn-primary" bindtap="onPrimaryTap">
+      {{agentStatus === 'active' ? '进入代理中心' : agentStatus === 'pending' ? '已提交，等待审核' : '立即申请成为代理'}}
+    </button>
+  </view>
+</view>

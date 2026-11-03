@@ -1,0 +1,21 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <view class="row-start gap-sm mb">
+    <button class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/staff/roles">角色与字段权限</button>
+    <button class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/audit/index">操作日志</button>
+  </view>
+  <todo-block items="{{todos}}" />
+
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row">
+      <text class="h3 ellipsis flex-1">{{item.name}}</text>
+      
+    </view>
+    <view class="row mt-sm">
+      <text class="small muted">{{item.role}} · {{item.wechatBound ? '微信已绑定' : '未绑定微信'}}</text>
+      <text class="small">{{item.status}}</text>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{!loading && !list.length}}" />
+</view>

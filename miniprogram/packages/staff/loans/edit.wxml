@@ -1,0 +1,56 @@
+<view class="container">
+  <view wx:if="{{result}}" class="card">
+    <view class="h2">{{result.type === 'loan_out' ? '出借单' : '借入单'}}已保存</view>
+    <view class="small muted mt-sm">{{result.no}} · {{result.items.length}} 台</view>
+    <button class="btn btn-primary btn-block mt" bindtap="onDetail">查看单据</button>
+  </view>
+  <block wx:else>
+    <view class="segment mb">
+      <view class="seg {{form.type === 'loan_out' ? 'on' : ''}}" data-type="loan_out" bindtap="onType">出借给同行</view>
+      <view class="seg {{form.type === 'borrow_in' ? 'on' : ''}}" data-type="borrow_in" bindtap="onType">从同行借入</view>
+    </view>
+    <view class="notice">{{form.type === 'loan_out' ? '出借算业务出库，不计销售；设备关闭分享，归还后须复检才能恢复可售。' : '借入设备为外部货权，登记为借入在库，不可销售或分享，归还后冲销。'}}首期不收押金、逾期费和损坏赔偿。</view>
+    <view wx:if="{{error}}" class="notice error">{{error}}</view>
+
+    <section-card wx:if="{{form.type === 'loan_out'}}" title="出借设备" subtitle="{{units.length}} 台">
+      <view class="row gap-sm"><input class="input flex-1" value="{{code}}" bindinput="onCode" bindconfirm="onAddCode" placeholder="设备编号 / 完整 IMEI" disabled="{{pending || saving || loading}}" /><button class="btn btn-soft btn-sm" bindtap="onAddCode" disabled="{{pending || saving || loading}}">添加</button><button class="btn btn-line btn-sm" bindtap="onScanUnit" disabled="{{pending || saving || loading}}">扫码</button></view>
+      <button class="btn btn-line btn-block mt" bindtap="onPickUnits" disabled="{{pending || saving || loading}}">从库存选择（可多选）</button>
+      <view wx:for="{{units}}" wx:key="id" class="list-item">
+        <view class="flex-1"><view class="h3 ellipsis">{{item.name}} {{item.storage}}</view><view class="tiny muted">{{item.imeiMasked}} · {{item.color}}</view></view>
+        <button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onRemoveUnit" disabled="{{pending || saving}}">移除</button>
+      </view>
+      <empty-state wx:if="{{!units.length}}" text="还没有选择设备" />
+    </section-card>
+
+    <section-card wx:else title="借入设备" subtitle="{{devices.length}} 台">
+      <view wx:for="{{devices}}" wx:key="key" class="device">
+        <view class="row mb"><text class="h3">第 {{index + 1}} 台</text><text wx:if="{{devices.length > 1}}" class="small muted" data-index="{{index}}" bindtap="onRemoveDevice">删除</text></view>
+        <view class="field"><view class="field-label required">型号</view><button class="btn btn-line btn-block" data-index="{{index}}" bindtap="onChooseModel" disabled="{{pending || saving}}">{{item.model ? item.model.name : '从型号库选择'}}</button></view>
+        <view class="field"><view class="field-label required">IMEI1</view><view class="row gap-sm"><input class="input flex-1" type="number" maxlength="15" value="{{item.imei1}}" data-index="{{index}}" data-field="imei1" bindinput="onDeviceInput" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view></view>
+        <view class="field"><view class="field-label">IMEI2（选填）</view><input class="input" type="number" maxlength="15" value="{{item.imei2}}" data-index="{{index}}" data-field="imei2" bindinput="onDeviceInput" disabled="{{pending || saving}}" /></view>
+        <view class="field"><view class="field-label">成色（选填）</view><input class="input" maxlength="60" value="{{item.condition}}" data-index="{{index}}" data-field="condition" bindinput="onDeviceInput" placeholder="如 99新" disabled="{{pending || saving}}" /></view>
+        <view class="field"><view class="field-label">外观与功能说明（选填）</view><textarea class="textarea" maxlength="1000" value="{{item.description}}" data-index="{{index}}" data-field="description" bindinput="onDeviceInput" disabled="{{pending || saving}}" /></view>
+      </view>
+      <button class="btn btn-soft btn-block" bindtap="onAddDevice" disabled="{{pending || saving || devices.length >= 50}}">＋ 再加一台</button>
+    </section-card>
+
+    <section-card title="对方与归还">
+      <view class="field"><view class="field-label required">对方（同行 / 门店）</view><input class="input" maxlength="120" value="{{form.counterparty}}" data-field="counterparty" bindinput="onInput" disabled="{{pending || saving}}" /></view>
+      <view class="field"><view class="field-label required">联系电话</view><input class="input" type="number" maxlength="11" value="{{form.phone}}" data-field="phone" bindinput="onInput" disabled="{{pending || saving}}" /></view>
+      <view class="field"><view class="field-label required">应归还日期</view><picker mode="date" start="{{today}}" value="{{form.dueAt}}" data-field="dueAt" bindchange="onInput" disabled="{{pending || saving}}"><view class="picker">{{form.dueAt || '选择日期'}}</view></picker></view>
+      <view class="field"><view class="field-label required">交接说明</view><textarea class="textarea" maxlength="500" value="{{form.reason}}" data-field="reason" bindinput="onInput" placeholder="如：同行急用，当面交接，外观无划痕" disabled="{{pending || saving}}" /></view>
+      <view class="field"><view class="field-label">备注（选填）</view><input class="input" maxlength="2000" value="{{form.remark}}" data-field="remark" bindinput="onInput" disabled="{{pending || saving}}" /></view>
+    </section-card>
+
+    <section-card title="交接照片" subtitle="选填 · 仅内部可见">
+      <view class="photos"><view wx:for="{{form.photos}}" wx:key="fileId" class="photo"><image src="{{item.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" bindtap="onRemovePhoto">移除</text></view></view>
+      <button class="btn btn-line btn-block mt" bindtap="onPhotos" loading="{{uploading}}" disabled="{{pending || saving || uploading || form.photos.length >= 9}}">添加交接照片</button>
+    </section-card>
+
+    <view class="footer-space"></view>
+    <view class="footer-bar">
+      <block wx:if="{{pending}}"><button class="btn btn-primary" bindtap="onRetry" loading="{{saving}}" disabled="{{saving}}">结果未确认，原样重试</button></block>
+      <button wx:else class="btn btn-primary" bindtap="onSubmit" loading="{{saving}}" disabled="{{loading || saving || uploading}}">{{form.type === 'loan_out' ? '确认出借' : '确认借入'}}</button>
+    </view>
+  </block>
+</view>

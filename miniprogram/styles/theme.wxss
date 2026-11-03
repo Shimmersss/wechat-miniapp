@@ -1,0 +1,33 @@
+/* 夏目数码设计令牌：苹果式简约（浅灰底 + 白卡片 + 近黑主色，少用彩色）。
+   令牌名沿用旧版以兼容各页面：gold 系列现为主色/中性填充，navy 系列现为深色面。 */
+page {
+  --c-bg: #F5F5F7;
+  --c-surface: #FFFFFF;
+  --c-surface-soft: #F2F2F4;
+  --c-ink: #1D1D1F;
+  --c-ink-2: #424245;
+  --c-muted: #86868B;
+  --c-line: #E5E5EA;
+  --c-gold: #1D1D1F;
+  --c-gold-light: #D2D2D7;
+  --c-gold-soft: #F2F2F4;
+  --c-navy: #1D1D1F;
+  --c-navy-2: #2C2C2E;
+  --c-price: #D70015;
+  --c-green: #1B7F3B;
+  --c-green-soft: #E9F6EC;
+  --c-orange: #B25000;
+  --c-orange-soft: #FFF3E3;
+  --c-red: #D70015;
+  --c-red-soft: #FFECEC;
+  --c-blue: #0066CC;
+  --c-blue-soft: #E8F1FB;
+
+  --radius-sm: 16rpx;
+  --radius: 24rpx;
+  --radius-lg: 36rpx;
+  --radius-pill: 999rpx;
+  --shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  --gap: 24rpx;
+  --gutter: 32rpx;
+}

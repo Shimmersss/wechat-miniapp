@@ -1,0 +1,4 @@
+<view wx:if="{{visible && items.length}}" class="todo">
+  <view class="head">🛠 {{title}}</view>
+  <view wx:for="{{items}}" wx:key="*this" class="item">· {{item}}</view>
+</view>

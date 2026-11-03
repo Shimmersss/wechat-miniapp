@@ -1,0 +1,5 @@
+<view class="metric {{dark ? 'dark' : ''}} {{align}}">
+  <view class="label">{{label}}</view>
+  <view class="value {{highlight ? 'hl' : ''}} {{value === '无权限查看' ? 'na' : ''}}">{{value === undefined || value === null || value === '' ? '--' : value}}</view>
+  <view wx:if="{{hint}}" class="hint">{{hint}}</view>
+</view>

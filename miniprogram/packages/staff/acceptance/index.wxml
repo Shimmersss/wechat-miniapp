@@ -1,0 +1,45 @@
+<view class="container">
+  <view class="notice">逐台核对实机。通过后生成库存；异常保留记录，不进入可售。供应商与成本沿用采购单；入库后再在库存详情开启展示和分享。</view>
+  <view wx:if="{{error}}" class="notice">{{error}}<button wx:if="{{!pending && !editor && !items.length}}" class="btn btn-line btn-sm mt-sm" bindtap="load">重新加载</button></view>
+  <view wx:if="{{loading}}" class="small muted mb">正在加载型号模板…</view>
+  <view wx:if="{{result}}" class="card"><view class="h2">验收结果已保存</view><view class="mt">通过 {{result.accepted}} 台 · 异常 {{result.rejected}} 台</view><button class="btn btn-primary btn-block mt" bindtap="onBack">返回采购单</button></view>
+  <block wx:elif="{{form}}">
+    <view class="card"><view class="h3">{{form.no}}</view><view class="small muted mt-sm">采购 {{form.expectedTotal}} 台 · 尚待验收 {{form.remaining}} 台 · 本批已记录 {{items.length}} 台</view><view wx:if="{{!form.canAccept && !exceptionId}}" class="small price mt">当前不可验收，请先回采购单登记实际签收。</view></view>
+    <view wx:if="{{!editor && !exceptionId && !pending && form.canAccept}}" class="card">
+      <view class="field-label">选择采购明细</view><picker range="{{form.lines}}" range-key="modelName" value="{{lineIndex}}" bindchange="onLinePick" disabled="{{submitting || loading}}"><view class="picker">{{form.lines[lineIndex].modelName}} · 待验 {{form.lines[lineIndex].remaining}} 台</view></picker>
+      <button class="btn btn-soft btn-block mt" bindtap="onAdd" disabled="{{submitting || loading || busy > 0}}">＋ 添加一台验收设备</button>
+    </view>
+    <view wx:for="{{items}}" wx:key="key" class="card">
+      <view class="row"><text class="h3">{{index + 1}}. {{item.modelName}}</text><status-pill text="{{item.result === 'pass' ? '通过' : '异常'}}" tone="{{item.result === 'pass' ? 'green' : 'red'}}" /></view>
+      <view class="small mt-sm">{{item.imei1}}</view><view class="small muted mt-sm">{{item.result === 'pass' ? item.attributes.storage + ' / ' + item.attributes.color : item.remark}}</view>
+      <view class="row-start gap-sm mt"><button class="btn btn-soft btn-sm" data-key="{{item.key}}" bindtap="onEdit" disabled="{{submitting || pending || editor || loading}}">编辑本台</button><button class="btn btn-line btn-sm" data-key="{{item.key}}" bindtap="onRemove" disabled="{{submitting || pending || editor || loading}}">移除</button></view>
+    </view>
+    <view wx:if="{{editor}}" class="card" id="acceptance-editor">
+      <view class="h2 mb">{{exceptionId ? '异常设备复验' : '逐台验收'}} · {{editor.modelName}}</view>
+      <view class="row gap-sm mb"><input class="input flex-1" type="number" maxlength="15" placeholder="IMEI1（必填）" value="{{editor.imei1}}" data-field="imei1" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" /><button wx:if="{{!exceptionId}}" class="btn btn-soft btn-sm" data-field="imei1" bindtap="onScan" disabled="{{submitting || pending || busy > 0 || uploading}}">扫码</button></view>
+      <view class="row gap-sm mb"><input class="input flex-1" type="number" maxlength="15" placeholder="IMEI2（可选）" value="{{editor.imei2}}" data-field="imei2" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" /><button wx:if="{{!exceptionId}}" class="btn btn-line btn-sm" data-field="imei2" bindtap="onScan" disabled="{{submitting || pending || busy > 0 || uploading}}">扫码</button></view>
+      <view wx:if="{{!exceptionId}}" class="chips mb"><view class="chip {{editor.result === 'pass' ? 'active' : ''}}" data-value="pass" bindtap="onResult">验收通过</view><view class="chip {{editor.result === 'fail' ? 'active' : ''}}" data-value="fail" bindtap="onResult">异常，不入库</view></view>
+      <block wx:if="{{editor.result === 'pass'}}">
+        <view class="chips mb"><view class="chip {{editor.condition === 'used' ? 'active' : ''}}" data-value="used" bindtap="onCondition">二手机</view><view class="chip {{editor.condition === 'new' ? 'active' : ''}}" data-value="new" bindtap="onCondition">新机</view></view>
+        <template-fields fields="{{fields}}" values="{{editor.attributes}}" bindchange="onAttribute" bindbusy="onFieldBusy" disabled="{{submitting || pending}}" />
+        <view class="h3 mt mb">单台定价（元）</view>
+        <view class="grid-3"><view><view class="field-label required">零售价</view><input class="input" type="digit" value="{{editor.retail}}" data-field="retail" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view><view><view class="field-label required">批发价</view><input class="input" type="digit" value="{{editor.wholesale}}" data-field="wholesale" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view><view><view class="field-label required">代理底价</view><input class="input" type="digit" value="{{editor.agentBase}}" data-field="agentBase" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view></view>
+        <view class="field mt"><view class="field-label">机况描述（同行）</view><textarea class="textarea" value="{{editor.peerDesc}}" maxlength="4000" data-field="peerDesc" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view>
+        <view class="field"><view class="field-label">机况描述（顾客）</view><textarea class="textarea" value="{{editor.customerDesc}}" maxlength="4000" data-field="customerDesc" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view>
+        <view class="field"><view class="field-label">内部备注</view><textarea class="textarea" value="{{editor.internalNote}}" maxlength="4000" data-field="internalNote" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view>
+        <view class="h3 mb">公开设备实拍</view><view class="media-list"><view wx:for="{{editor.publicImages}}" wx:key="fileId" class="media"><video wx:if="{{item.mediaType === 'video'}}" src="{{item.url}}" /><image wx:else src="{{item.url}}" mode="aspectFill" /><button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onRemoveMedia" disabled="{{submitting || uploading || pending}}">移除</button></view></view><button wx:if="{{editor.publicImages.length < 9}}" class="btn btn-soft btn-sm mt" bindtap="onMedia" loading="{{uploading}}" disabled="{{submitting || pending || busy > 0 || uploading}}">添加照片 / 视频</button>
+        <view class="row mt mb"><text class="small flex-1">已核对型号/规格、电池、成色、系统、检测、维修史、配件及整备状态</text><switch checked="{{editor.checksConfirmed}}" data-field="checksConfirmed" bindchange="onEditorInput" disabled="{{submitting || pending}}" /></view>
+      </block>
+      <block wx:if="{{editor.result === 'fail'}}"><view class="field"><view class="field-label required">异常原因（型号、数量或机况不符等）</view><textarea class="textarea" value="{{editor.remark}}" maxlength="500" data-field="remark" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view><view class="field"><view class="field-label">实机型号说明</view><input class="input" value="{{editor.observedModel}}" data-field="observedModel" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view></block>
+      <template-fields fields="{{receiptFields}}" values="{{editor.attributes}}" bindchange="onAttribute" bindbusy="onFieldBusy" disabled="{{submitting || pending}}" />
+      <view wx:if="{{exceptionId}}" class="field mt"><view class="field-label required">复验处理原因</view><textarea class="textarea" value="{{resolutionReason}}" maxlength="500" data-field="resolutionReason" bindinput="onInput" disabled="{{submitting}}" /></view>
+      <view class="row gap-sm mt"><button wx:if="{{!exceptionId}}" class="btn btn-line" bindtap="onCancelEditor" disabled="{{submitting || busy > 0 || uploading}}">取消本台</button><button class="btn btn-primary flex-1" bindtap="{{exceptionId ? 'onReinspect' : 'onSaveEditor'}}" loading="{{submitting}}" disabled="{{submitting || busy > 0 || uploading || loading}}">{{exceptionId ? '确认复验并入库' : '保存本台验收'}}</button></view>
+    </view>
+    <view wx:if="{{!exceptionId && items.length}}" class="card">
+      <view class="field"><view class="field-label required">本次实收数量（与逐台记录一致）</view><input class="input" type="number" value="{{declaredCount}}" data-field="declaredCount" bindinput="onInput" disabled="{{submitting || pending}}" /></view>
+      <block wx:if="{{items.length < form.remaining}}"><view class="row mb"><text>确认本次为分批验收</text><switch checked="{{partialConfirmed}}" data-field="partialConfirmed" bindchange="onInput" disabled="{{submitting || pending}}" /></view><textarea class="textarea" value="{{partialReason}}" placeholder="填写分批验收原因" maxlength="500" data-field="partialReason" bindinput="onInput" disabled="{{submitting || pending}}" /></block>
+    </view>
+    <view wx:if="{{pending}}" class="notice">提交结果尚未确认。已锁定本批内容，请原样重试，系统会防止重复验收。<button class="btn btn-primary btn-block mt" bindtap="onRetry" loading="{{submitting}}" disabled="{{submitting}}">重试查询并提交本批</button></view>
+    <view class="footer-space"></view><view wx:if="{{!exceptionId && !pending && !editor}}" class="footer-bar"><button class="btn btn-primary" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || loading || editor || busy > 0 || uploading || !items.length || !form.canAccept}}">确认本批验收（{{items.length}}台）</button></view>
+  </block>
+</view>

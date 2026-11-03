@@ -1,0 +1,4 @@
+.field-row { padding: 24rpx 0; border-bottom: 1rpx solid var(--c-line); }
+.editor-mask { position: fixed; inset: 0; background: var(--c-navy); z-index: 100; display: flex; align-items: flex-end; }
+.editor-panel { box-sizing: border-box; max-height: 90vh; padding: 32rpx 32rpx 64rpx; background: var(--c-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.visibility { display: inline-flex; align-items: center; margin: 12rpx 16rpx 12rpx 0; }

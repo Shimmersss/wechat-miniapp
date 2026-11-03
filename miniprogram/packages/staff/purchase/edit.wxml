@@ -1,0 +1,24 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <view wx:if="{{error}}" class="notice">{{error}}<button wx:if="{{id}}" class="btn btn-line btn-sm mt-sm" bindtap="load">重新加载</button></view>
+  <view wx:if="{{saved}}" class="card"><view class="h2">采购单已保存</view><view class="small muted mt-sm">{{saved.no}} · {{saved.qty}} 台</view><view class="mt">含运费总额：{{saved.amount !== undefined ? '¥' + f.maskMoney(saved.amount, privacy) : '无权限查看'}}</view><button class="btn btn-primary btn-block mt" bindtap="onOpenSaved">查看采购单 / 绑定运单</button></view>
+  <block wx:else>
+    <view class="card">
+      <view class="field"><view class="field-label required">供应商</view><button class="btn btn-soft btn-block" bindtap="onChooseSupplier" disabled="{{saving || loading}}">{{supplierName || '选择供应商'}}</button></view>
+      <view class="field"><view class="field-label required">预计到货</view><picker mode="date" value="{{form.expectedAt}}" data-field="expectedAt" bindchange="onInput" disabled="{{saving || loading}}"><view class="picker">{{form.expectedAt || '选择日期'}}</view></picker></view>
+      <view class="field"><view class="field-label">运费（元）</view><input class="input" type="digit" value="{{form.freight}}" placeholder="不填为 0" data-field="freight" bindinput="onInput" disabled="{{saving || loading}}" /></view>
+      <view class="field"><view class="field-label">采购备注</view><textarea class="textarea" value="{{form.remark}}" maxlength="1000" data-field="remark" bindinput="onInput" disabled="{{saving || loading}}" /></view>
+    </view>
+    <view class="notice">采购规格可选，不填则验收时核对实机。总额由后台核算，保存后显示；运单在采购单详情中绑定。</view>
+    <view wx:for="{{lines}}" wx:key="key" class="card">
+      <view class="row mb"><text class="h3">采购明细 {{index + 1}}</text><button wx:if="{{lines.length > 1}}" class="btn btn-line btn-sm" data-key="{{item.key}}" bindtap="onRemoveLine" disabled="{{saving || loading}}">删除</button></view>
+      <button class="btn btn-soft btn-block mb" data-key="{{item.key}}" bindtap="onChooseModel" disabled="{{saving || loading}}">{{item.modelName || '选择型号'}}</button>
+      <template-fields fields="{{item.specFields}}" values="{{item.attributes}}" data-key="{{item.key}}" bindchange="onSpec" disabled="{{saving || loading}}" />
+      <view wx:if="{{item.modelId}}" class="small muted mt-sm">规格：{{item.attributes.version || '版本不限'}} / {{item.attributes.storage || '容量不限'}} / {{item.attributes.color || '颜色不限'}}</view>
+      <button wx:if="{{item.modelId}}" class="btn btn-line btn-sm mt-sm" data-key="{{item.key}}" bindtap="onClearSpecs" disabled="{{saving || loading}}">清空规格限制</button>
+      <view class="grid-2 mt"><view><view class="field-label required">数量（台）</view><input class="input" type="number" value="{{item.quantity}}" data-key="{{item.key}}" data-field="quantity" bindinput="onLineInput" disabled="{{saving || loading}}" /></view><view><view class="field-label required">单台采购价（元）</view><input class="input" type="digit" value="{{item.unitCost}}" data-key="{{item.key}}" data-field="unitCost" bindinput="onLineInput" disabled="{{saving || loading}}" /></view></view>
+    </view>
+    <button wx:if="{{lines.length < 100}}" class="btn btn-soft btn-block" bindtap="onAddLine" disabled="{{saving || loading}}">＋ 添加采购明细</button>
+    <view class="footer-space"></view><view class="footer-bar"><button class="btn btn-primary" bindtap="onSubmit" loading="{{saving || loading}}" disabled="{{saving || loading}}">{{id ? '保存修改' : '创建采购单'}}</button></view>
+  </block>
+</view>

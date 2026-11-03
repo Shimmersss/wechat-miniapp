@@ -1,0 +1,18 @@
+<view class="container">
+  <view class="notice">加价只能增加，不能低于总部底价；成交价写入订单快照，后续调价不影响历史收益。</view>
+  <view wx:for="{{units}}" wx:key="unitId" id="u-{{item.unitId}}" class="card {{focusId === item.unitId ? 'focus' : ''}}">
+    <view class="row">
+      <view class="flex-1">
+        <view class="h3">{{item.name}}</view>
+        <view class="tiny muted">{{item.spec}}</view>
+      </view>
+      <price-tag value="{{item.sharePrice}}" size="md" />
+    </view>
+    <view class="row mt-sm">
+      <text class="tiny muted">我的加价 ¥{{item.markup}}</text>
+      <text class="tiny muted">上限 ¥{{item.markupMax}}</text>
+    </view>
+    <slider min="{{item.markupMin}}" max="{{item.markupMax}}" step="50" value="{{item.markup}}" activeColor="#1D1D1F" block-size="20" data-index="{{index}}" bindchanging="onMarkupChanging" bindchange="onMarkupChange" />
+  </view>
+  <empty-state wx:if="{{!units.length}}" text="暂无可分享商品" />
+</view>

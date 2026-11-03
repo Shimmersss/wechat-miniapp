@@ -1,0 +1,4 @@
+.parameter-value { max-width: 62%; text-align: right; word-break: break-all; }
+.media-list { display: flex; flex-wrap: wrap; gap: 16rpx; } .media-list image, .media-list video { width: 180rpx; height: 180rpx; border-radius: var(--radius-sm); }
+.price-mask { position: fixed; inset: 0; z-index: 20; background: var(--c-navy); opacity: .4; }
+.price-panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 85vh; background: var(--c-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom)); }

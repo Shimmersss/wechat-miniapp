@@ -1,0 +1,41 @@
+const test=require('node:test'),assert=require('node:assert/strict');let role='boss';global.wx={getStorageSync:()=>role};const db=require('../miniprogram/mock/data'),mock=require('../miniprogram/mock');const call=(url,method='GET',data={})=>mock.handle({url,method,data});
+test('库存 mock：改价版本、分享状态、复检与盘点历史真正保存',async()=>{
+ const unit=db.units.find(u=>u.status==='in_stock'), id=unit.id;
+ let r=await call('/units/'+id);const version=r.data.priceVersion;
+ assert.equal((await call('/units/'+id+'/price','PATCH',{retail:'1234.56',priceVersion:version,reason:'验证改价'})).code,0);
+ assert.equal((await call('/units/'+id)).data.retail,1234.56);
+ assert.equal((await call('/units/'+id+'/price','PATCH',{retail:1,priceVersion:version,reason:'旧版本'})).code,409);
+ assert.equal((await call('/units/'+id+'/share-flags','PATCH',{showInShop:false})).data.showInShop,false);
+ const snapshot={version:1,fields:[{key:'refurbishment',label:'整备',type:'select',required:true,visibility:['internal'],options:['正在整备','整备完成']}]};
+ unit.templateSnapshot=snapshot;unit.attributes={refurbishment:'正在整备'};unit.status='recheck';unit.flags={showInShop:false,sharePeer:false,shareAgent:false};
+ r=await call('/units/'+id+'/recheck-form');assert.equal(r.code,0);
+ assert.equal((await call('/units/'+id+'/recheck','POST',{inspectionVersion:r.data.inspectionVersion,result:'pass',reason:'验证复检',attributes:{refurbishment:'整备完成'}})).code,0);
+ assert.equal((await call('/units/'+id)).data.status,'in_stock');assert.equal((await call('/units/'+id+'/ledger')).data.total,1);
+ const request={requestKey:'fixture-stocktake',scannedImeis:[id,'UNKNOWN'],statuses:['in_stock']};
+ r=await call('/stocktakes','POST',request);assert.equal(r.code,0);assert.equal(r.data.matched,1);assert.equal(r.data.extra.length,1);const recordId=r.data.id;
+ assert.equal((await call('/stocktakes','POST',request)).data.id,recordId);assert.equal((await call('/stocktakes')).data.total,1);
+ assert.equal((await call('/stocktakes/'+recordId)).data.id,recordId);
+ assert.equal((await call('/stocktakes','POST',{...request,scannedImeis:['OTHER']})).code,409);
+ role='sales';assert.equal((await call('/units/'+id+'/price','PATCH',{retail:1})).code,403);assert.equal((await call('/stocktakes')).code,403);
+ role='customer';assert.equal((await call('/units/'+id)).code,403);
+});
+test('库存 mock：在库汇总只算 in_stock，成本总额按角色裁剪',async()=>{
+ role='boss';const owned=db.units.filter(u=>u.status==='in_stock');
+ let r=await call('/units',"GET",{status:'sold'});assert.equal(r.code,0);
+ assert.equal(r.data.summary.inStock,owned.length);
+ assert.equal(r.data.summary.retailTotal,Math.round(owned.reduce((n,u)=>n+u.retail,0)*100)/100);
+ assert.equal(r.data.summary.costTotal,Math.round(owned.reduce((n,u)=>n+u.cost,0)*100)/100);
+ role='sales';r=await call('/units');assert.equal(r.code,0);
+ assert.equal(r.data.summary.inStock,owned.length);assert.equal(r.data.summary.costTotal,undefined);
+ role='boss';
+});
+test('库存 mock：批量代理转发整批校验，非在库不能开启',async()=>{
+ role='boss';const ok=db.units.filter(u=>u.status==='in_stock').slice(0,2).map(u=>u.id);
+ let r=await call('/units/share-flags','PATCH',{unitIds:ok,shareAgent:false});assert.equal(r.code,0);assert.equal(r.data.updated,ok.length);
+ assert.ok(ok.every(id=>db.units.find(u=>u.id===id).flags.shareAgent===false));
+ const off=db.units.find(u=>!ok.includes(u.id)),status=off.status;off.status='repairing';
+ r=await call('/units/share-flags','PATCH',{unitIds:[ok[0],off.id],shareAgent:true});off.status=status;
+ assert.equal(r.code,409);assert.equal(db.units.find(u=>u.id===ok[0]).flags.shareAgent,false);
+ assert.equal((await call('/units/share-flags','PATCH',{unitIds:[],shareAgent:true})).code,400);
+ role='warehouse';assert.equal((await call('/units/share-flags','PATCH',{unitIds:ok,shareAgent:true})).code,403);role='boss';
+});

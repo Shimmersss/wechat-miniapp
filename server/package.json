@@ -1,0 +1,33 @@
+{
+  "name": "xiamu-erp-server",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/index.js",
+    "migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.migration scripts/migrate.js",
+    "bootstrap": "node --env-file-if-exists=.env scripts/bootstrap.js",
+    "test": "node --env-file-if-exists=.env --test test/*.test.js",
+    "db:start": "node scripts/local-mysql.js",
+    "db:grants": "node scripts/local-grants.js",
+    "test:db": "node scripts/test-database.js"
+  },
+  "dependencies": {
+    "@fastify/multipart": "^10.1.7",
+    "@fastify/rate-limit": "^11.2.2",
+    "fastify": "^5.12.8",
+    "file-type": "^22.3.0",
+    "mysql2": "^3.24.6",
+    "tencentcloud-sdk-nodejs-sms": "^4.1.306"
+  },
+  "overrides": {
+    "tencentcloud-sdk-nodejs-common": {
+      "uuid": "^11.1.1"
+    }
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}

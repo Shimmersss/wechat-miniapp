@@ -1,0 +1,25 @@
+<view class="container">
+  <view class="profile card">
+    <view class="avatar">{{user && user.nickname ? user.nickname[0] : '访'}}</view>
+    <view class="flex-1">
+      <view class="h2">{{user && user.nickname ? user.nickname : '微信用户'}}</view>
+      <status-pill text="{{roleLabel}}" tone="gold" />
+    </view>
+  </view>
+
+  <section-card title="我的服务">
+    <view class="list-item" bindtap="onNavigate" data-url="/packages/shop/requests/index"><text>我的咨询与预约记录</text><text class="muted">›</text></view>
+    <view class="list-item" bindtap="onNavigate" data-url="/packages/shop/consult/index"><text>咨询与预约到店</text><text class="muted">›</text></view>
+    <view class="list-item" bindtap="goAgent"><text>{{agent ? '代理中心' : '成为代理'}}</text><text class="muted">›</text></view>
+    <view class="list-item" bindtap="goStaff"><text>{{staff ? '员工经营台' : '员工登录'}}</text><text class="muted">›</text></view>
+  </section-card>
+
+  <section-card wx:if="{{devMode}}" title="开发调试" subtitle="仅 mock 模式显示">
+    <picker range="{{mockRoles}}" range-key="label" value="{{mockRoleIndex}}" bindchange="onMockRoleChange">
+      <view class="list-item"><text>切换模拟身份</text><text class="gold">{{mockRoles[mockRoleIndex].label}} ›</text></view>
+    </picker>
+  </section-card>
+
+  <view class="small muted center">{{brand.name}} · {{brand.slogan}}</view>
+  <button wx:if="{{staff}}" class="btn btn-line btn-block mt" bindtap="onLogout">退出员工账号</button>
+</view>

@@ -1,0 +1,10 @@
+<view class="brand {{dark ? 'dark' : ''}}">
+  <view class="left">
+    <view class="logo">夏</view>
+    <view>
+      <view class="name">{{brand.name}}</view>
+      <view wx:if="{{showSlogan}}" class="slogan">{{brand.slogan}}</view>
+    </view>
+  </view>
+  <view class="right"><slot name="right" /></view>
+</view>

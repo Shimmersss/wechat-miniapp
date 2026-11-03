@@ -1,0 +1,9 @@
+<view class="container">
+ <view class="chips mb"><view wx:for="{{kinds}}" wx:key="value" class="chip {{kind === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onKind">{{item.label}}</view></view>
+ <picker range="{{statuses}}" range-key="label" value="{{statusIndex}}" bindchange="onStatus"><view class="picker mb">{{statuses[statusIndex].label}}</view></picker>
+ <view wx:if="{{internal}}" class="row gap-sm mb"><input class="input flex-1" placeholder="姓名 / 手机号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" /><button class="btn btn-line" bindtap="onSearch">查找</button></view>
+ <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line mt" bindtap="onSearch">重试</button></view>
+ <view wx:for="{{list}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="onSelect"><view class="row"><text class="h3">{{item.kind === 'appointment' ? '到店预约' : '商品咨询'}}</text><status-pill text="{{labels[item.status]}}" tone="{{item.status === 'new' ? 'orange' : 'gold'}}" /></view><view class="mt-sm">{{item.unit ? item.unit.name : '门店咨询'}} {{item.unit.storage}}</view><view wx:if="{{item.kind === 'appointment'}}" class="small mt-sm">{{item.date}} · {{item.timeSlot}}</view><view class="muted small mt-sm">{{item.content}}</view><view class="tiny muted mt-sm">{{item.createdLabel}}</view><view wx:if="{{internal}}" class="small mt-sm">{{item.name || '未留称呼'}} · {{item.phone}}</view></view>
+ <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无对应记录" />
+ <button wx:if="{{more}}" class="btn btn-line" bindtap="onReachBottom" loading="{{loading}}">加载更多</button><button wx:if="{{!internal}}" class="btn btn-primary mt" bindtap="onNew">新增咨询 / 预约</button>
+</view>

@@ -1,0 +1,6 @@
+.chips.nowrap { flex-wrap: nowrap; }
+.chip { flex-shrink: 0; }
+.ticket.overdue { border-left: 8rpx solid var(--c-red); }
+
+.repair-lanes { display: flex; align-items: flex-start; gap: 20rpx; }
+.repair-lane { flex: none; width: 440rpx; background: var(--c-surface-soft); border-radius: var(--radius); padding: 20rpx; }

@@ -1,0 +1,3 @@
+.todo { border: 2rpx dashed var(--c-gold-light); border-radius: var(--radius); padding: 20rpx 24rpx; margin-bottom: var(--gap); background: rgba(242,242,244,.6); }
+.head { font-size: 24rpx; font-weight: 700; color: var(--c-ink-2); margin-bottom: 8rpx; }
+.item { font-size: 22rpx; color: var(--c-ink-2); line-height: 1.8; }

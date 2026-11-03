@@ -1,0 +1,42 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="load">重试</button></view>
+  <view wx:if="{{loading}}" class="small muted mb">加载中…</view>
+  <block wx:if="{{detail}}">
+    <view class="card"><view class="row"><text class="h3">{{detail.no}}</text><status-pill text="{{f.label(statusMap, detail.status)}}" tone="{{f.tone(statusMap, detail.status)}}" /></view><button wx:if="{{canManage && detail.status === 'pending_ship'}}" class="btn btn-soft btn-sm mt" bindtap="onEdit">编辑采购明细</button></view>
+    <section-card title="基本信息">
+      <view class="list-item"><text class="muted">供应商</text><text>{{detail.supplier || '无权限查看'}}</text></view>
+      <view class="list-item"><text class="muted">采购数量</text><text>{{detail.qty}} 台</text></view>
+      <view class="list-item"><text class="muted">含运费总额</text><text>{{detail.amount !== undefined ? '¥' + f.maskMoney(detail.amount, privacy) : '无权限查看'}}</text></view>
+      <view class="list-item"><text class="muted">运费</text><text>{{detail.freight !== undefined ? '¥' + f.maskMoney(detail.freight, privacy) : '无权限查看'}}</text></view>
+      <view class="list-item"><text class="muted">负责人</text><text>{{detail.owner}}</text></view><view class="list-item"><text class="muted">预计到货</text><text>{{detail.expectedAt}}</text></view><view wx:if="{{detail.remark}}" class="small muted mt">{{detail.remark}}</view>
+    </section-card>
+    <section-card title="采购明细">
+      <view wx:for="{{detail.lines}}" wx:key="id" class="mb">
+        <view class="h3">{{item.modelName}}</view><view class="small muted mt-sm">{{item.attributes.version || '版本不限'}} / {{item.attributes.storage || '容量不限'}} / {{item.attributes.color || '颜色不限'}}</view>
+        <view class="small mt-sm">采购 {{item.quantity}} · 已收 {{item.received}} · 通过 {{item.accepted}} · 异常 {{item.rejected}} · 待验 {{item.remaining}}</view><view class="tiny muted mt-sm">单价 {{item.unitCost !== undefined ? '¥' + f.maskMoney(item.unitCost, privacy) : '无权限查看'}}</view>
+      </view>
+    </section-card>
+    <section-card title="采购运单">
+      <button wx:if="{{canManage && detail.status !== 'completed'}}" class="btn btn-soft btn-sm mb" bindtap="onAddShipment">＋ 绑定运单</button>
+      <view wx:if="{{shipmentEditor}}" class="card">
+        <picker range="{{carriers}}" range-key="label" value="{{carrierIndex}}" bindchange="onCarrier" disabled="{{saving}}"><view class="picker">{{carriers[carrierIndex].label}}</view></picker>
+        <input class="input mt-sm" placeholder="运单号" value="{{shipmentEditor.trackingNo}}" bindinput="onShipmentInput" maxlength="40" disabled="{{saving}}" />
+        <view class="row gap-sm mt"><button class="btn btn-line btn-sm" bindtap="onScanShipment" disabled="{{saving}}">扫运单</button><button class="btn btn-line btn-sm" bindtap="onCloseShipment" disabled="{{saving}}">取消</button><button class="btn btn-primary btn-sm" bindtap="onSaveShipment" loading="{{saving}}" disabled="{{saving}}">绑定</button></view>
+      </view>
+      <view wx:for="{{detail.shipments}}" wx:key="id" class="mb">
+        <view class="row"><text class="small">{{item.carrier}} · {{item.trackingNo}}</text><status-pill text="{{item.status === 'signed' ? '已签收' : '在途'}}" tone="{{item.status === 'signed' ? 'green' : 'orange'}}" /></view>
+        <view class="row-start gap-sm mt-sm"><button wx:if="{{item.status !== 'signed'}}" class="btn btn-soft btn-sm" data-id="{{item.id}}" bindtap="onReceive" disabled="{{saving}}">已收货，登记签收</button></view>
+      </view>
+      <empty-state wx:if="{{!detail.shipments.length}}" text="请先绑定运单，实际签收后再验收" />
+    </section-card>
+    <section-card wx:if="{{detail.exceptions.length}}" title="验收异常">
+      <view wx:for="{{detail.exceptions}}" wx:key="id" class="mb">
+        <view class="row"><text class="h3">{{item.modelName}}</text><status-pill text="{{resolutions[item.resolution]}}" tone="{{item.resolution === 'none' || item.resolution === 'dispute' ? 'red' : 'gray'}}" /></view>
+        <view class="small mt-sm">{{item.imei1 || item.imeiMasked}}</view><view class="small muted mt-sm">{{item.reason}}</view><view wx:if="{{item.observedModel}}" class="small muted mt-sm">实机型号说明：{{item.observedModel}}</view>
+        <view wx:if="{{canAccept && (item.resolution === 'none' || item.resolution === 'dispute')}}" class="row-start gap-sm mt"><button class="btn btn-line btn-sm" data-id="{{item.id}}" data-action="return" bindtap="onResolve" disabled="{{saving}}">登记退货</button><button class="btn btn-line btn-sm" data-id="{{item.id}}" data-action="dispute" bindtap="onResolve" disabled="{{saving}}">争议</button><button class="btn btn-soft btn-sm" data-id="{{item.id}}" bindtap="onReinspect" disabled="{{saving}}">复验入库</button></view>
+      </view>
+    </section-card>
+    <view class="footer-space"></view><view wx:if="{{canAccept && (detail.status === 'arrived' || detail.status === 'accepting' || detail.status === 'exception')}}" class="footer-bar"><button class="btn btn-primary" bindtap="onAccept">逐台到货验收</button></view>
+  </block>
+</view>

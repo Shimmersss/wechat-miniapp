@@ -1,0 +1,48 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container {{picking ? 'picking' : 'has-staff-tabbar'}}">
+  <view wx:if="{{summary && !picking}}" class="card summary">
+    <view class="summary-label">在库</view>
+    <view class="summary-main"><text class="summary-num">{{summary.inStock}}</text><text class="summary-unit">台</text></view>
+    <view class="grid-2 mt">
+      <view><view class="summary-label">零售总额</view><view class="summary-money">¥{{f.maskMoney(summary.retailTotal, privacy)}}</view></view>
+      <view><view class="summary-label">在库成本</view><view class="summary-money {{summary.costTotal === undefined ? 'na' : ''}}">{{summary.costTotal !== undefined ? '¥' + f.maskMoney(summary.costTotal, privacy) : '无权限查看'}}</view></view>
+    </view>
+  </view>
+  <view wx:if="{{!picking}}" class="actions mb">
+    <view wx:if="{{canInbound}}" class="action" bindtap="onNavigate" data-url="/packages/staff/inbound/index"><view class="action-icon"><image src="/assets/icons/inbound.svg" /></view><text>入库</text></view>
+    <view wx:if="{{canSell}}" class="action" bindtap="onStartPick"><view class="action-icon"><image src="/assets/icons/outbound.svg" /></view><text>手动出库</text></view>
+    <view wx:if="{{canSell}}" class="action" bindtap="onScanOut"><view class="action-icon"><image src="/assets/icons/scan.svg" /></view><text>扫码出库</text></view>
+    <view wx:if="{{canShare}}" class="action" bindtap="onStartAgent"><view class="action-icon"><image src="/assets/icons/forward.svg" /></view><text>代理转发</text></view>
+    <view wx:if="{{canStocktake}}" class="action stocktake-entry" bindtap="onStocktake"><view class="action-icon"><image src="/assets/icons/list.svg" /></view><text>库存盘点</text></view>
+  </view>
+  <view wx:else class="notice row"><text class="flex-1">{{pickMode === 'agent' ? '勾选在库可售设备，批量开启或关闭“允许代理转发”。' : pickFor === 'loan' ? '勾选要出借的在库自有设备（可多选），确认后带回出借单。' : '勾选要出库的在库设备（可多选），确认后进入收银登记实收并扣库。'}}</text><button class="btn btn-line btn-sm" bindtap="onSelectAll">全选本页</button></view>
+  <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="型号 / 完整 IMEI / 设备编号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-line btn-sm" bindtap="onScan">扫码</button><button class="btn btn-line btn-sm" bindtap="onToggleFilter">筛选</button></view>
+  <view wx:if="{{filterOpen}}" class="card">
+    <button class="btn btn-soft btn-block mb" bindtap="onChooseModel">{{model ? model.name : '按型号筛选'}}</button>
+    <view class="field"><view class="field-label">库龄不少于（天）</view><input class="input" type="number" value="{{ageingOver}}" data-field="ageingOver" bindinput="onFilterInput" /></view>
+    <view class="grid-2"><view><view class="field-label">最低零售价（元）</view><input class="input" type="digit" value="{{minPrice}}" data-field="minPrice" bindinput="onFilterInput" /></view><view><view class="field-label">最高零售价（元）</view><input class="input" type="digit" value="{{maxPrice}}" data-field="maxPrice" bindinput="onFilterInput" /></view></view>
+    <view class="row gap-sm mt"><button class="btn btn-line" bindtap="onResetFilter">重置全部</button><button class="btn btn-primary" bindtap="onApplyFilter">应用筛选</button></view>
+  </view>
+  <scroll-view scroll-x class="mb"><view class="chips nowrap"><view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}} {{counts[item.value || 'all'] || 0}}</view></view></scroll-view>
+  <view class="small muted mb">符合筛选 {{total}} 台；状态标签为全库数量。{{model ? '型号：' + model.name : ''}}</view>
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="onSearch">重试</button></view>
+  <view wx:for="{{list}}" wx:key="id" class="card unit {{item.ageDays > 30 ? 'age-warning' : ''}} {{picking && selected[item.id] ? 'picked' : ''}} {{picking && item.status !== 'in_stock' ? 'unpickable' : ''}}" bindtap="onItemTap" data-id="{{item.id}}" data-status="{{item.status}}">
+    <view class="row"><view wx:if="{{picking}}" class="check {{selected[item.id] ? 'on' : ''}}">{{selected[item.id] ? '✓' : ''}}</view><text class="h3 ellipsis flex-1">{{item.name}} {{item.storage}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view class="small muted mt-sm">{{item.imeiMasked || f.maskImei(item.imei1)}} · {{item.color}} · {{item.grade}}</view>
+    <view class="row mt-sm"><text class="small {{item.ageDays > 30 ? 'price' : 'muted'}}">库龄 {{item.ageDays}} 天{{item.ageDays > 30 ? ' · 超 30 天' : ''}}</text><text class="small">零 ¥{{f.maskMoney(item.retail, privacy)}}</text></view>
+    <view wx:if="{{pickMode === 'agent'}}" class="small mt-sm {{item.flags.shareAgent ? 'agent-on' : 'muted'}}">{{item.flags.shareAgent ? '已开启代理转发' : '未开启代理转发'}}</view>
+    <view class="tiny muted mt-sm">成本 {{item.cost !== undefined ? '¥' + f.maskMoney(item.cost, privacy) : '无权限查看'}} · 批发 {{item.wholesale !== undefined ? '¥' + f.maskMoney(item.wholesale, privacy) : '无权限查看'}}</view>
+  </view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的库存" /><view wx:if="{{loading}}" class="small muted mb">加载中…</view>
+  <view wx:if="{{picking}}" class="footer-space"></view>
+</view>
+<view wx:if="{{pickMode === 'agent'}}" class="footer-bar">
+  <button class="btn btn-soft" bindtap="onCancelPick" disabled="{{saving}}">取消</button>
+  <button class="btn btn-line" data-on="0" bindtap="onAgentShare" disabled="{{!selectedCount || saving}}">关闭转发</button>
+  <button class="btn btn-primary" data-on="1" bindtap="onAgentShare" disabled="{{!selectedCount || saving}}">开启（{{selectedCount}}）</button>
+</view>
+<view wx:elif="{{picking}}" class="footer-bar">
+  <button class="btn btn-soft" bindtap="onCancelPick">取消</button>
+  <button class="btn btn-primary" bindtap="onConfirmPick" disabled="{{!selectedCount}}">{{pickFor === 'loan' ? '加入出借单' : '去收银'}}（{{selectedCount}} 台）</button>
+</view>
+<staff-tabbar wx:else active="inventory" />

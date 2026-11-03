@@ -1,0 +1,55 @@
+CREATE TABLE IF NOT EXISTS roles (
+  role_key VARCHAR(32) PRIMARY KEY, label VARCHAR(60) NOT NULL, permissions JSON NOT NULL
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS users (
+  id CHAR(36) PRIMARY KEY, openid VARCHAR(128) NOT NULL UNIQUE, nickname VARCHAR(100) NOT NULL DEFAULT '微信用户',
+  role VARCHAR(32) NOT NULL DEFAULT 'customer', status VARCHAR(16) NOT NULL DEFAULT 'active', agent_status VARCHAR(16),
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS staff (
+  id CHAR(36) PRIMARY KEY, user_id CHAR(36) UNIQUE, phone CHAR(11) NOT NULL UNIQUE, name VARCHAR(100) NOT NULL,
+  role_key VARCHAR(32) NOT NULL, status VARCHAR(16) NOT NULL DEFAULT 'active', store_id VARCHAR(60),
+  FOREIGN KEY (user_id) REFERENCES users(id), FOREIGN KEY (role_key) REFERENCES roles(role_key)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash CHAR(64) PRIMARY KEY, user_id CHAR(36) NOT NULL, expires_at DATETIME(3) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), FOREIGN KEY (user_id) REFERENCES users(id), INDEX (expires_at)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS sms_challenges (
+  phone CHAR(11) PRIMARY KEY, code_hash CHAR(64) NOT NULL, expires_at DATETIME(3) NOT NULL,
+  sent_at DATETIME(3) NOT NULL, attempts INT NOT NULL DEFAULT 0, consumed BOOLEAN NOT NULL DEFAULT FALSE,
+  delivered BOOLEAN NOT NULL DEFAULT FALSE
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, actor_id CHAR(36), action VARCHAR(80) NOT NULL,
+  object_id VARCHAR(120) NOT NULL, before_data JSON, after_data JSON, reason VARCHAR(500) NOT NULL DEFAULT '',
+  request_id VARCHAR(100) NOT NULL, ip VARCHAR(64) NOT NULL, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  INDEX (created_at), INDEX (actor_id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS files (
+  id CHAR(36) PRIMARY KEY, scope ENUM('public','internal') NOT NULL, stored_name VARCHAR(100) NOT NULL UNIQUE,
+  mime VARCHAR(80) NOT NULL, byte_size BIGINT UNSIGNED NOT NULL, sha256 CHAR(64) NOT NULL, owner_id CHAR(36) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3), FOREIGN KEY (owner_id) REFERENCES users(id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS categories (
+  id VARCHAR(60) PRIMARY KEY, label VARCHAR(50) NOT NULL UNIQUE, created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS templates (
+  id VARCHAR(60) PRIMARY KEY, name VARCHAR(100) NOT NULL, category_id VARCHAR(60) NOT NULL,
+  current_version INT NOT NULL DEFAULT 1, FOREIGN KEY (category_id) REFERENCES categories(id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS template_versions (
+  template_id VARCHAR(60) NOT NULL, version INT NOT NULL, fields JSON NOT NULL, description_presets JSON NOT NULL,
+  operator_id CHAR(36), published_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (template_id,version), FOREIGN KEY (template_id) REFERENCES templates(id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS models (
+  id VARCHAR(60) PRIMARY KEY, category_id VARCHAR(60) NOT NULL, brand VARCHAR(50) NOT NULL,
+  brand_label VARCHAR(50) NOT NULL, series VARCHAR(50) NOT NULL, name VARCHAR(100) NOT NULL UNIQUE,
+  template_id VARCHAR(60) NOT NULL, FOREIGN KEY (category_id) REFERENCES categories(id), FOREIGN KEY (template_id) REFERENCES templates(id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS tac_mappings (
+  tac CHAR(8) PRIMARY KEY, model_id VARCHAR(60) NOT NULL, source VARCHAR(200) NOT NULL,
+  FOREIGN KEY (model_id) REFERENCES models(id)
+) ENGINE=InnoDB;
+CREATE OR REPLACE VIEW report_catalog AS SELECT c.label category, m.brand_label brand, m.name model FROM models m JOIN categories c ON c.id=m.category_id;

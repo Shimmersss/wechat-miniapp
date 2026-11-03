@@ -1,0 +1,3 @@
+<wxs module="f" src="../../utils/filters.wxs" />
+<text wx:if="{{value === undefined || value === null}}" class="none">{{placeholder}}</text>
+<text wx:else class="price {{size}} {{color}}"><text class="yen">¥</text>{{f.maskMoney(value, privacy)}}</text>

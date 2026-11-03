@@ -1,0 +1,23 @@
+<view class="container">
+  <brand-header />
+  <view class="card">
+    <view class="h2 mb">员工登录</view>
+    <view class="field">
+      <view class="field-label required">员工手机号</view>
+      <input class="input" type="number" maxlength="11" disabled="{{submitting}}" placeholder="请输入手机号" value="{{account}}" data-field="account" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="field-label required">短信验证码</view>
+      <view class="row gap-sm">
+        <input class="input flex-1" type="number" maxlength="6" disabled="{{submitting}}" placeholder="6 位验证码" value="{{smsCode}}" data-field="smsCode" bindinput="onInput" />
+        <button class="btn btn-soft btn-sm" bindtap="sendCode" disabled="{{counting > 0 || sendingCode || submitting}}" loading="{{sendingCode}}">{{counting > 0 ? counting + 's' : '获取验证码'}}</button>
+      </view>
+    </view>
+    <picker wx:if="{{devMode}}" range="{{mockRoles}}" range-key="label" value="{{mockRoleIndex}}" bindchange="onMockRoleChange">
+      <view class="notice">开发模式：以「{{mockRoles[mockRoleIndex].label}}」身份登录（点击切换）</view>
+    </picker>
+    <view wx:if="{{error}}" class="notice mt" aria-role="alert">{{error}}</view>
+    <button class="btn btn-primary btn-block" bindtap="submit" loading="{{submitting}}" disabled="{{submitting || sendingCode}}">登录并绑定微信</button>
+    <view class="tiny muted mt">登录、改价、退款、导出等操作将记录到操作日志。</view>
+  </view>
+</view>

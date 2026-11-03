@@ -1,0 +1,5 @@
+.dark-divider { background: rgba(255,255,255,.12); }
+.entry { background: var(--c-surface); border-radius: var(--radius); padding: 24rpx 0; text-align: center; font-size: 24rpx; box-shadow: var(--shadow); }
+.unit { display: flex; align-items: center; gap: 20rpx; padding: 20rpx 0; border-bottom: 1rpx solid var(--c-line); }
+.unit:last-child { border-bottom: 0; }
+.thumb { width: 120rpx; height: 120rpx; border-radius: var(--radius-sm); background: var(--c-surface-soft); flex-shrink: 0; }

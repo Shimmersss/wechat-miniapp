@@ -1,0 +1,17 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <todo-block items="{{todos}}" />
+
+  <view wx:for="{{list}}" wx:key="id" class="card" bindtap="onItemTap" data-id="{{item.id}}">
+    <view class="row">
+      <text class="h3 ellipsis flex-1">{{item.name}}</text>
+      
+    </view>
+    <view class="row mt-sm">
+      <text class="small muted">{{item.storage}} · {{item.color}} · {{item.grade}}</text>
+      <text class="small">¥{{f.money(item.price)}}</text>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{!loading && !list.length}}" />
+</view>

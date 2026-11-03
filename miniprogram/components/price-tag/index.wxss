@@ -1,0 +1,5 @@
+.price { font-weight: 600; letter-spacing: -0.5rpx; font-variant-numeric: tabular-nums; }
+.yen { font-size: 0.7em; margin-right: 2rpx; }
+.sm { font-size: 28rpx; } .md { font-size: 34rpx; } .lg { font-size: 56rpx; }
+.price.price { color: var(--c-ink); } .ink { color: var(--c-ink); } .gold { color: var(--c-gold); } .white { color: #fff; }
+.none { font-size: 24rpx; color: var(--c-muted); }

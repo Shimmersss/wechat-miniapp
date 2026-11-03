@@ -1,0 +1,11 @@
+.gallery { width: 100%; height: 750rpx; background: var(--c-surface); }
+.gallery-img { width: 100%; height: 100%; }
+.dots { position: relative; margin-top: -76rpx; margin-left: 32rpx; display: inline-block; padding: 4rpx 16rpx; border-radius: 999rpx; background: rgba(0,0,0,.4); color: #fff; }
+
+.report-photo { width: 120rpx; height: 120rpx; border-radius: var(--radius-sm); margin-left: 12rpx; }
+
+.product-video { width: 100%; }
+
+.footer-bar button.icon-action { flex: 0 0 88rpx; width: 88rpx; margin: 0; padding: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 2rpx; font-size: 22rpx; line-height: 1.3; color: var(--c-ink-2); }
+.footer-bar button.icon-action::after { border: 0; }
+.action-icon { width: 44rpx; height: 44rpx; }

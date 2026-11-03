@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="card label">
+    <view class="h3">{{brand.name}}</view>
+    <view class="qr">二维码</view>
+    <view class="tiny muted">{{label.unitId}}</view>
+  </view>
+  <todo-block items="{{['标签模板：型号 / 存储 / 成色 / 零售价 / 二维码', '蓝牙打印机连接与指令', '批量打印']}}" />
+  <view class="footer-space"></view>
+  <view class="footer-bar"><button class="btn btn-primary" bindtap="onPrint">打印标签</button></view>
+</view>

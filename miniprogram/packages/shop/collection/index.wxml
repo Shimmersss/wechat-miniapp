@@ -1,0 +1,7 @@
+<view class="container">
+ <brand-header />
+ <view wx:if="{{loading}}" class="notice">正在核验分享…</view>
+ <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line mt" bindtap="load">重试</button></view>
+ <view wx:if="{{share}}"><view class="card collection-head"><view class="h2">{{share.title}}</view><view class="tiny muted mt-sm">{{share.channel === 'peer' ? '同行授权库存' : '顾客精选库存'}} · 价格与可售状态实时核验</view></view><view class="grid-2"><product-card wx:for="{{share.units}}" wx:key="id" unit="{{item}}" bind:select="onSelect" /></view><button class="btn btn-primary mt" open-type="share">转发此合集</button></view>
+ <button class="btn btn-line mt" bindtap="onBrowseShop">浏览店铺全部现货</button>
+</view>

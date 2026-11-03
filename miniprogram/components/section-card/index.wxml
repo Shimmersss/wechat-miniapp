@@ -1,0 +1,10 @@
+<view class="section {{dark ? 'dark' : ''}}">
+  <view wx:if="{{title}}" class="head" bindtap="onMore">
+    <view class="title-wrap">
+      <text class="title">{{title}}</text>
+      <text wx:if="{{subtitle}}" class="subtitle">{{subtitle}}</text>
+    </view>
+    <view class="extra"><slot name="extra" /><text wx:if="{{moreUrl}}" class="arrow">›</text></view>
+  </view>
+  <slot />
+</view>

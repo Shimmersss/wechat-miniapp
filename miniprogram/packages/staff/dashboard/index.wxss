@@ -1,0 +1,7 @@
+.eye { width: 64rpx; height: 64rpx; border-radius: 50%; background: var(--c-surface); color: var(--c-ink); display: flex; align-items: center; justify-content: center; font-size: 32rpx; }
+.dark-hint { color: rgba(255,255,255,.6); }
+.quick { row-gap: 32rpx; }
+.quick-item { display: flex; flex-direction: column; align-items: center; gap: 10rpx; }
+.quick-icon { width: 96rpx; height: 96rpx; border-radius: 28rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; }
+.quick-img { width: 48rpx; height: 48rpx; }
+.eye-icon { width: 36rpx; height: 36rpx; }

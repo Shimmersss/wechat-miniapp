@@ -1,0 +1,21 @@
+# OS / editor
+.DS_Store
+*.log
+
+# Secrets: never commit real env files (examples are allowed)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# WeChat DevTools local settings
+project.private.config.json
+miniprogram_npm/
+
+# Dependencies (rebuildable)
+node_modules/
+
+# Persistent local data: MySQL data, account passwords, uploaded files
+.local/

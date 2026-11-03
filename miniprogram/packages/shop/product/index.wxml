@@ -1,0 +1,49 @@
+<view wx:if="{{loading}}" class="container muted">正在核验商品…</view>
+<view wx:if="{{error}}" class="container"><view class="notice">{{error}}</view><button class="btn btn-line" bindtap="load">重试</button><button class="btn btn-primary mt" bindtap="onBrowseShop">浏览店铺现货</button></view>
+<view wx:if="{{unit}}" class="page">
+  <swiper wx:if="{{unit.images.length}}" class="gallery" circular bindchange="onSwiperChange">
+    <swiper-item wx:for="{{unit.images}}" wx:key="*this">
+      <image class="gallery-img" src="{{item}}" mode="aspectFill" data-src="{{item}}" bindtap="onPreview" />
+    </swiper-item>
+  </swiper>
+  <view wx:if="{{unit.images.length}}" class="dots tiny">{{current + 1}}/{{unit.images.length}} · 单机实拍</view>
+
+  <view class="container">
+    <view class="card">
+      <view class="row-start gap-sm">
+        <status-pill text="在库现货" tone="green" />
+        <status-pill text="已质检" tone="gold" />
+      </view>
+      <view class="h1 mt-sm">{{unit.name}}</view>
+      <view class="muted small">{{unit.version}} · {{unit.storage}} · {{unit.color}} · {{unit.grade}}<text wx:if="{{unit.battery !== undefined}}"> · 电池 {{unit.battery}}%</text></view>
+      <view class="row mt">
+        <price-tag value="{{unit.price}}" size="lg" />
+        <text class="tiny muted">{{priceLabel}}</text>
+      </view>
+    </view>
+
+    <view wx:for="{{unit.videos}}" wx:key="*this" class="card"><video class="product-video" src="{{item}}" /></view>
+    <section-card title="放心承诺">
+      <view class="grid-2">
+        <metric-item label="店铺质保" value="{{unit.warrantyDays === null ? '以门店确认为准' : unit.warrantyDays + ' 天'}}" />
+        <metric-item label="检测说明" value="一机一报告" />
+      </view>
+      <view class="divider"></view>
+      <view class="small muted">{{unit.desc}}</view>
+      <view class="tiny muted mt-sm">串码 {{unit.imeiMasked}} · 完整串码到店核验</view>
+    </section-card>
+
+    <section-card wx:if="{{unit.publicFields.length}}" title="单机检测与参数">
+      <view wx:for="{{unit.publicFields}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><view wx:if="{{item.type === 'image'}}"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" class="report-photo" src="{{photo.url}}" mode="aspectFill" /></view><text wx:else>{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text></view>
+    </section-card>
+    <todo-block items="{{['相似在售推荐']}}" />
+  </view>
+
+  <view class="footer-space"></view>
+  <view class="footer-bar">
+    <button class="icon-action" bindtap="onPoster"><image class="action-icon" src="/assets/icons/poster.svg" /><text>海报</text></button>
+    <button class="icon-action" open-type="share"><image class="action-icon" src="/assets/icons/forward.svg" /><text>转发</text></button>
+    <button class="btn btn-soft" bindtap="onAppointment">预约到店</button>
+    <button class="btn btn-primary" bindtap="onConsult">咨询这台</button>
+  </view>
+</view>

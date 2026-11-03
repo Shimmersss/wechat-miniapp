@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "单台入库",
+  "usingComponents": {
+    "template-fields": "/components/template-fields/index"
+  }
+}

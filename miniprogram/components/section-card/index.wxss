@@ -1,0 +1,9 @@
+.section { background: var(--c-surface); border-radius: var(--radius-lg); padding: 32rpx; box-shadow: var(--shadow); margin-bottom: var(--gap); }
+.section.dark { background: var(--c-navy); color: #fff; }
+.head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
+.title-wrap { display: flex; align-items: baseline; gap: 16rpx; }
+.title { font-size: 34rpx; font-weight: 700; letter-spacing: -0.5rpx; }
+.subtitle { font-size: 24rpx; color: var(--c-muted); }
+.dark .subtitle { color: rgba(255,255,255,.6); }
+.extra { display: flex; align-items: center; gap: 12rpx; }
+.arrow { font-size: 44rpx; color: #C7C7CC; line-height: 1; }

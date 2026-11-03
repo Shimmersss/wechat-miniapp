@@ -1,0 +1,5 @@
+.chips.nowrap { flex-wrap: nowrap; } .chip { flex-shrink: 0; }
+.type { padding: 8rpx 4rpx; font-size: 28rpx; color: var(--c-muted); margin-right: 16rpx; }
+.type.on { color: var(--c-ink); font-weight: 600; border-bottom: 4rpx solid var(--c-ink); }
+.total { margin-left: auto; }
+.loan.overdue { box-shadow: inset 0 0 0 2rpx var(--c-red-soft); }

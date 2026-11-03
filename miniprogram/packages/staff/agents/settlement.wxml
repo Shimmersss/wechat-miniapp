@@ -1,0 +1,22 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <scroll-view scroll-x class="mb">
+    <view class="chips nowrap">
+      <view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view>
+    </view>
+  </scroll-view>
+  <todo-block items="{{todos}}" />
+
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row">
+      <text class="h3 ellipsis flex-1">{{item.agentName}}</text>
+      <status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" />
+    </view>
+    <view class="row mt-sm">
+      <text class="small muted">{{item.orderNo}}</text>
+      <text class="small">¥{{f.maskMoney(item.amount, privacy)}}</text>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{!loading && !list.length}}" />
+</view>

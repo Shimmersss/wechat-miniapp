@@ -1,0 +1,1 @@
+.trend-row { margin: 20rpx 0; } .trend-track { height: 14rpx; background: var(--c-surface-soft); border-radius: var(--radius-pill); margin-top: 10rpx; overflow: hidden; } .trend-bar { height: 14rpx; background: var(--c-gold); border-radius: var(--radius-pill); } .trend-bar.negative { background: var(--c-red); }

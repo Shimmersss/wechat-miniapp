@@ -1,0 +1,56 @@
+<wxs module="view">
+function contains(values, value) { return values.indexOf(value) >= 0; }
+function typeLabel(type) {
+  var labels = { text: '文本', number: '数字', select: '单选', boolean: '开关', ref: '关联文本', image: '图片' };
+  return labels[type] || type;
+}
+function visibilityLabel(values) {
+  var labels = { customer: '顾客', peer: '同行', internal: '仅内部' };
+  var result = [];
+  for (var i = 0; i < values.length; i++) result.push(labels[values[i]] || values[i]);
+  return result.join('、');
+}
+module.exports = { contains: contains, typeLabel: typeLabel, visibilityLabel: visibilityLabel };
+</wxs>
+<view class="container">
+  <view wx:if="{{error}}" class="notice mb">{{error}}<button wx:if="{{!detail}}" class="btn btn-line btn-sm" bindtap="onRetry">重试</button></view>
+  <block wx:if="{{detail}}">
+    <view class="card"><view class="h2">{{detail.name}} · v{{detail.version}}</view><view class="small muted mt-sm">{{detail.fields.length}} 个字段 · {{dirty ? '有未发布修改' : '当前已发布版本'}}</view></view>
+    <section-card title="快捷描述" subtitle="每行一句，发布后在入库页快捷选择">
+      <view class="field-label">同行描述</view><textarea class="textarea" value="{{peerPresetText}}" data-channel="peer" bindinput="onPresetInput" maxlength="2000" disabled="{{publishing}}" />
+      <view class="field-label mt">顾客描述</view><textarea class="textarea" value="{{customerPresetText}}" data-channel="customer" bindinput="onPresetInput" maxlength="2000" disabled="{{publishing}}" />
+    </section-card>
+    <section-card title="字段与展示规则" subtitle="按顺序渲染入库表单；点击字段编辑">
+      <view wx:for="{{detail.fields}}" wx:key="key" class="field-row">
+        <view data-index="{{index}}" bindtap="onEditField"><view class="h3">{{item.label}}</view><view class="tiny muted">{{item.key}} · {{view.typeLabel(item.type)}} · {{item.required ? '必填' : '选填'}}</view><view class="tiny muted">可见：{{view.visibilityLabel(item.visibility)}} · {{item.filterable ? '参与筛选' : '不参与筛选'}}</view></view>
+        <view class="row gap-sm mt-sm">
+          <button class="btn btn-soft btn-sm" data-index="{{index}}" data-step="-1" bindtap="onMove" disabled="{{index === 0 || publishing}}">上移</button>
+          <button class="btn btn-soft btn-sm" data-index="{{index}}" data-step="1" bindtap="onMove" disabled="{{index === detail.fields.length - 1 || publishing}}">下移</button>
+          <button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onDelete" disabled="{{publishing}}">删除</button>
+        </view>
+      </view>
+    </section-card>
+    <button class="btn btn-line btn-block" bindtap="onToggleHistory">{{historyVisible ? '收起版本历史' : '查看版本历史'}}</button>
+    <section-card wx:if="{{historyVisible}}" title="已发布快照">
+      <view wx:for="{{history}}" wx:key="version" class="field-row"><view class="h3">v{{item.version}} · {{item.fields.length}} 个字段</view><view class="tiny muted">{{item.publishedAt || '初始版本'}} {{item.operator}}</view><view wx:for="{{item.fields}}" wx:for-item="field" wx:key="key" class="tiny muted">{{field.label}} · {{view.typeLabel(field.type)}} · {{field.required ? '必填' : '选填'}} · {{view.visibilityLabel(field.visibility)}} · 默认 {{field.default}}</view></view>
+      <button wx:if="{{historyMore}}" class="btn btn-soft btn-block" bindtap="onMoreHistory" loading="{{historyLoading}}" disabled="{{historyLoading}}">加载更多版本</button>
+    </section-card>
+  </block>
+  <view class="footer-space"></view>
+  <view wx:if="{{detail}}" class="footer-bar"><button class="btn btn-line" bindtap="onAddField" disabled="{{publishing}}">＋ 自定义字段</button><button class="btn btn-primary" bindtap="onPublish" disabled="{{!dirty || publishing}}" loading="{{publishing}}">发布新版本</button></view>
+  <view wx:if="{{editor}}" class="editor-mask">
+    <scroll-view scroll-y class="editor-panel">
+      <view class="h2 mb">{{editIndex < 0 ? '新增字段' : '编辑字段'}}</view>
+      <view class="field"><view class="field-label required">字段标识（唯一）</view><input class="input" value="{{editor.key}}" data-field="key" bindinput="onEditorInput" maxlength="40" placeholder="如 screenHistory" /></view>
+      <view class="field"><view class="field-label required">字段名称</view><input class="input" value="{{editor.label}}" data-field="label" bindinput="onEditorInput" maxlength="30" /></view>
+      <view class="field"><view class="field-label">类型</view><picker range="{{typeLabels}}" value="{{editor.typeIndex}}" bindchange="onTypeChange"><view class="input">{{typeLabels[editor.typeIndex]}} ▾</view></picker></view>
+      <view wx:if="{{editor.type === 'select'}}" class="field"><view class="field-label required">选项（每行一个）</view><textarea class="textarea" value="{{editor.optionsText}}" data-field="optionsText" bindinput="onEditorInput" maxlength="2000" /></view>
+      <view wx:if="{{editor.type !== 'image'}}" class="field"><view class="field-label">默认值</view><switch wx:if="{{editor.type === 'boolean'}}" checked="{{editor.default}}" data-field="default" bindchange="onEditorInput" /><input wx:else class="input" type="{{editor.type === 'number' ? 'digit' : 'text'}}" value="{{editor.default}}" data-field="default" bindinput="onEditorInput" /></view>
+      <view wx:if="{{editor.type === 'number'}}" class="grid-2 field"><view><view class="field-label">最小值（选填）</view><input class="input" type="digit" value="{{editor.min}}" data-field="min" bindinput="onEditorInput" /></view><view><view class="field-label">最大值（选填）</view><input class="input" type="digit" value="{{editor.max}}" data-field="max" bindinput="onEditorInput" /></view></view>
+      <view class="list-item"><text>必填</text><switch checked="{{editor.required}}" data-field="required" bindchange="onEditorInput" /></view>
+      <view class="list-item"><text>参与筛选</text><switch checked="{{editor.filterable}}" data-field="filterable" bindchange="onEditorInput" /></view>
+      <view class="field mt"><view class="field-label required">可见范围</view><checkbox-group bindchange="onVisibilityChange"><label wx:for="{{visibilityOptions}}" wx:key="value" class="visibility"><checkbox value="{{item.value}}" checked="{{view.contains(editor.visibility, item.value)}}" />{{item.label}}</label></checkbox-group><view class="tiny muted mt-sm">仅内部不能同时对外展示；供应商、凭证、内部备注仅内部可见。</view></view>
+      <view class="row gap-sm"><button class="btn btn-line" bindtap="onCloseEditor">取消</button><button class="btn btn-primary" bindtap="onSaveField">保存字段</button></view>
+    </scroll-view>
+  </view>
+</view>

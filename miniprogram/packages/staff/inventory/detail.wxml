@@ -1,0 +1,48 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+ <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
+ <block wx:if="{{detail}}">
+  <view class="card"><view class="h2">{{detail.name}} {{detail.storage}}</view><status-pill text="{{f.label(statusMap,detail.status)}}" tone="{{f.tone(statusMap,detail.status)}}" /><view class="small mt-sm">{{detail.imei1 || detail.imeiMasked}}</view><view wx:if="{{detail.imei2}}" class="small">IMEI2 {{detail.imei2}}</view><view class="small muted">库龄 {{detail.ageDays}} 天 · {{detail.color}} · {{detail.grade}}</view></view>
+  <section-card title="价格与货源">
+   <view class="list-item"><text>成本</text><text>{{detail.cost !== undefined ? '¥'+f.maskMoney(detail.cost,privacy) : '无权限查看'}}</text></view>
+   <view class="list-item"><text>零售价</text><text>¥{{f.maskMoney(detail.retail,privacy)}}</text></view>
+   <view class="list-item"><text>批发价</text><text>{{detail.wholesale !== undefined ? '¥'+f.maskMoney(detail.wholesale,privacy) : '无权限查看'}}</text></view>
+   <view class="list-item"><text>代理底价</text><text>{{detail.agentBase !== undefined ? '¥'+f.maskMoney(detail.agentBase,privacy) : '无权限查看'}}</text></view>
+   <view class="list-item"><text>供应商</text><text>{{detail.supplier !== undefined ? detail.supplier : '无权限查看'}}</text></view>
+   <button wx:if="{{canPrice && detail.status === 'in_stock'}}" class="btn btn-soft btn-block mt" bindtap="onEditPrice" disabled="{{mutating}}">修改价格</button>
+  </section-card>
+  <section-card title="机况与参数">
+   <view wx:for="{{detail.parameters}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><text wx:if="{{item.type !== 'image'}}" class="parameter-value">{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text><view wx:else class="media-list"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" src="{{photo.url}}" data-file="{{photo.fileId}}" bindtap="onPreview" mode="aspectFill" /></view></view>
+   <view class="h3 mt">同行描述</view><view class="small mt-sm">{{detail.peerDesc || '未填写'}}</view><view class="h3 mt">顾客描述</view><view class="small mt-sm">{{detail.customerDesc || '未填写'}}</view><view class="h3 mt">内部备注</view><view class="small mt-sm">{{detail.internalNote !== undefined ? detail.internalNote || '未填写' : '无权限查看'}}</view>
+  </section-card>
+  <section-card title="设备相册">
+   <view class="chips mb"><view class="chip {{album === 'public' ? 'active' : ''}}" data-value="public" bindtap="onAlbum">公开实拍</view><view class="chip {{album === 'internal' ? 'active' : ''}}" data-value="internal" bindtap="onAlbum">内部凭证</view></view>
+   <view wx:if="{{album === 'public'}}" class="media-list"><block wx:for="{{detail.publicImages}}" wx:key="fileId"><video wx:if="{{item.mediaType === 'video'}}" src="{{item.url}}" /><image wx:else src="{{item.url}}" data-file="{{item.fileId}}" bindtap="onPreview" mode="aspectFill" /></block></view>
+   <view wx:else><view wx:if="{{!detail.receiptImages}}" class="small muted">无可访问的内部凭证</view><view class="media-list"><image wx:for="{{detail.receiptImages}}" wx:key="fileId" src="{{item.url}}" data-file="{{item.fileId}}" bindtap="onPreview" mode="aspectFill" /></view></view>
+  </section-card>
+  <section-card title="展示与分享">
+   <view class="list-item"><text>展示在店铺</text><switch checked="{{detail.flags.showInShop}}" data-field="showInShop" bindchange="onFlag" disabled="{{mutating || !canShare || detail.status !== 'in_stock'}}" /></view>
+   <view class="list-item"><text>共享给同行</text><switch checked="{{detail.flags.sharePeer}}" data-field="sharePeer" bindchange="onFlag" disabled="{{mutating || !canShare || detail.status !== 'in_stock'}}" /></view>
+   <view class="list-item"><text>允许代理转发</text><switch checked="{{detail.flags.shareAgent}}" data-field="shareAgent" bindchange="onFlag" disabled="{{mutating || !canShare || detail.status !== 'in_stock'}}" /></view>
+   <view class="small muted mt">仅可售设备允许开启；复检通过后需重新确认共享范围。</view>
+  </section-card>
+  <view wx:if="{{canRecheck}}" class="card"><button class="btn btn-primary btn-block" bindtap="onOpenRecheck" disabled="{{mutating || priceEditor || recheckEditor}}">填写库存复检</button></view>
+  <view wx:if="{{recheckEditor}}" class="card">
+   <view class="h2 mb">复检 · 入库模板 v{{recheckEditor.templateVersion}}</view><view class="small muted mb">只保存改动字段；未获授权的原凭证由后台保留。</view>
+   <template-fields fields="{{recheckEditor.fields}}" values="{{recheckEditor.values}}" bindchange="onRecheckField" bindbusy="onFieldBusy" disabled="{{mutating || recheckEditor.conflict}}" />
+   <view class="chips mt"><view class="chip {{recheckEditor.result === 'pass' ? 'active' : ''}}" data-value="pass" bindtap="onRecheckResult">通过</view><view class="chip {{recheckEditor.result === 'fail' ? 'active' : ''}}" data-value="fail" bindtap="onRecheckResult">未通过</view></view>
+   <view wx:if="{{recheckEditor.conflict}}" class="notice mt">记录已变化，请关闭并重新加载核对。</view>
+   <view class="row gap-sm mt"><button class="btn btn-line" bindtap="onCloseRecheck" disabled="{{mutating || busy}}">关闭</button><button class="btn btn-primary" bindtap="onSaveRecheck" disabled="{{mutating || busy || recheckEditor.conflict}}" loading="{{mutating}}">保存复检</button></view>
+  </view>
+  <section-card title="库存流水">
+   <view wx:for="{{ledger}}" wx:key="id" class="mb"><view class="small">{{f.label(statusMap,item.from)}} → {{f.label(statusMap,item.to)}}</view><view class="tiny muted">{{item.time}} · {{item.operator}} · {{docLabels[item.docType] || item.docType}}</view><view class="tiny muted">{{item.doc}} {{item.reason}}</view></view>
+   <view wx:if="{{ledgerError}}" class="notice">{{ledgerError}}<button class="btn btn-line btn-sm" bindtap="onRetryLedger">重试</button></view>
+   <button wx:if="{{ledgerMore}}" class="btn btn-line btn-block" bindtap="onMoreLedger" loading="{{ledgerLoading}}" disabled="{{ledgerLoading}}">加载更多</button><view wx:if="{{!ledger.length && !ledgerLoading}}" class="muted small">暂无流水</view>
+  </section-card>
+  <button wx:if="{{canSell}}" class="btn btn-primary btn-block mb" bindtap="onSell">加入收银单</button>
+  <button wx:if="{{canRepair}}" class="btn btn-line btn-block mb" bindtap="onRepair">本店设备送修</button>
+  <todo-block items="{{todos}}" />
+  <view class="row gap-sm mb"><button wx:if="{{canLabel}}" class="btn btn-line" bindtap="onLabel">标签</button><button wx:if="{{canShare && detail.status === 'in_stock'}}" class="btn btn-line" bindtap="onShare">分享</button></view>
+ </block>
+ <block wx:if="{{priceEditor}}"><view class="price-mask"></view><scroll-view scroll-y class="price-panel"><view class="h2 mb">修改单机价格</view><view wx:for="{{priceEditor.keys}}" wx:key="*this" class="field"><view class="field-label">{{priceLabels[item]}}（元）</view><input class="input" type="digit" value="{{priceEditor.values[item]}}" data-field="{{item}}" bindinput="onPriceInput" disabled="{{mutating || priceConflict}}" /></view><view wx:if="{{priceConflict}}" class="notice">价格已变化。关闭并刷新后重新核对。<button class="btn btn-soft" bindtap="onRefreshPrice">刷新价格</button></view><view class="row gap-sm"><button class="btn btn-line" bindtap="onClosePrice" disabled="{{mutating}}">取消</button><button class="btn btn-primary" bindtap="onSavePrice" loading="{{mutating}}" disabled="{{mutating || priceConflict}}">填写原因并保存</button></view></scroll-view></block>
+</view>

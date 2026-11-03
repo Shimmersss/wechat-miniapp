@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "批量入库",
+  "usingComponents": {
+    "template-fields": "/components/template-fields/index"
+  }
+}

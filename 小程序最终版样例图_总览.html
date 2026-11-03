@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>夏目数码 · V0.3 小程序与 ERP 样例图总览</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f1f0ec; color: #14233b; }
+  .hero { background: radial-gradient(circle at 78% 20%, rgba(181,138,82,.24), transparent 32%), linear-gradient(135deg, #101c30 0%, #1b2c48 72%, #263c5d 100%); color: #fff; padding: 58px 24px 64px; text-align: center; }
+  .brand { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; font-size: 13px; letter-spacing: 4px; color: #dbc39f; }
+  .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(219,195,159,.65); border-radius: 10px; font-size: 18px; letter-spacing: 0; }
+  .hero h1 { font-size: 32px; letter-spacing: 2px; }
+  .hero .slogan { margin-top: 10px; font-size: 17px; color: #e5d3b7; letter-spacing: 4px; }
+  .hero p { margin-top: 14px; font-size: 13px; opacity: .72; line-height: 1.9; }
+  .hero .badge { display: inline-block; margin-top: 20px; padding: 7px 17px; border: 1px solid rgba(229,211,183,.4); border-radius: 999px; font-size: 12px; color: #eadbc4; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 70px; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: -30px; position: relative; }
+  .summary div { padding: 18px 12px; border-radius: 14px; background: #fff; text-align: center; box-shadow: 0 12px 30px rgba(20,35,59,.08); }
+  .summary strong { display: block; font-size: 20px; color: #a47743; }
+  .summary span { display: block; margin-top: 5px; color: #7a8290; font-size: 11px; }
+  .group-title { display: flex; align-items: baseline; gap: 12px; margin: 48px 0 8px; }
+  .group-title h2 { font-size: 21px; }
+  .group-title span { font-size: 12px; color: #9a835f; letter-spacing: 1px; }
+  .group-desc { font-size: 13px; color: #737d8d; margin-bottom: 22px; line-height: 1.8; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 26px; }
+  .card { background: #fff; border: 1px solid rgba(20,35,59,.04); border-radius: 18px; padding: 16px; box-shadow: 0 10px 30px rgba(20,35,59,.06); transition: transform .18s ease, box-shadow .18s ease; cursor: zoom-in; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 18px 44px rgba(20,35,59,.12); }
+  .card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; display: block; background: #f5f3ee; }
+  .card h3 { font-size: 15px; margin: 14px 4px 5px; }
+  .card p { font-size: 12px; color: #78818f; margin: 0 4px 4px; line-height: 1.7; }
+  .lightbox { position: fixed; inset: 0; background: rgba(10,18,31,.9); display: none; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; padding: 24px; }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-height: 94vh; max-width: min(94vw, 620px); border-radius: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .footer { text-align: center; font-size: 12px; color: #8b929c; padding: 40px 0 10px; line-height: 2; }
+  @media (max-width: 640px) { .summary { grid-template-columns: repeat(2, 1fr); } .hero h1 { font-size: 26px; } .hero .slogan { font-size: 14px; letter-spacing: 2px; } }
+  @page { size: A4; margin: 11mm; }
+  @media print {
+    body { background: #fff; }
+    .hero { padding: 20px 0 24px; }
+    .hero h1 { font-size: 24px; }
+    .brand { margin-bottom: 8px; }
+    .wrap { max-width: none; padding: 0 0 16px; }
+    .summary { margin-top: 12px; }
+    .summary div { box-shadow: none; border: 1px solid #e3e0d9; padding: 10px; }
+    .group-title { margin: 26px 0 6px; break-after: avoid; }
+    .group-desc { break-after: avoid; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .card { break-inside: avoid; box-shadow: none; border: 1px solid #e3e0d9; padding: 10px; }
+    .card:hover { transform: none; box-shadow: none; }
+    .card img { border: 1px solid #eeeae2; }
+    .lightbox { display: none !important; }
+    .footer { padding: 16px 0 0; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="brand"><span class="brand-mark">夏</span>XIAMU DIGITAL</div>
+  <h1>夏目数码 · 小程序与 ERP 样例</h1>
+  <div class="slogan">让价格透明 · 让产品放心</div>
+  <p>顾客小程序 ＋ 同行代理端 ＋ 员工经营端 ＋ 老板管理后台<br>共 13 页 V0.3 专属样例，点击图片可全屏放大</p>
+  <span class="badge">V0.3 · 同源库存 · 分渠道价格 · 全程留痕</span>
+</header>
+<main class="wrap">
+  <section class="summary" aria-label="方案摘要">
+    <div><strong>1 套</strong><span>实时共享库存</span></div>
+    <div><strong>4 套</strong><span>成本 / 同行 / 零售 / 代理价</span></div>
+    <div><strong>13 页</strong><span>核心业务界面</span></div>
+    <div><strong>全链路</strong><span>身份权限与审计</span></div>
+  </section>
+
+  <section>
+    <div class="group-title"><h2>顾客与代理</h2><span>CUSTOMER & AGENT · 4 页</span></div>
+    <div class="group-desc">顾客看零售价与公开机况，代理共享同一套实时库存，只能在授权范围内前台加价；申请、转发、访问和订单均可归因。</div>
+    <div class="grid">
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_01_shop.png" alt="夏目数码机库首页"><h3>01 夏目机库首页</h3><p>品牌与口号统一，型号搜索、分类筛选、现货实拍和代理入口前置。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_02_product.png" alt="单机商品详情"><h3>02 单机商品详情</h3><p>一机一档，突出成色、电池、质保与公开机况，不暴露成本和完整 IMEI。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_03_agent_landing.png" alt="代理招募"><h3>03 成为代理</h3><p>无需投资、无需囤货、共享库存、一键转发，申请流程与规则透明。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_04_agent_center.png" alt="代理中心"><h3>04 代理中心</h3><p>今日访问、转发、订单和收益集中展示；代理只能加价并发展直属代理。</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="group-title"><h2>经营与采购</h2><span>OPERATIONS & PURCHASE · 2 页</span></div>
+    <div class="group-desc">老板打开手机即可查看动销率、毛利率和今日访问；采购从供应商、快递轨迹到到货验收全程可追踪。</div>
+    <div class="grid">
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_05_dashboard.png" alt="经营工作台"><h3>05 经营工作台</h3><p>销售额、毛利、动销率、UV/PV 和待办同屏展示，快捷操作按角色呈现。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_06_purchase.png" alt="采购与快递在途"><h3>06 采购与快递在途</h3><p>顺丰 / 京东运单轨迹关联采购单；在途不可售，签收验收后才能正式入库。</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="group-title"><h2>入库与库存</h2><span>INBOUND & INVENTORY · 3 页</span></div>
+    <div class="group-desc">标准型号模板与自定义字段减少手输；IMEI1 扫码唯一校验，成本快捷选择、目标利润辅助定价，三价一次设置。</div>
+    <div class="grid">
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_07_inbound.png" alt="IMEI 扫码入库"><h3>07 IMEI 扫码入库</h3><p>成本档位、目标利润、三价体系、双描述和双相册，二次确认后入库。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_08_templates.png" alt="型号模板配置"><h3>08 型号模板配置</h3><p>不同品类独立模板，字段必填、默认值、渠道可见与筛选项均可配置。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_09_inventory.png" alt="单机库存管理"><h3>09 单机库存管理</h3><p>可售、在途、维修、出借和已售状态分开；成本按权限显示，货权独立标识。</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="group-title"><h2>售后、渠道与安全</h2><span>SERVICE, CHANNEL & SECURITY · 4 页</span></div>
+    <div class="group-desc">维修、出借、借入与销售分单分账；顾客和同行分享不同价格；员工独立身份，关键操作及数据库访问边界清晰。</div>
+    <div class="grid">
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_10_repair.png" alt="维修开单与看板"><h3>10 维修开单与看板</h3><p>待检测、待报价、维修中、待取机分阶段流转，超时和待确认突出提醒。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_11_loans.png" alt="出借借入管理"><h3>11 出借 / 借入与归还</h3><p>出借算业务出库但不计销售毛利；归还复检后才恢复可售，借入标记外部货权。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_12_share.png" alt="分渠道分享"><h3>12 顾客 / 同行 / 代理分享</h3><p>同一商品按身份生成不同价格海报，链接带渠道和分享人，访问订单可归因。</p></article>
+      <article class="card"><img src="assets/xiamu_mockups/xiamu_13_staff.png" alt="员工权限与操作审计"><h3>13 员工权限与操作审计</h3><p>登录、改价、退款、导出与权限变化全程留痕；数据库账号按用途隔离。</p></article>
+    </div>
+  </section>
+
+  <footer class="footer">
+    夏目数码 · 让价格透明 · 让产品放心 ｜ 所有商品、金额、人员与单号均为演示数据<br>
+    配套交付：夏目数码_高保真交互原型_V0.3.html · 夏目数码_小程序与ERP整体框架_V0.3.md
+  </footer>
+</main>
+<div class="lightbox" id="lightbox" role="dialog" aria-label="样例图放大预览"><img id="lightboxImg" alt="放大预览"></div>
+<script>
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightboxImg");
+  document.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("click", () => {
+      const img = card.querySelector("img");
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightbox.classList.add("show");
+    });
+  });
+  lightbox.addEventListener("click", () => lightbox.classList.remove("show"));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") lightbox.classList.remove("show");
+  });
+</script>
+</body>
+</html>

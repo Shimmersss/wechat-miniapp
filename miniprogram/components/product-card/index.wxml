@@ -1,0 +1,11 @@
+<view class="card" bindtap="onTap">
+  <image class="cover" src="{{unit.cover}}" mode="aspectFill" lazy-load />
+  <view class="body">
+    <view class="name ellipsis">{{unit.name}}</view>
+    <view class="spec">{{unit.storage}}  {{unit.color}}</view>
+    <view class="foot">
+      <price-tag value="{{unit.price}}" size="md" />
+      <text class="grade">{{unit.grade}}</text>
+    </view>
+  </view>
+</view>

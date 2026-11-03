@@ -1,0 +1,28 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container has-staff-tabbar">
+ <view class="notice">仅登记已实际收款的交易。保存后扣库；本页不会发起微信或支付宝扣款。</view>
+ <view wx:if="{{referral}}" class="notice">已关联顾客意向。意向价不锁价，成交按当前库存报价核算。</view>
+ <view wx:if="{{error}}" class="notice">{{error}}</view>
+ <view wx:if="{{order}}" class="card"><view class="h2">销售单已保存</view><view class="mt">{{order.no}}</view><view class="mt">¥{{f.maskMoney(order.amount,privacy)}}</view><button class="btn btn-primary btn-block mt" bindtap="onOrder">查看销售单</button><button class="btn btn-soft btn-block mt" bindtap="onNew">继续开单</button></view>
+ <block wx:else>
+  <view class="row gap-sm mb"><input class="input flex-1" value="{{code}}" data-field="code" bindinput="onInput" bindconfirm="onAdd" placeholder="设备编号 / 完整 IMEI" disabled="{{saving || pending || loading}}" /><button class="btn btn-soft btn-sm" bindtap="onAdd" disabled="{{saving || pending || loading}}">添加</button><button class="btn btn-line btn-sm" bindtap="onScan" disabled="{{saving || pending || loading}}">扫码</button></view>
+  <button class="btn btn-line btn-block mb" bindtap="onPick" disabled="{{saving || pending || loading}}">从库存选择设备（可多选）</button>
+  <section-card title="收银单" subtitle="{{cart.length}} 台" more-url="/packages/staff/sales/list">
+   <view wx:for="{{cart}}" wx:key="id" class="mb"><view class="row"><text class="h3 flex-1">{{item.name}} {{item.storage}}</text><button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onRemove" disabled="{{saving || pending || loading}}">移除</button></view><view class="tiny muted mt-sm">{{item.imeiMasked}}</view><view class="small mt-sm">零售 ¥{{f.maskMoney(item.retail,privacy)}}</view>
+    <view wx:if="{{item.wholesale !== undefined}}" class="row mt-sm"><text class="small">按批发价 ¥{{f.maskMoney(item.wholesale,privacy)}} 成交</text><switch checked="{{item.channel === 'wholesale'}}" data-id="{{item.id}}" bindchange="onChannel" disabled="{{saving || pending || loading}}" /></view>
+    <view wx:if="{{canPrice}}" class="mt-sm"><view class="field-label">自定义成交价（选填，保存需原因）</view><input class="input" type="digit" value="{{item.price}}" data-id="{{item.id}}" bindinput="onPrice" placeholder="留空使用渠道价格" disabled="{{saving || pending || loading}}" /></view>
+   </view>
+   <empty-state wx:if="{{!cart.length}}" text="扫码或输入编号添加设备" />
+   <view wx:if="{{cart.length}}" class="row gap-sm mt"><button class="btn btn-soft btn-sm" bindtap="onQuote" loading="{{quoting}}" disabled="{{saving || pending || loading || quoting}}">核算报价</button><button class="btn btn-line btn-sm" bindtap="onRefresh" disabled="{{saving || pending || loading}}">刷新库存与价格</button></view>
+  </section-card>
+  <section-card title="顾客与收款">
+   <view class="field"><view class="field-label">顾客（选填）</view><input class="input" value="{{customer}}" data-field="customer" bindinput="onInput" maxlength="100" disabled="{{saving || pending || loading}}" /></view>
+   <view class="field"><view class="field-label">电话（选填）</view><input class="input" value="{{phone}}" data-field="phone" bindinput="onInput" maxlength="30" disabled="{{saving || pending || loading}}" /></view>
+   <view class="field"><view class="field-label">备注</view><textarea class="textarea" value="{{remark}}" data-field="remark" bindinput="onInput" maxlength="1000" disabled="{{saving || pending || loading}}" /></view>
+   <picker range="{{payMethods}}" value="{{payIndex}}" bindchange="onPayChange" disabled="{{saving || pending || loading}}"><view class="picker">{{payMethods[payIndex]}}</view></picker>
+  </section-card>
+  <view wx:if="{{pending}}" class="notice">提交结果未知，已锁定本单。原样重试可防止重复扣库。<button class="btn btn-primary btn-block mt" bindtap="onRetry" loading="{{saving}}" disabled="{{saving}}">原样重试</button></view>
+  <view wx:else class="card"><view class="h2">合计 {{total !== null ? '¥'+f.maskMoney(total,privacy) : '待核算'}}</view><button class="btn btn-primary btn-block mt" bindtap="onCheckout" loading="{{saving}}" disabled="{{saving || loading || quoting || !quote}}">确认已收款并出库</button></view>
+ </block>
+ <todo-block items="{{['收款凭证 / 发票', '实际收款码与小票打印']}}" />
+</view><staff-tabbar active="pos" />

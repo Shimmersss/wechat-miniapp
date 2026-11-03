@@ -1,0 +1,1 @@
+<text class="pill {{tone}}">{{text}}<slot /></text>

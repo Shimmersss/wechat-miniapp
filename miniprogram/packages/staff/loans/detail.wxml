@@ -1,0 +1,64 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+  <view wx:if="{{loading && !detail}}" class="small muted">加载中…</view>
+  <block wx:if="{{detail}}">
+    <view class="card">
+      <view class="row">
+        <view class="row-start gap-sm"><status-pill text="{{f.label(typeMap, detail.type)}}" tone="{{detail.type === 'loan_out' ? 'gold' : 'blue'}}" /><text class="tiny muted">{{detail.no}}</text></view>
+        <status-pill text="{{f.label(statusMap, detail.status)}}" tone="{{f.tone(statusMap, detail.status)}}" />
+      </view>
+      <view class="h1 mt-sm">{{detail.counterparty}}</view>
+      <view class="small muted">{{detail.phone}}</view>
+      <view class="grid-2 mt">
+        <view><view class="tiny muted">应归还</view><view class="h3 {{detail.overdue ? 'price' : ''}}">{{detail.dueAt}}{{detail.overdue ? ' · 已逾期' : ''}}</view></view>
+        <view><view class="tiny muted">设备</view><view class="h3">{{detail.items.length}} 台 · 待归还 {{detail.openCount}}</view></view>
+      </view>
+      <view wx:if="{{detail.remark}}" class="small muted mt">备注：{{detail.remark}}</view>
+    </view>
+
+    <section-card title="设备">
+      <view wx:for="{{detail.items}}" wx:key="id" class="list-item item">
+        <view class="flex-1">
+          <view class="h3 ellipsis">{{item.name}}</view>
+          <view class="tiny muted">{{item.imei1 || item.imeiMasked}} · {{item.statusText}}</view>
+        </view>
+        <block wx:if="{{item.status === 'returned_recheck'}}">
+          <button wx:if="{{item.unitStatus === 'in_stock'}}" class="btn btn-primary btn-sm" data-id="{{item.unitId}}" bindtap="onCloseItem" disabled="{{saving || pending}}">完结</button>
+          <button wx:elif="{{item.canRecheck}}" class="btn btn-line btn-sm" data-id="{{item.unitId}}" bindtap="onGoRecheck">去复检</button>
+          <text wx:else class="tiny muted">等待库管复检</text>
+        </block>
+      </view>
+      <view wx:if="{{detail.type === 'loan_out'}}" class="tiny muted mt">出借设备归还后进入“待复检”，须在库存页按模板实际复检通过，再回来点“完结”；复检后不会自动开启分享。</view>
+    </section-card>
+
+    <view wx:if="{{editor}}" class="card">
+      <view class="row mb"><text class="h2">登记归还</text><text class="small muted" bindtap="onCloseReturn">取消</text></view>
+      <view wx:for="{{editor.items}}" wx:key="unitId" class="return {{item.selected ? 'on' : ''}}">
+        <view class="row-start" data-index="{{index}}" bindtap="onToggleReturn"><view class="check {{item.selected ? 'on' : ''}}">{{item.selected ? '✓' : ''}}</view><view class="flex-1"><view class="h3 ellipsis">{{item.name}}</view><view class="tiny muted">{{item.imeiMasked}}</view></view></view>
+        <block wx:if="{{item.selected}}">
+          <view class="field mt"><view class="field-label required">外观与功能结论</view><textarea class="textarea" maxlength="2000" value="{{item.condition}}" data-index="{{index}}" data-field="condition" bindinput="onReturnInput" placeholder="如：外观无新增磕碰，开机正常" disabled="{{saving || pending}}" /></view>
+          <view class="field"><view class="field-label">损坏描述（选填）</view><input class="input" maxlength="2000" value="{{item.damage}}" data-index="{{index}}" data-field="damage" bindinput="onReturnInput" disabled="{{saving || pending}}" /></view>
+          <view class="field-label required">交接照片 · 仅内部可见</view>
+          <view class="photos"><view wx:for="{{item.photos}}" wx:for-item="photo" wx:for-index="p" wx:key="fileId" class="photo"><image src="{{photo.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" data-photo="{{p}}" bindtap="onRemoveReturnPhoto">移除</text></view></view>
+          <button class="btn btn-line btn-sm mt-sm" data-index="{{index}}" bindtap="onReturnPhotos" loading="{{uploading}}" disabled="{{saving || pending || uploading || item.photos.length >= 9}}">添加照片</button>
+        </block>
+      </view>
+      <view class="field mt"><view class="field-label required">处理说明</view><input class="input" maxlength="500" value="{{editor.reason}}" bindinput="onReturnReason" placeholder="如：同行当面归还" disabled="{{saving || pending}}" /></view>
+    </view>
+
+    <section-card wx:if="{{detail.timeline.length}}" title="记录">
+      <view wx:for="{{detail.timeline}}" wx:key="id" class="event">
+        <view class="row"><text class="h3">{{item.actionText}}</text><text class="tiny muted">{{item.operator}} · {{item.timeText}}</text></view>
+        <view class="small muted mt-sm">{{item.reason}}</view>
+        <view wx:for="{{item.returned}}" wx:for-item="r" wx:key="unitId" class="tiny mt-sm">{{r.name}}：{{r.condition}}{{r.damage ? '；损坏：' + r.damage : ''}}</view>
+        <view wx:if="{{item.photos.length}}" class="photos mt-sm"><image wx:for="{{item.photos}}" wx:for-item="photo" wx:key="id" class="thumb" src="{{photo.url}}" mode="aspectFill" data-url="{{photo.url}}" bindtap="onPreview" /></view>
+      </view>
+    </section-card>
+
+    <view class="footer-space"></view>
+    <view wx:if="{{pending}}" class="footer-bar"><button class="btn btn-primary" bindtap="onRetry" loading="{{saving}}" disabled="{{saving}}">结果未确认，原样重试</button></view>
+    <view wx:elif="{{editor}}" class="footer-bar"><button class="btn btn-soft" bindtap="onCloseReturn" disabled="{{saving || uploading}}">取消</button><button class="btn btn-primary" bindtap="onSubmitReturn" loading="{{saving}}" disabled="{{saving || uploading}}">确认归还</button></view>
+    <view wx:elif="{{detail.openCount && detail.storedStatus !== 'closed'}}" class="footer-bar"><button class="btn btn-primary" bindtap="onOpenReturn">登记归还</button></view>
+  </block>
+</view>

@@ -1,0 +1,9 @@
+.layout { display: flex; height: 100vh; }
+.side { width: 180rpx; background: var(--c-bg); }
+.side-item { padding: 34rpx 0; text-align: center; font-size: 28rpx; color: var(--c-muted); }
+.side-item.active { background: var(--c-surface); color: var(--c-ink); font-weight: 600; }
+.main { flex: 1; padding: 24rpx; box-sizing: border-box; background: var(--c-surface); }
+.brand-title { font-size: 34rpx; font-weight: 700; letter-spacing: -0.5rpx; margin: 24rpx 0 12rpx; }
+.series-title { font-size: 26rpx; color: var(--c-muted); margin: 16rpx 0 12rpx; }
+.model-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16rpx; }
+.model { background: var(--c-surface-soft); border-radius: var(--radius-sm); padding: 24rpx 12rpx; text-align: center; font-size: 26rpx; }

@@ -1,0 +1,42 @@
+<view class="container">
+  <section-card dark="{{true}}">
+    <view class="grid-3">
+      <metric-item dark="{{true}}" label="今日访问" value="{{overview.todayVisits}}" />
+      <metric-item dark="{{true}}" label="分享次数" value="{{overview.shareCount}}" />
+      <metric-item dark="{{true}}" label="成交订单" value="{{overview.dealOrders}}" />
+    </view>
+    <view class="divider dark-divider"></view>
+    <view class="grid-2">
+      <metric-item dark="{{true}}" highlight="{{true}}" label="待转账收益" value="¥{{overview.pendingCommission}}" />
+      <metric-item dark="{{true}}" label="已转账累计" value="¥{{overview.settledCommission}}" />
+    </view>
+  </section-card>
+
+  <view class="grid-4 mb">
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/orders/index">我的订单</view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/commission/index">收益明细</view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/invite/index">邀请代理</view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/markup/index">加价管理</view>
+  </view>
+
+  <section-card title="共享库存" subtitle="只能前台加价">
+    <view wx:for="{{units}}" wx:key="unitId" class="unit">
+      <image class="thumb" src="{{item.cover}}" mode="aspectFill" />
+      <view class="flex-1">
+        <view class="h3 ellipsis">{{item.name}}</view>
+        <view class="tiny muted">{{item.spec}}</view>
+        <view class="row mt-sm">
+          <view>
+            <text class="tiny muted">我的分享价 </text>
+            <price-tag value="{{item.sharePrice}}" size="sm" />
+          </view>
+          <text class="tiny gold" data-id="{{item.unitId}}" bindtap="onMarkup">加价 ¥{{item.markup}} ›</text>
+        </view>
+      </view>
+      <button class="btn btn-primary btn-sm" data-id="{{item.unitId}}" bindtap="onShare">转发</button>
+    </view>
+    <empty-state wx:if="{{!units.length}}" text="暂无可分享商品" />
+  </section-card>
+
+  <view class="notice">代理无权修改总部库存、成本与渠道底价；顾客只看到你的最终分享价。</view>
+</view>
