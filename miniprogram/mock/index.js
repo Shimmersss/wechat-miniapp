@@ -16,6 +16,7 @@ const createShopShare = require('./shop-share');
 const createCustomerRequests=require('./customer-requests');
 const createRepair=require('./repair');
 const createLoans=require('./loans');
+const createAgents=require('./agents');
 const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM } = require('../constants/roles');
 const { REPAIR_FLOW } = require('../constants/status');
 
@@ -68,7 +69,7 @@ function publicUnit(u, {channel = currentRole() === 'peer' ? 'peer' : 'customer'
   const attribute = key => shown(key) ? ((u.attributes || {})[key] !== undefined ? u.attributes[key] : u[key]) : undefined;
   const battery=attribute('battery');
   const warranty = shown('shopWarranty') && u.attributes ? u.attributes.shopWarranty : undefined;
-  return {publicFields,id:u.id,modelId:u.modelId,name:u.name,brand:u.brand,storage:attribute('storage')||'',color:attribute('color')||'',grade:attribute('grade')||'',battery:battery===undefined?undefined:Number(String(battery).replace('%','')),version:attribute('version'),images:u.images||[],videos:u.videos||[],cover:(u.images||[])[0]||'',desc:channel==='peer'?u.peerDesc:u.customerDesc,price:price===undefined?(channel==='peer'?u.wholesale:u.retail):price,priceType:channel==='peer'?'wholesale':'retail',imeiMasked:u.imei1.slice(0,2)+'****'+u.imei1.slice(-4),warrantyDays:warranty!==undefined&&warranty!==''?Number(warranty):null};
+  return {publicFields,id:u.id,modelId:u.modelId,name:u.name,brand:u.brand,storage:attribute('storage')||'',color:attribute('color')||'',grade:attribute('grade')||'',battery:battery===undefined?undefined:Number(String(battery).replace('%','')),version:attribute('version'),images:u.images||[],videos:u.videos||[],cover:(u.images||[])[0]||'',desc:channel==='peer'?u.peerDesc:u.customerDesc,price:price===undefined?(channel==='peer'?u.wholesale:u.retail):price,priceType:channel==='peer'?'wholesale':channel==='agent'?'agent':'retail',imeiMasked:u.imei1.slice(0,2)+'****'+u.imei1.slice(-4),warrantyDays:warranty!==undefined&&warranty!==''?Number(warranty):null};
 }
 
 /** 员工视图：按角色裁剪敏感字段 */
@@ -121,8 +122,9 @@ function validatePurchaseFiles(input, scope, trustedIds = new Set()) {
     const { ownerRole, ...view } = file; return view;
   });
 }
-const shopShare = createShopShare(db, {fail, currentRole, requirePermission, paginate, publicUnit});
-const customerRequests=createCustomerRequests(db,{fail,currentRole,requirePermission,paginate,clone,shopShare,publicUnit});
+const agentsMock = createAgents(db, {fail, currentRole, requirePermission, paginate, clone, publicUnit});
+const shopShare = createShopShare(db, {fail, currentRole, requirePermission, paginate, publicUnit, agents: agentsMock});
+const customerRequests=createCustomerRequests(db,{fail,currentRole,requirePermission,paginate,clone,shopShare,publicUnit,agents:agentsMock});
 const repairMock=createRepair(db,{fail,currentRole,requirePermission,paginate,clone,uploadedFiles});
 const loanMock=createLoans(db,{fail,currentRole,requirePermission,paginate,clone,uploadedFiles});
 const routes = [
@@ -167,26 +169,10 @@ const routes = [
   ...customerRequests.routes,
 
   // ---------- agent ----------
-  ['POST', '/agent/applications', () => ({ status: 'pending' })],
-  ['GET', '/agent/me', () => ({ status: currentRole() === 'agent' ? 'active' : 'none', markupMax: 800, inviteCode: 'XM8K2Q' })],
-  ['GET', '/agent/overview', () => db.agentOverview],
-  ['GET', '/agent/units', (d) => paginate(
-    db.units.filter((u) => u.flags.shareAgent && u.status === 'in_stock').map((u) => ({
-      unitId: u.id, name: u.name, spec: `${u.storage} · ${u.color} · ${u.grade}`, cover: u.images[0],
-      markup: 200, markupMin: 0, markupMax: 800, sharePrice: u.agentBase + 200
-    })), d)],
-  ['PUT', '/agent/units/:id/markup', (d, h, p) => {
-    const u = db.units.find((x) => x.id === p.id);
-    if (!u) fail(404, '商品不可分享');
-    if (d.markup < 0 || d.markup > 800) fail(400, '加价超出允许范围');
-    return { markup: d.markup, sharePrice: u.agentBase + Number(d.markup) };
-  }],
-  ['GET', '/agent/orders', (d) => paginate([], d)],
-  ['GET', '/agent/commissions', (d) => paginate(db.settlements, d)],
-  ['GET', '/agent/invite', () => ({ inviteCode: 'XM8K2Q', members: [] })],
+  ...agentsMock.routes,
 
   ...createReportRoutes(db, {fail, requirePermission, currentRole}),
-  ...createAnalyticsRoutes(db, {fail, requirePermission, paginate, currentRole, clone, staffUnit, resolveShare: shopShare.resolve, repair:repairMock}),
+  ...createAnalyticsRoutes(db, {fail, requirePermission, paginate, currentRole, clone, staffUnit, resolveShare: shopShare.resolve, repair:repairMock, agents:agentsMock}),
 
   // ---------- purchase ----------
   ...createPurchaseRoutes(db, { fail, requirePermission, clone, paginate, currentRole, getTemplate, prepareUnit: inboundRoutes.prepareUnit, commitUnits: inboundRoutes.commitUnits, validateFiles: validatePurchaseFiles }),
@@ -251,7 +237,7 @@ const routes = [
 
   ...createInventoryRoutes(db, {fail, requirePermission, clone, paginate, currentRole, staffUnit, validateFiles: validatePurchaseFiles}),
 
-  ...createSalesRoutes(db, {fail, requirePermission, paginate, clone, currentRole, staffUnit, customerRequests}),
+  ...createSalesRoutes(db, {fail, requirePermission, paginate, clone, currentRole, staffUnit, customerRequests, agents: agentsMock}),
 
 
   ...repairMock.routes,
@@ -259,11 +245,6 @@ const routes = [
   ...loanMock.routes,
 
   // ---------- admin agent ----------
-  ['GET', '/admin/agent-applications', (d) => paginate(db.agentApplications, d)],
-  ['POST', '/admin/agent-applications/:id/review', () => true],
-  ['GET', '/admin/agents', (d) => paginate([], d)],
-  ['GET', '/admin/settlements', (d) => paginate(db.settlements, d)],
-  ['POST', '/admin/settlements/:id/settle', () => ({ status: 'settled' })],
 
   // ---------- staff / audit ----------
   ['GET', '/staff', (d) => paginate(db.staff, d)],

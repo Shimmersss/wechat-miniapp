@@ -11,7 +11,7 @@ createPage({
  requireStaff:true,permission:PERM.SALES_CREATE,
  data:{cart:[],total:null,quote:null,quoting:false,loading:false,saving:false,error:'',code:'',payMethods:['微信','支付宝','现金','银行卡','分期'],payIndex:0,customer:'',phone:'',remark:'',canPrice:false,pending:null,order:null,customerRequestId:'',referral:null},
  onLoad(query){this.setData({canPrice:can(this.data.user,PERM.PRICE_EDIT)});this.offPicked=events.on('pos:units-selected',ids=>this.addUnits(ids));if(query.customerRequestId)return this.loadReferral(query.customerRequestId);if(query.unitIds){let ids=String(query.unitIds);try{ids=decodeURIComponent(ids);}catch(_){}return this.addUnits(ids.split(','));}if(query.scan==='1')return this.onScan();if(query.unitId){this.setData({code:query.unitId});return this.onAdd();}},
- async loadReferral(id){this.setData({loading:true,error:'',customerRequestId:id});try{const referral=await api.customerRequest.detail(id);if(!referral.canStartSale)throw new Error('此意向暂不能开单，请回顾客跟进核对');this.setData({referral,customer:referral.name,phone:referral.phone,code:referral.unitId,loading:false});await this.onAdd();}catch(e){this.setData({error:e.message});}finally{this.setData({loading:false});}},
+ async loadReferral(id){this.setData({loading:true,error:'',customerRequestId:id});try{const referral=await api.customerRequest.detail(id);if(!referral.canStartSale)throw new Error('此意向暂不能开单，请回顾客跟进核对');this.setData({referral,customer:referral.name,phone:referral.phone,code:referral.unitId,loading:false});if(referral.kind==='order'){const u=await api.sales.lookup(referral.unitId,id);this.setData({cart:[{...u,channel:'agent',price:'',agentPrice:referral.agentOrder.sharePrice}],code:''});return this.requote();}await this.onAdd();}catch(e){this.setData({error:e.message});}finally{this.setData({loading:false});}},
  onUnload(){this.destroyed=true;this.revision=(this.revision||0)+1;if(this.offPicked)this.offPicked();},
  /** 手动出库：从库存列表多选在库设备后加入收银单；逐台按服务端当前状态与价格核验 */
  onPick(){if(!this.locked())this.$go(ROUTES.INVENTORY,{pick:'pos'});},
@@ -31,7 +31,7 @@ createPage({
  items(){return this.data.cart.map(u=>({unitId:u.id,priceVersion:u.priceVersion,channel:u.channel,...(u.price!==''?{price:u.price}:{})}));},
  async requote(){
   const revision=this.revision=(this.revision||0)+1;this.setData({quote:null,total:null,quoting:false,error:''});if(!this.data.cart.length)return;
-  this.setData({quoting:true});try{const quote=await api.sales.quote({items:this.items()});if(this.destroyed||revision!==this.revision)return;this.setData({quote,total:quote.total});}
+  this.setData({quoting:true});try{const quote=await api.sales.quote({items:this.items(),...(this.data.customerRequestId?{customerRequestId:this.data.customerRequestId}:{})});if(this.destroyed||revision!==this.revision)return;this.setData({quote,total:quote.total});}
   catch(e){if(revision===this.revision)this.setData({error:e.message});}finally{if(revision===this.revision)this.setData({quoting:false});}
  },
  onRemove(e){if(this.locked())return;this.setData({cart:this.data.cart.filter(u=>u.id!==e.currentTarget.dataset.id)});return this.requote();},
@@ -41,7 +41,7 @@ createPage({
  onQuote(){if(!this.locked())return this.requote();},
  async onRefresh(){
   if(this.locked()||!this.data.cart.length)return;
-  this.setData({loading:true,error:''});try{const cart=await Promise.all(this.data.cart.map(async u=>({...await api.sales.lookup(u.id),channel:u.channel,price:''})));this.setData({cart});await this.requote();}catch(e){this.setData({quote:null,total:null,error:e.message});}finally{this.setData({loading:false});}
+  this.setData({loading:true,error:''});try{const cart=await Promise.all(this.data.cart.map(async u=>({...await api.sales.lookup(u.id,u.channel==='agent'?this.data.customerRequestId:undefined),channel:u.channel,price:'',agentPrice:u.agentPrice})));this.setData({cart});await this.requote();}catch(e){this.setData({quote:null,total:null,error:e.message});}finally{this.setData({loading:false});}
  },
  async onCheckout(){
   if(this.locked()||this.data.quoting)return;

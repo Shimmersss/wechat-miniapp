@@ -72,7 +72,7 @@ test("分享页面真实API：不默认设备、查找多选、切换清旧价�
   assert.equal(p.confirmations.at(-1).needReason, true);
   p.onAudienceTap({ currentTarget: { dataset: { value: "agent" } } });
   await p.createLink();
-  assert.match(p.data.error, /尚未配置/);
+  assert.match(p.data.error, /仅已审核通过的代理/);
   assert.equal(p.data.share, null);
 });
 test("仅s打开商品/合集，失效时清旧商品；迟到分享结果不能覆盖新渠道", async () => {

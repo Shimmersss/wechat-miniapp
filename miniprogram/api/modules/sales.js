@@ -3,7 +3,8 @@ const { http } = require('../../utils/request');
 
 module.exports = {
   /** 通过 IMEI / 标签码查可售设备 */
-  lookup: (code) => http.get('/sales/lookup', { code }),
+  /** 代理订单锁定的设备须带 customerRequestId 才能查到 */
+  lookup: (code, customerRequestId) => http.get('/sales/lookup', { code, ...(customerRequestId ? { customerRequestId } : {}) }),
   /** {items:[{unitId,priceVersion,channel?,price?}]} → {total,items}；服务端校验状态、版本及成交改价权限 */
   quote: data => http.post('/sales/quote', data),
   /** 开单 {requestKey,items,payMethod,paymentConfirmed:true,customer?,phone?,remark?,priceReason?,customerRequestId?} → 订单快照；改价需权限和原因 */

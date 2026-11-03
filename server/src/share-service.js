@@ -11,9 +11,22 @@ function shareService({ config }) {
           SENSITIVE_FIELDS.wholesalePrice.includes(user.role)))
     );
   }
+  const isAgent = (user) =>
+    !!user &&
+    !user.staffNo &&
+    user.role === "agent" &&
+    user.agentStatus === "active";
+  /** 渠道对应的分享开关：同行 sharePeer，代理 shareAgent，顾客 showInShop */
+  const flagOf = (channel) =>
+    channel === "peer"
+      ? "sharePeer"
+      : channel === "agent"
+        ? "shareAgent"
+        : "showInShop";
   function canCreate(user, channel) {
     if (!user) fail(401, "请登录后分享");
-    if (channel === "agent") fail(503, "代理分享规则尚未配置");
+    if (channel === "agent" && !isAgent(user))
+      fail(403, "仅已审核通过的代理可生成代理分享");
     if (channel === "peer" && !canPeer(user)) fail(403, "无同行分享权限");
     if (user.staffNo && !user.permissions.includes(PERM.SHARE))
       fail(403, "无分享权限");
@@ -39,10 +52,11 @@ function shareService({ config }) {
       fail(410, "分享授权已变更");
     if (link.channel === "peer" && !canPeer(owner))
       fail(410, "同行分享授权已变更");
+    if (link.channel === "agent" && !isAgent(owner))
+      fail(410, "代理资格已变更，分享失效");
     if (ownerOnly && user?.id !== link.owner_id) fail(403, "无权管理该分享");
     if (link.channel === "peer" && !canPeer(user))
       fail(403, "此分享仅供已授权同行查看");
-    if (link.channel === "agent") fail(503, "代理分享规则尚未配置");
     const [items] = await db.execute(
       unitSelect +
         " JOIN share_items si ON si.unit_id=u.id WHERE si.share_id=? ORDER BY u.id",
@@ -56,10 +70,7 @@ function shareService({ config }) {
     for (const u of items) {
       const flags = json(u.share_flags),
         snapshot = snapshots.find((i) => i.unit_id === u.id);
-      if (
-        u.status !== "in_stock" ||
-        !(link.channel === "peer" ? flags.sharePeer : flags.showInShop)
-      )
+      if (u.status !== "in_stock" || !flags[flagOf(link.channel)])
         fail(410, "分享中的设备已下架或不可售");
       if (u.price_version !== snapshot.price_version)
         fail(410, "商品价格已变化，请重新分享");
@@ -185,10 +196,7 @@ function shareService({ config }) {
           : "customer";
     if (ctx && !ctx.items.some((i) => i.id === u.id))
       fail(404, "商品不在本分享内");
-    if (
-      u.status !== "in_stock" ||
-      !(channel === "peer" ? flags.sharePeer : flags.showInShop)
-    )
+    if (u.status !== "in_stock" || !flags[flagOf(channel)])
       fail(404, "商品不存在或已下架");
     return publicView(db, u, {
       channel,
@@ -197,6 +205,8 @@ function shareService({ config }) {
   }
   return {
     canPeer,
+    isAgent,
+    flagOf,
     canCreate,
     resolve,
     publicView,

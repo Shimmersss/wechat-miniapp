@@ -121,18 +121,7 @@ const staff = [
   { id: 'st4', name: '小周', role: 'engineer', wechatBound: true, status: 'active' }
 ];
 
-const agentOverview = { todayVisits: 36, shareCount: 12, intentOrders: 3, dealOrders: 2, pendingCommission: 420, settledCommission: 1860 };
-
-const agentApplications = [
-  { id: 'ap1', name: '张三', phone: '138****1234', region: '深圳', status: 'pending', appliedAt: '2026-11-02 10:12' }
-];
-
-const settlements = [
-  { id: 'se1', agentName: '张三', orderNo: 'SO20261101-003', amount: 200, status: 'pending' },
-  { id: 'se2', agentName: '张三', orderNo: 'SO20261031-011', amount: 220, status: 'pending' }
-];
-
 module.exports = {
   units, brands, categories, dashboard, purchaseOrders, repairOrders, loans, salesOrders,
-  auditLogs, templates, models, staff, agentOverview, agentApplications, settlements
+  auditLogs, templates, models, staff
 };

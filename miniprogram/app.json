@@ -61,6 +61,7 @@
         "share/index",
         "agents/review",
         "agents/settlement",
+        "agents/orders",
         "stats/index",
         "staff/index",
         "staff/roles",

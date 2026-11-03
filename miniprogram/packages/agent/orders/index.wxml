@@ -1,22 +1,14 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <scroll-view scroll-x class="mb">
-    <view class="chips nowrap">
-      <view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view>
-    </view>
-  </scroll-view>
-  <todo-block items="{{todos}}" />
-
+  <view class="chips mb"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view>
+  <view wx:if="{{error}}" class="notice">{{error}}</view>
   <view wx:for="{{list}}" wx:key="id" class="card">
-    <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.unitName}}</text>
-      <status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" />
-    </view>
+    <view class="row"><text class="h3 ellipsis flex-1">{{item.name}} {{item.storage}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view class="row mt-sm"><text class="small muted">顾客 {{item.customerName}} · {{item.customerPhone}}</text><price-tag value="{{item.sharePrice}}" size="sm" /></view>
     <view class="row mt-sm">
-      <text class="small muted">{{item.orderNo}} · {{item.createdAt}}</text>
-      <text class="small">¥{{f.money(item.sharePrice)}}</text>
+      <text class="tiny muted">{{item.createdText}}</text>
+      <text class="tiny {{item.status === 'sold' ? 'earn' : 'muted'}}">{{item.status === 'locked' ? '锁定至 ' + item.lockText : item.status === 'sold' ? '收益 +¥' + item.markup : item.releaseReason}}</text>
     </view>
   </view>
-
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="还没有通过你的链接下的订单" />
 </view>

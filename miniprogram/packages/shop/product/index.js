@@ -31,6 +31,8 @@ createPage({
   onPreview(e){wx.previewImage({urls:this.data.unit.images,current:e.currentTarget.dataset.src});},
   onConsult(){if(!this.data.unit)return;track.event('consult_click',{unitId:this.data.id});this.$go(ROUTES.CONSULT,{unitId:this.data.id});},
   onAppointment(){if(this.data.unit)this.$go(ROUTES.CONSULT,{unitId:this.data.id,mode:'appointment'});},
+  /** 代理链接：下单短时锁库，门店确认成交（框架文档 7.3） */
+  onOrder(){if(this.data.unit&&this.data.unit.priceType==='agent'){track.event('agent_order_click',{unitId:this.data.id});this.$go(ROUTES.CONSULT,{unitId:this.data.id,mode:'order'});}},
   onPoster(){if(this.data.unit)this.$go(ROUTES.POSTER,this.data.share?{s:this.data.share.shareId}:{unitId:this.data.id,channel:this.data.unit.priceType==='wholesale'?'peer':'customer'});},
   onBrowseShop(){channel.clear();this.$go(ROUTES.SHOP);},
   onShareAppMessage(){

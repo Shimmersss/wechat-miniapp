@@ -1,15 +1,17 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
+  <view wx:if="{{error}}" class="notice">{{error}}</view>
   <section-card dark="{{true}}">
     <view class="tiny invite-label">我的邀请码</view>
     <view class="code">{{inviteCode}}</view>
     <view class="row-start gap-sm mt">
       <button class="btn btn-soft btn-sm" bindtap="onCopy">复制邀请码</button>
-      <button class="btn btn-primary btn-sm" open-type="share">邀请好友</button>
+      <button class="btn btn-sm invite-share" open-type="share">邀请好友</button>
     </view>
   </section-card>
   <section-card title="直属代理" subtitle="{{members.length}} 人">
-    <view wx:for="{{members}}" wx:key="id" class="list-item"><text>{{item.name}}</text><text class="tiny muted">{{item.joinedAt}}</text></view>
+    <view wx:for="{{members}}" wx:key="appliedAt" class="list-item"><text>{{item.name}}</text><view class="row-start gap-sm"><text class="tiny muted">{{item.appliedText}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view></view>
     <empty-state wx:if="{{!members.length}}" text="还没有邀请到代理" />
   </section-card>
-  <todo-block items="{{['邀请海报（复用 poster 绘制逻辑）', '直属代理的业绩概览（不显示其客户信息）']}}" />
+  <view class="notice">首期只做一级代理：好友用你的邀请码申请，审核通过后成为你的直属代理。邀请本身不产生收益。</view>
 </view>

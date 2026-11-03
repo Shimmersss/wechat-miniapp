@@ -45,8 +45,10 @@ async function fixture(roles = ["boss", "warehouse", "sales", "customer"]) {
     tokens = {},
     users = {};
   // Test setup inserts fixture sessions in a dedicated DB. There is no test-login endpoint in production.
-  for (const role of roles) {
-    const userId = id();
+  // "customer:b" creates a second user with role customer, addressed as "customer:b".
+  for (const entry of roles) {
+    const role = entry.split(":")[0],
+      userId = id();
     await admin.execute(
       "INSERT INTO users (id,openid,nickname) VALUES (?,?,?)",
       [userId, "fixture_" + userId, "验证" + role],
@@ -74,8 +76,8 @@ async function fixture(roles = ["boss", "warehouse", "sales", "customer"]) {
       }
     }
     const token = crypto.randomBytes(32).toString("base64url");
-    tokens[role] = token;
-    users[role] = userId;
+    tokens[entry] = token;
+    users[entry] = userId;
     await admin.execute(
       "INSERT INTO sessions (token_hash,user_id,expires_at,assurance) VALUES (?,?,DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 1 HOUR),?)",
       [hash(token), userId, STAFF_ROLES.includes(role) ? "staff" : "wechat"],

@@ -1,61 +1,32 @@
 const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
-const { ROUTES } = require('../../../utils/router');
 const { SETTLEMENT_STATUS } = require('../../../constants/status');
+const { date } = require('../../../utils/format');
 
 /**
- * 收益明细（框架文档 十三.1）：每笔成交按加价快照记一条收益，公司线下转账后标记已转账；
- * 退款先冲回未转账收益，已转账的形成负向记录在后续订单抵扣
+ * 收益明细（框架文档 十三.1）：每笔成交按加价快照记一条收益，公司线下转账后由财务标记已转账；
+ * 退货时未转账的收益直接冲回，已转账的生成负数冲回记录，在后续转账中抵扣。
  */
 createPage({
   requireAgent: true,
   data: {
-    list: [],
-    page: 1,
-    hasMore: true,
-    loading: false,
-    todos: [
-      '顶部汇总：待转账 / 已转账 / 本月',
-      '按单记账与转账说明'
-    ],
-    filters: [
-      { value: '', label: '全部' },
-      { value: 'pending', label: '待转账' },
-      { value: 'settled', label: '已转账' },
-      { value: 'reversed', label: '已冲回' }
-    ],
-    activeFilter: ''
+    list: [], summary: null, page: 1, total: 0, hasMore: true, loading: false, error: '', status: '',
+    filters: [{ value: '', label: '全部' }, { value: 'pending', label: '待转账' }, { value: 'settled', label: '已转账' }, { value: 'reversed', label: '已冲回' }]
   },
-
-  onLoad(query) {
-    this.query = query || {};
-    this.setData({ statusMap: SETTLEMENT_STATUS });
-    if (this.query.status && this.data.filters) this.setData({ activeFilter: this.query.status });
-    this.load(true);
+  onLoad(query = {}) { this.setData({ statusMap: SETTLEMENT_STATUS, status: SETTLEMENT_STATUS[query.status] ? query.status : '' }); return this.load(true); },
+  onPullDownRefresh() { this.load(true).finally(() => wx.stopPullDownRefresh()); },
+  onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(false); },
+  async load(reset) {
+    const revision = this.revision = (this.revision || 0) + 1, page = reset ? 1 : this.data.page + 1;
+    this.setData({ loading: true, error: '' });
+    try {
+      const res = await api.agent.commissions({ status: this.data.status || undefined, page, pageSize: 20 });
+      if (revision !== this.revision) return;
+      const rows = res.list.map((e) => ({ ...e, createdText: date(new Date(e.createdAt)), settledText: e.settledAt ? date(new Date(e.settledAt)) : '' }));
+      const list = reset ? rows : this.data.list.concat(rows);
+      this.setData({ list, summary: res.summary, page, total: res.total, hasMore: list.length < res.total });
+    } catch (e) { if (revision === this.revision) this.setData({ error: e.message }); }
+    finally { if (revision === this.revision) this.setData({ loading: false }); }
   },
-
-  onPullDownRefresh() {
-    this.load(true).finally(() => wx.stopPullDownRefresh());
-  },
-
-  onReachBottom() {
-    if (this.data.hasMore) this.load(false);
-  },
-
-  load(reset) {
-    if (this.data.loading) return Promise.resolve();
-    const page = reset ? 1 : this.data.page + 1;
-    this.setData({ loading: true });
-    return api.agent.commissions({ ...this.query, page, pageSize: 20, status: this.data.activeFilter || undefined })
-      .then((res) => {
-        const list = reset ? res.list : this.data.list.concat(res.list);
-        this.setData({ list, page, hasMore: list.length < res.total });
-      })
-      .finally(() => this.setData({ loading: false }));
-  },
-
-  onFilterTap(e) {
-    this.setData({ activeFilter: e.currentTarget.dataset.value });
-    this.load(true);
-  },
+  onFilter(e) { this.setData({ status: e.currentTarget.dataset.value }); return this.load(true); }
 });

@@ -1,22 +1,24 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <scroll-view scroll-x class="mb">
-    <view class="chips nowrap">
-      <view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view>
-    </view>
-  </scroll-view>
-  <todo-block items="{{todos}}" />
-
-  <view wx:for="{{list}}" wx:key="id" class="card">
-    <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.agentName}}</text>
-      <status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" />
-    </view>
-    <view class="row mt-sm">
-      <text class="small muted">{{item.orderNo}}</text>
-      <text class="small">¥{{f.maskMoney(item.amount, privacy)}}</text>
-    </view>
+  <view wx:if="{{summary}}" class="card grid-2">
+    <view><view class="tiny muted">待转账合计（含冲回抵扣）</view><view class="h1 num">¥{{f.maskMoney(summary.pendingAmount, privacy)}}</view></view>
+    <view><view class="tiny muted">已转账累计</view><view class="h1 num">¥{{f.maskMoney(summary.settledAmount, privacy)}}</view></view>
   </view>
+  <view class="row mb"><view class="chips"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view><button wx:if="{{canSettle && status === 'pending' && list.length}}" class="btn btn-line btn-sm" bindtap="onSelectAll">全选</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
 
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <view wx:for="{{list}}" wx:key="id" class="card earning {{selected[item.id] ? 'picked' : ''}}" data-id="{{item.id}}" bindtap="onToggle">
+    <view class="row">
+      <view class="row-start flex-1"><view wx:if="{{canSettle && item.status === 'pending'}}" class="check {{selected[item.id] ? 'on' : ''}}">{{selected[item.id] ? '✓' : ''}}</view><text class="h3 ellipsis">{{item.agentName}} · {{item.kind === 'reversal' ? '退货冲回' : item.name}}</text></view>
+      <text class="h3 num {{item.amount < 0 ? 'price' : ''}}">{{item.amount < 0 ? '-' : ''}}¥{{f.maskMoney(item.amount < 0 ? -item.amount : item.amount, privacy)}}</text>
+    </view>
+    <view class="row mt-sm"><text class="tiny muted">{{item.createdText}}{{item.kind === 'reversal' ? ' · ' + item.name : ''}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view wx:if="{{item.settleReason}}" class="tiny muted mt-sm">{{item.settledText ? item.settledText + ' · ' : ''}}{{item.settleReason}}</view>
+  </view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无收益记录" />
+  <view wx:if="{{selectedCount}}" class="footer-space"></view>
+</view>
+<view wx:if="{{selectedCount}}" class="footer-bar">
+  <text class="small flex-1">已选 {{selectedCount}} 笔 · 合计 ¥{{f.maskMoney(selectedAmount, privacy)}}</text>
+  <button class="btn btn-primary" bindtap="onSettle" loading="{{saving}}" disabled="{{saving}}">标记已转账</button>
 </view>

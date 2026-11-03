@@ -82,11 +82,11 @@ const SALES_STATUS = {
   refunded: { label: '已退款', tone: 'gray' }
 };
 
+/** 代理订单（框架文档 7.3）：锁定中 → 门店确认成交 / 取消或到期释放；退货体现在收益冲回 */
 const AGENT_ORDER_STATUS = {
-  locked: { label: '已锁库存', tone: 'orange' },
-  confirmed: { label: '已成交', tone: 'green' },
-  released: { label: '已释放', tone: 'gray' },
-  refunded: { label: '已退款', tone: 'red' }
+  locked: { label: '锁定中', tone: 'orange' },
+  sold: { label: '已成交', tone: 'green' },
+  released: { label: '已释放', tone: 'gray' }
 };
 
 const AGENT_STATUS = {

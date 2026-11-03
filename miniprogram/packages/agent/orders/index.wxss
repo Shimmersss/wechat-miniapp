@@ -1,2 +1,1 @@
-.chips.nowrap { flex-wrap: nowrap; }
-.chip { flex-shrink: 0; }
+.earn { color: var(--c-green); font-weight: 600; }

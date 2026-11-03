@@ -48,6 +48,8 @@ function client(f, role) {
     "shop",
     "customer-request",
     "share",
+    "agent",
+    "admin-agent",
   ]) {
     const context = { module: { exports: {} }, require: () => ({ http }) };
     vm.runInNewContext(
@@ -57,8 +59,11 @@ function client(f, role) {
       ),
       context,
     );
-    api[name === "customer-request" ? "customerRequest" : name] =
-      context.module.exports;
+    api[
+      { "customer-request": "customerRequest", "admin-agent": "adminAgent" }[
+        name
+      ] || name
+    ] = context.module.exports;
   }
   return api;
 }

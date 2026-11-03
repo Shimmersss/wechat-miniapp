@@ -86,6 +86,7 @@ async function buildApp(config, options = {}) {
 
   dependencies.salesStats = await require("./sales-stats")(app, dependencies);
   dependencies.shareService = await require("./shop-share")(app, dependencies);
+  dependencies.agents = await require("./agents")(app, dependencies);
   dependencies.customerRequests = await require("./customer-requests")(
     app,
     dependencies,

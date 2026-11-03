@@ -15,7 +15,7 @@ const paths = new Set(
 );
 module.exports = async function (
   app,
-  { pool, config, route, salesStats, shareService, repair },
+  { pool, config, route, salesStats, shareService, repair, agents },
 ) {
   const read = (r) => requirePerm(r, PERM.DASHBOARD_VIEW, PERM.STATS_VIEW),
     stock = stockService({ config });
@@ -262,6 +262,28 @@ module.exports = async function (
           url: "/packages/staff/inventory/list?ageingOver=31",
         },
       );
+    const agentQueue = await agents.pending(r);
+    if (agentQueue.applications !== undefined)
+      todos.push({
+        key: "agentApplications",
+        text: "代理申请待审核",
+        count: agentQueue.applications,
+        url: "/packages/staff/agents/review",
+      });
+    if (agentQueue.lockedOrders !== undefined)
+      todos.push({
+        key: "agentOrders",
+        text: "代理订单待确认成交",
+        count: agentQueue.lockedOrders,
+        url: "/packages/staff/agents/orders?status=locked",
+      });
+    if (agentQueue.pendingEarnings !== undefined)
+      todos.push({
+        key: "agentEarnings",
+        text: "代理收益待转账（笔）",
+        count: agentQueue.pendingEarnings,
+        url: "/packages/staff/agents/settlement?status=pending",
+      });
     if (r.user.permissions.includes(PERM.LOAN_MANAGE)) {
       const overdue = await one(
           pool,

@@ -1,5 +1,11 @@
-.dark-divider { background: rgba(255,255,255,.12); }
-.entry { background: var(--c-surface); border-radius: var(--radius); padding: 24rpx 0; text-align: center; font-size: 24rpx; box-shadow: var(--shadow); }
-.unit { display: flex; align-items: center; gap: 20rpx; padding: 20rpx 0; border-bottom: 1rpx solid var(--c-line); }
+.dark { background: var(--c-navy); color: #fff; }
+.label { font-size: 24rpx; color: rgba(255,255,255,.6); }
+.amount { font-size: 72rpx; font-weight: 600; letter-spacing: -2rpx; margin-top: 4rpx; font-variant-numeric: tabular-nums; }
+.sub { font-size: 32rpx; font-weight: 600; margin-top: 4rpx; font-variant-numeric: tabular-nums; }
+.entries { display: flex; background: var(--c-surface); border-radius: var(--radius-lg); padding: 28rpx 4rpx; }
+.entry { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-ink); }
+.entry-icon { width: 88rpx; height: 88rpx; border-radius: 28rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; }
+.entry-icon image { width: 46rpx; height: 46rpx; }
+.unit { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 0; border-bottom: 1rpx solid var(--c-line); }
 .unit:last-child { border-bottom: 0; }
-.thumb { width: 120rpx; height: 120rpx; border-radius: var(--radius-sm); background: var(--c-surface-soft); flex-shrink: 0; }
+.thumb { width: 128rpx; height: 128rpx; border-radius: var(--radius-sm); background: var(--c-surface-soft); flex-shrink: 0; }

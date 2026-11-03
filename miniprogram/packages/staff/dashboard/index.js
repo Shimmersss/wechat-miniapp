@@ -17,6 +17,8 @@ const QUICK_ACTIONS = [
   { text: '分渠道分享', icon: 'share', url: ROUTES.SHARE, perm: PERM.SHARE },
   { text: '型号模板', icon: 'layers', url: ROUTES.TEMPLATES, perm: PERM.TEMPLATE_MANAGE },
   { text: '代理审核', icon: 'check', url: ROUTES.AGENT_REVIEW, perm: PERM.AGENT_REVIEW },
+  { text: '代理订单', icon: 'forward', url: ROUTES.AGENT_ORDERS_ADMIN, perm: [PERM.AGENT_REVIEW, PERM.SALES_CREATE] },
+  { text: '代理收益', icon: 'chart', url: ROUTES.AGENT_SETTLEMENT, perm: PERM.AGENT_SETTLE },
   { text: '员工权限', icon: 'users', url: ROUTES.STAFF, perm: PERM.STAFF_MANAGE },
   { text: '操作日志', icon: 'list', url: ROUTES.AUDIT, perm: PERM.AUDIT_VIEW }
 ];

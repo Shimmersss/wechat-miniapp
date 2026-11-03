@@ -26,7 +26,7 @@ const canonical = (v) =>
       : v;
 module.exports = async function (
   app,
-  { pool, config, route, customerRequests },
+  { pool, config, route, customerRequests, agents },
 ) {
   const stock = stockService({ config }),
     read = (r) =>
@@ -143,7 +143,7 @@ module.exports = async function (
         if (seen.has(unitId)) fail(400, "销售设备重复");
         seen.add(unitId);
         const channel = x.channel || "retail";
-        if (!["retail", "wholesale"].includes(channel))
+        if (!["retail", "wholesale", "agent"].includes(channel))
           fail(400, "销售渠道无效");
         return {
           unitId,
@@ -154,19 +154,35 @@ module.exports = async function (
       })
       .sort((a, b) => a.unitId.localeCompare(b.unitId));
   }
-  async function plan(db, input, r, lock) {
+  async function plan(db, input, r, lock, requestId) {
     const items = [];
     let total = 0n,
       cost = 0n;
     for (const x of input) {
       const u = await stock.get(db, x.unitId, lock);
-      if (u.status !== "in_stock" || u.ownership !== "own")
+      // 代理订单：设备须由该订单锁定，按分享价快照成交，不能改价（框架文档 7.3）
+      const agentOrder =
+        x.channel === "agent"
+          ? await agents.saleItem(db, requestId || "", x.unitId, lock)
+          : null;
+      if (
+        u.ownership !== "own" ||
+        u.status !== (agentOrder ? "locked" : "in_stock")
+      )
         fail(409, "设备不可售，请刷新库存");
       if (x.priceVersion !== u.price_version)
         fail(409, "设备价格已变化，请重新核对");
       if (x.channel === "wholesale" && !canSee(r.user, "wholesalePrice"))
         fail(403, "无权限使用批发价格");
-      const base = cents(x.channel === "wholesale" ? u.wholesale : u.retail),
+      if (agentOrder && x.price !== undefined)
+        fail(400, "代理订单按分享价成交，不能改价");
+      const base = cents(
+          agentOrder
+            ? agentOrder.share_price
+            : x.channel === "wholesale"
+              ? u.wholesale
+              : u.retail,
+        ),
         price = x.price === undefined ? base : cents(x.price, "成交价");
       if (price !== base) requirePerm(r, PERM.PRICE_EDIT);
       total += BigInt(price);
@@ -185,15 +201,31 @@ module.exports = async function (
     );
     if (!u) fail(404, "未找到设备");
     const row = await stock.get(pool, u.id);
-    if (row.status !== "in_stock" || row.ownership !== "own")
+    if (row.status === "locked" && r.query.customerRequestId)
+      await agents.saleItem(
+        pool,
+        text(r.query.customerRequestId, "代理订单", 36),
+        row.id,
+        false,
+      );
+    else if (row.status !== "in_stock" || row.ownership !== "own")
       fail(409, "设备不可售");
     return stock.view(pool, row, r);
   });
   route("POST", "/sales/quote", async (r) => {
     requirePerm(r, PERM.SALES_CREATE);
-    const result = await transaction(pool, (db) =>
-      plan(db, rows(r.body || {}), r, false),
-    );
+    const body = r.body || {},
+      result = await transaction(pool, (db) =>
+        plan(
+          db,
+          rows(body),
+          r,
+          false,
+          body.customerRequestId
+            ? text(body.customerRequestId, "顾客意向", 36)
+            : null,
+        ),
+      );
     return {
       total: Number(result.total),
       items: result.items.map((i) => ({
@@ -227,7 +259,15 @@ module.exports = async function (
         if (prior.request_hash !== digest) fail(409, "提交标识内容冲突");
         return view(db, await order(db, prior.id), r);
       }
-      const p = await plan(db, input, r, true),
+      const p = await plan(
+          db,
+          input,
+          r,
+          true,
+          d.customerRequestId
+            ? text(d.customerRequestId, "顾客意向", 36)
+            : null,
+        ),
         changed = p.items.some((i) => i.price !== i.base),
         reason = changed ? text(d.priceReason, "成交改价原因", 500) : "";
       const referral = d.customerRequestId
@@ -287,7 +327,7 @@ module.exports = async function (
           db,
           r,
           u.id,
-          "in_stock",
+          u.status,
           "sold",
           "sales_order",
           target,
@@ -473,7 +513,9 @@ module.exports = async function (
             target,
             reason,
           );
+          await agents.onReturn(db, r, o.id, p.i.unit_id, target);
         }
+        // TODO(confirm): 差价退款（adjustment）是否同步扣减代理收益，框架文档仅规定退款冲回。
       }
       await audit(db, r, "销售退款", o.id, {
         after: {

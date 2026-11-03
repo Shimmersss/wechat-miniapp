@@ -1,2 +1,1 @@
-.chips.nowrap { flex-wrap: nowrap; }
-.chip { flex-shrink: 0; }
+.notice.error { background: var(--c-red-soft); color: var(--c-red); }

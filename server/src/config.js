@@ -43,6 +43,8 @@ function config(env = process.env) {
           : env.WX_CODE_CHECK_PATH === "true",
     },
     share: { hours: Number(env.SHARE_HOURS || 72) },
+    // TODO(confirm): 代理链接下单后的锁库时长（分钟），框架文档 7.3 只要求“锁定有时效”。
+    agent: { lockMinutes: Number(env.AGENT_LOCK_MINUTES || 30) },
     // TODO(confirm): appointment availability/hours are configurable; every submission requires store confirmation.
     contact: {
       days: Number(env.APPOINTMENT_DAYS || 30),

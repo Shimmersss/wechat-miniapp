@@ -15,6 +15,7 @@ const ENTRIES = [
   { text: '型号模板', url: ROUTES.TEMPLATES, perm: PERM.TEMPLATE_MANAGE },
   { text: '供应商', url: ROUTES.SUPPLIERS, perm: PERM.SUPPLIER_VIEW },
   { text: '代理审核', url: ROUTES.AGENT_REVIEW, perm: PERM.AGENT_REVIEW },
+  { text: '代理订单', url: ROUTES.AGENT_ORDERS_ADMIN, perm: [PERM.AGENT_REVIEW, PERM.AGENT_SETTLE, PERM.SALES_CREATE] },
   { text: '代理收益转账', url: ROUTES.AGENT_SETTLEMENT, perm: PERM.AGENT_SETTLE },
   { text: '员工与角色', url: ROUTES.STAFF, perm: PERM.STAFF_MANAGE },
   { text: '操作日志', url: ROUTES.AUDIT, perm: PERM.AUDIT_VIEW }

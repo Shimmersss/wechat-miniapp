@@ -1,22 +1,16 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <scroll-view scroll-x class="mb">
-    <view class="chips nowrap">
-      <view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view>
-    </view>
-  </scroll-view>
-  <todo-block items="{{todos}}" />
-
-  <view wx:for="{{list}}" wx:key="id" class="card">
-    <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.orderNo}}</text>
-      <status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" />
-    </view>
-    <view class="row mt-sm">
-      <text class="small muted">{{item.agentName}}</text>
-      <text class="small">¥{{f.money(item.amount)}}</text>
-    </view>
+  <view wx:if="{{summary}}" class="card grid-2">
+    <view><view class="tiny muted">待转账（已扣冲回）</view><view class="h1 num">¥{{f.money(summary.pendingAmount)}}</view></view>
+    <view><view class="tiny muted">已转账累计</view><view class="h1 num">¥{{f.money(summary.settledAmount)}}</view></view>
   </view>
-
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <view class="chips mb"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view>
+  <view wx:if="{{error}}" class="notice">{{error}}</view>
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row"><text class="h3 ellipsis flex-1">{{item.kind === 'reversal' ? '退货冲回 · ' : ''}}{{item.name}}</text><text class="h3 num {{item.amount < 0 ? 'price' : ''}}">{{item.amount < 0 ? '-' : '+'}}¥{{f.money(item.amount < 0 ? -item.amount : item.amount)}}</text></view>
+    <view class="row mt-sm"><text class="tiny muted">{{item.createdText}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view wx:if="{{item.settledText}}" class="tiny muted mt-sm">{{item.settledText}} 已转账</view>
+  </view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无收益记录" />
+  <view class="notice mt">收益按单记账，公司线下转账后标记“已转账”。退货会冲回该单收益，已转账的在后续转账中抵扣。</view>
 </view>

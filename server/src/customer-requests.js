@@ -18,7 +18,10 @@ const {
 } = require("../../miniprogram/constants/customer-requests");
 const { unitSelect } = require("./stock");
 const select = `SELECT c.*,s.status,s.version,s.updated_at FROM customer_requests c JOIN customer_request_states s ON s.request_id=c.id`;
-module.exports = async function (app, { pool, config, route, shareService }) {
+module.exports = async function (
+  app,
+  { pool, config, route, shareService, agents },
+) {
   const login = (r) => {
     if (!r.user) fail(401, "请先登录");
   };
@@ -85,6 +88,10 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       [row.id],
     );
     const state = TRANSITIONS[row.kind][row.status] || [];
+    const agentOrder =
+      row.kind === "order"
+        ? await agents.requestView(db, row.id, internal)
+        : null;
     let canStartSale = false;
     if (
       internal &&
@@ -96,7 +103,12 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       const u = await one(db, "SELECT status,ownership FROM units WHERE id=?", [
         row.unit_id,
       ]);
-      canStartSale = u?.status === "in_stock" && u.ownership === "own";
+      // 代理订单只能在本单锁定期间按分享价成交
+      canStartSale =
+        row.kind === "order"
+          ? agentOrder?.status === "locked" &&
+            new Date(agentOrder.lockExpiresAt).getTime() > Date.now()
+          : u?.status === "in_stock" && u.ownership === "own";
     }
     const shareOwner =
       internal && row.share_owner_id
@@ -120,6 +132,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       saleRecorded: !!sale,
+      ...(agentOrder ? { agentOrder } : {}),
       ...(internal
         ? {
             ownerId: row.owner_id,
@@ -174,14 +187,15 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       fail(400, "提交参数无效");
     const key = text(d.requestKey, "提交标识", 100),
       unitId = text(d.unitId, "设备编号", 36, true) || null,
-      content = text(d.content, "咨询内容", 2000, kind === "appointment"),
+      content = text(d.content, "咨询内容", 2000, kind !== "consult"),
       phone = text(d.phone, "联系电话", 30),
       name = text(d.name, "称呼", 100, kind === "consult");
+    if (kind === "order" && !unitId) fail(400, "请选择要下单的设备");
     if (!isPhone(phone)) fail(400, "请填写11位手机号");
     const date = kind === "appointment" ? validDate(d.date) : null,
       slot = kind === "appointment" ? text(d.timeSlot, "预约时段", 60) : null;
-    if (kind === "consult" && (d.date || d.timeSlot))
-      fail(400, "咨询无需预约日期");
+    if (kind !== "appointment" && (d.date || d.timeSlot))
+      fail(400, "咨询或下单无需预约日期");
     const source = r.headers["x-channel"] || "";
     if (typeof source !== "string" || source.length > 100)
       fail(400, "分享标识无效");
@@ -211,9 +225,13 @@ module.exports = async function (app, { pool, config, route, shareService }) {
             fail(400, "请选择有效的预约日期和时段");
         }
         if (unitId) {
-          const locked = await one(db, unitSelect + " WHERE u.id=? FOR SHARE", [
-            unitId,
-          ]);
+          const locked = await one(
+            db,
+            unitSelect +
+              " WHERE u.id=? " +
+              (kind === "order" ? "FOR UPDATE" : "FOR SHARE"),
+            [unitId],
+          );
           if (!locked) fail(404, "商品不存在或已下架");
         }
         const ctx = await shareService.context(db, r),
@@ -243,11 +261,16 @@ module.exports = async function (app, { pool, config, route, shareService }) {
           "INSERT INTO customer_request_states(request_id) VALUES (?)",
           [target],
         );
+        if (kind === "order") await agents.lock(db, r, target, ctx, unitId);
         await event(db, r, target, "customer", null, "new", 1, "", key, digest);
         await audit(
           db,
           r,
-          kind === "appointment" ? "提交到店预约" : "提交商品咨询",
+          kind === "appointment"
+            ? "提交到店预约"
+            : kind === "order"
+              ? "代理链接下单"
+              : "提交商品咨询",
           target,
           { after: { kind, unitId, shareId: ctx?.link.id || null } },
         );
@@ -343,6 +366,13 @@ module.exports = async function (app, { pool, config, route, shareService }) {
         key,
         digest,
       );
+      if (row.kind === "order" && ["closed", "cancelled"].includes(status))
+        await agents.release(
+          db,
+          r,
+          row.id,
+          internal ? "门店关闭代理订单：" + note : "顾客取消代理订单",
+        );
       await audit(db, r, internal ? "跟进咨询预约" : "取消咨询预约", row.id, {
         reason: note,
         after: { status, version: version + 1 },
@@ -363,7 +393,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       if (r.query[key]) {
         const values =
           key === "kind"
-            ? ["consult", "appointment"]
+            ? ["consult", "appointment", "order"]
             : [
                 "new",
                 "contacted",
@@ -405,6 +435,9 @@ module.exports = async function (app, { pool, config, route, shareService }) {
   route("POST", "/shop/appointments", (r) => submit(r, "appointment"), {
     config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
   });
+  route("POST", "/shop/orders", (r) => submit(r, "order"), {
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
+  });
   route("GET", "/shop/requests", (r) => rows(r, false));
   route("GET", "/shop/requests/:id", async (r) => {
     login(r);
@@ -437,6 +470,8 @@ module.exports = async function (app, { pool, config, route, shareService }) {
     if (!ACTIVE.includes(row.status)) fail(409, "咨询预约已结束或取消");
     if (!row.unit_id || !items.some((i) => i.unit.id === row.unit_id))
       fail(400, "销售单需包含意向设备");
+    if (row.kind === "order")
+      await agents.saleItem(db, row.id, row.unit_id, true);
     if (
       await one(
         db,
@@ -449,6 +484,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
   }
   async function recordSale(db, r, row, orderId) {
     if (!row) return;
+    if (row.kind === "order") await agents.recordSale(db, r, row.id, orderId);
     await db.execute(
       "INSERT INTO sales_attributions(order_id,customer_request_id,customer_id,source,share_id,share_owner_id) VALUES (?,?,?,?,?,?)",
       [

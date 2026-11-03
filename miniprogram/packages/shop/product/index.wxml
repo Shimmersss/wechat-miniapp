@@ -43,7 +43,13 @@
   <view class="footer-bar">
     <button class="icon-action" bindtap="onPoster"><image class="action-icon" src="/assets/icons/poster.svg" /><text>海报</text></button>
     <button class="icon-action" open-type="share"><image class="action-icon" src="/assets/icons/forward.svg" /><text>转发</text></button>
-    <button class="btn btn-soft" bindtap="onAppointment">预约到店</button>
-    <button class="btn btn-primary" bindtap="onConsult">咨询这台</button>
+    <block wx:if="{{unit.priceType === 'agent'}}">
+      <button class="btn btn-soft" bindtap="onConsult">咨询</button>
+      <button class="btn btn-primary" bindtap="onOrder">立即下单</button>
+    </block>
+    <block wx:else>
+      <button class="btn btn-soft" bindtap="onAppointment">预约到店</button>
+      <button class="btn btn-primary" bindtap="onConsult">咨询这台</button>
+    </block>
   </view>
 </view>

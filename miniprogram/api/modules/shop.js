@@ -20,7 +20,9 @@ module.exports = {
   consult: (data, shareId) => http.post('/shop/consults', data, {loading:true,...(shareId !== undefined?{header:{'X-Channel':shareId}}:{})}),
   /** {requestKey,unitId?,content?,phone,name,date,timeSlot} → 本人预约；不锁库存/价格 */
   appointment: (data, shareId) => http.post('/shop/appointments', data, {loading:true,...(shareId !== undefined?{header:{'X-Channel':shareId}}:{})}),
-  /** {kind?,status?,page?,pageSize?} → 本人咨询/预约分页，内部备注不返回 */
+  /** 代理链接下单 {requestKey,unitId,name,phone,content?} + 代理分享 shareId → 本人订单（kind=order，含 agentOrder 锁定到期时间与分享价）；仅代理链接可下单，锁库期间门店确认成交 */
+  order: (data, shareId) => http.post('/shop/orders', data, {loading:true,header:{'X-Channel':shareId}}),
+  /** {kind?,status?,page?,pageSize?} → 本人咨询/预约/下单分页，内部备注不返回 */
   requests: params => http.get('/shop/requests',params),
   /** id → 本人记录/公开时间线；其他账号404 */
   request: id => http.get(`/shop/requests/${id}`),

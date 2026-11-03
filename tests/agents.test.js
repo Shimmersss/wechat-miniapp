@@ -1,0 +1,38 @@
+const test=require('node:test'),assert=require('node:assert/strict');let role='boss';global.wx={getStorageSync:()=>role};
+const db=require('../miniprogram/mock/data'),mock=require('../miniprogram/mock');
+const call=(url,method='GET',data={},header={})=>mock.handle({url,method,data,header});let n=0;const key=()=> 'agent_mock_'+ ++n;
+test('代理 mock：申请审核、加价上限、代理分享价、链接下单锁库、按分享价成交记收益、转账与退货冲回',async()=>{
+ role='customer';let r=await call('/agent/applications','POST',{name:'王顾客',phone:'13800000021',region:'深圳',agreed:true});assert.equal(r.data.status,'pending');
+ assert.equal((await call('/agent/applications','POST',{name:'王顾客',phone:'13800000021',region:'深圳',agreed:true})).code,409);
+ role='sales';assert.equal((await call('/admin/agent-applications')).code,403);
+ role='boss';const app=(await call('/admin/agent-applications')).data.list.find(a=>a.id==='mock_customer');
+ r=await call('/admin/agent-applications/mock_customer/review','POST',{approve:true,remark:'核实',version:app.version});assert.equal(r.data.status,'active');assert.equal(r.data.markupMax,300);
+ role='agent';const unit=db.units.find(u=>u.status==='in_stock'&&u.flags.shareAgent);
+ assert.equal((await call('/agent/units/'+unit.id+'/markup','PUT',{markup:'501'})).code,400);
+ r=await call('/agent/units/'+unit.id+'/markup','PUT',{markup:'200'});assert.equal(r.data.sharePrice,unit.agentBase+200);
+ const share=(await call('/share/links','POST',{channel:'agent',unitIds:[unit.id]})).data;assert.equal(share.units[0].price,unit.agentBase+200);assert.equal(share.units[0].priceType,'agent');
+ role='sales';assert.equal((await call('/share/links','POST',{channel:'agent',unitIds:[unit.id]})).code,403);
+ role='agent';assert.equal((await call('/shop/orders','POST',{requestKey:key(),unitId:unit.id,name:'自己',phone:'13900000001'},{'X-Channel':share.shareId})).code,400);
+ role='peer';const placed=await call('/shop/orders','POST',{requestKey:key(),unitId:unit.id,name:'李顾客',phone:'13900000002'},{'X-Channel':share.shareId});assert.equal(placed.code,0,placed.message);
+ assert.equal(unit.status,'locked');assert.equal(placed.data.agentOrder.markup,undefined);
+ role='sales';const req=(await call('/customer-requests/'+placed.data.id)).data;assert.equal(req.canStartSale,true);assert.equal(req.agentOrder.markup,200);
+ assert.equal((await call('/sales/lookup','GET',{code:unit.id})).code,409);
+ const looked=(await call('/sales/lookup','GET',{code:unit.id,customerRequestId:req.id})).data;const item={unitId:unit.id,channel:'agent',priceVersion:looked.priceVersion||1};
+ assert.equal((await call('/sales/quote','POST',{customerRequestId:req.id,items:[{...item,price:'1'}]})).code,400);
+ const sale=(await call('/sales-orders','POST',{requestKey:key(),payMethod:'微信',paymentConfirmed:true,customerRequestId:req.id,items:[item]})).data;assert.equal(sale.amount,unit.agentBase+200);assert.equal(unit.status,'sold');
+ role='agent';let mine=(await call('/agent/commissions')).data;assert.equal(mine.summary.pendingAmount,200);
+ role='finance';const e=(await call('/admin/agent-earnings','GET',{status:'pending'})).data.list.find(x=>x.orderId===req.id);
+ assert.equal((await call('/admin/agent-earnings/settle','POST',{ids:[e.id],reason:'微信转账'})).data.settled,1);
+ role='boss';await call('/sales-orders/'+sale.id+'/refund','POST',{requestKey:key(),kind:'return',reason:'退货',items:[{itemId:sale.items[0].id}]});
+ role='agent';mine=(await call('/agent/commissions')).data;assert.equal(mine.summary.settledAmount,200);assert.equal(mine.summary.pendingAmount,-200);
+ role='boss';
+});
+test('代理 mock：顾客取消下单释放锁库，停用代理后分享失效',async()=>{
+ role='agent';const unit=db.units.find(u=>u.status==='in_stock'&&u.flags.shareAgent);const share=(await call('/share/links','POST',{channel:'agent',unitIds:[unit.id]})).data;
+ role='peer';const placed=(await call('/shop/orders','POST',{requestKey:key(),unitId:unit.id,name:'赵顾客',phone:'13900000003'},{'X-Channel':share.shareId})).data;assert.equal(unit.status,'locked');
+ assert.equal((await call('/shop/requests/'+placed.id+'/cancel','PATCH',{requestKey:key(),reason:'不要了',version:placed.version})).code,0);assert.equal(unit.status,'in_stock');
+ role='boss';const a=(await call('/admin/agents',"GET",{status:'active'})).data.list.find(x=>x.id==='mock_agent');
+ assert.equal((await call('/admin/agents/mock_agent','PATCH',{status:'disabled',reason:'停用',version:a.version})).code,0);
+ role='peer';assert.equal((await call('/shop/shares/'+share.shareId)).code,410);
+ role='boss';await call('/admin/agents/mock_agent','PATCH',{status:'active',reason:'恢复',version:a.version+1});
+});

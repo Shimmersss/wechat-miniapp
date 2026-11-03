@@ -113,10 +113,10 @@ miniprogram/
 - [ ] 分渠道分享：选设备、合集分享（`staff/share`）、Canvas 海报（`shop/poster`）
 
 ### 阶段 C：代理增长（必须在库存锁定、订单快照、退款冲回完成后上线）
-- [ ] 代理申请协议、地区选择（`agent/apply`）
-- [ ] 代理订单详情、收益汇总（`agent/orders`、`agent/commission`）
-- [ ] 邀请海报（`agent/invite`）
-- [ ] 代理审核通过/拒绝（设固定金额加价上限）、收益逐单标记已转账（`staff/agents/*`）
+- [x] 代理申请协议、地区选择（`agent/apply`）
+- [x] 代理订单、收益汇总（`agent/orders`、`agent/commission`）；顾客代理链接下单锁库（`shop/consult` mode=order）
+- [ ] 邀请海报（`agent/invite`，邀请码与直属代理列表已完成）
+- [x] 代理审核通过/拒绝（设固定金额加价上限）、代理订单、收益逐单标记已转账（`staff/agents/*`）
 
 ### 还需要的外部条件（非前端可完成）
 - 后端服务（按 `api/modules` 的接口注释实现；MySQL/Redis 不开公网，数据库账号分离见框架文档 2.2）

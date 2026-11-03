@@ -54,6 +54,7 @@ module.exports = {
   SHARE: '/packages/staff/share/index',
   AGENT_REVIEW: '/packages/staff/agents/review',
   AGENT_SETTLEMENT: '/packages/staff/agents/settlement',
+  AGENT_ORDERS_ADMIN: '/packages/staff/agents/orders',
   STATS: '/packages/staff/stats/index',
   STAFF: '/packages/staff/staff/index',
   STAFF_ROLES: '/packages/staff/staff/roles',

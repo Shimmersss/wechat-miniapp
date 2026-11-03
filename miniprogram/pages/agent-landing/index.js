@@ -5,7 +5,7 @@ const { ROUTES } = require('../../utils/router');
 /** 代理招募页（需求 16）：顾客端直接可见，申请后跳转申请表；已是代理则进入代理中心 */
 createPage({
   data: {
-    agentStatus: 'none', // none | pending | active | rejected
+    agentStatus: 'none', // none | pending | active | rejected | disabled
     benefits: [
       { no: '01', title: '无需投资', desc: '不用囤货、不压资金，成交后按单记账、总部转账。' },
       { no: '02', title: '共享实时机库', desc: '总部库存实时同步，卖出即下架，不会一机多卖。' },
@@ -26,6 +26,7 @@ createPage({
   onPrimaryTap() {
     if (this.data.agentStatus === 'active') return this.$go(ROUTES.AGENT_CENTER);
     if (this.data.agentStatus === 'pending') return this.$toast('申请审核中，请耐心等待');
+    if (this.data.agentStatus === 'disabled') return this.$toast('代理资格已停用，请联系门店');
     return this.$go(ROUTES.AGENT_APPLY);
   }
 });

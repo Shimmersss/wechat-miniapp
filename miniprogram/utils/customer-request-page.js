@@ -7,12 +7,12 @@ let sequence=0;
 const key=()=> 'follow_'+Date.now()+'_'+ ++sequence+'_'+Math.random().toString(36).slice(2);
 const sources={natural:'自然访问',customer:'顾客分享',peer:'同行分享',agent:'代理分享'};
 function timeLabel(value){const at=Date.parse(value);return Number.isFinite(at)?new Date(at+28800000).toISOString().slice(0,16).replace('T',' '):'--';}
-function display(record){return{...record,createdLabel:timeLabel(record.createdAt),timeline:(record.timeline||[]).map(e=>({...e,timeLabel:timeLabel(e.time)}))};}
+function display(record){return{...record,...(record.agentOrder?{agentOrder:{...record.agentOrder,lockText:timeLabel(record.agentOrder.lockExpiresAt)}}:{}),createdLabel:timeLabel(record.createdAt),timeline:(record.timeline||[]).map(e=>({...e,timeLabel:timeLabel(e.time)}))};}
 const staffApi=()=>api.customerRequest;
 const methods=internal=>internal?{list:staffApi().list,detail:staffApi().detail,change:staffApi().updateStatus}:{list:api.shop.requests,detail:api.shop.request,change:api.shop.cancelRequest};
 const guard=internal=>internal?{requireStaff:true,permission:PERM.CONSULT_MANAGE}:{};
 function listPage(internal){return{
- ...guard(internal),data:{internal,sources,labels:LABELS,kinds:[{value:'',label:'全部'},{value:'consult',label:'咨询'},{value:'appointment',label:'预约'}],statuses:[{value:'',label:'全部状态'},...Object.keys(LABELS).map(value=>({value,label:LABELS[value]}))],kind:'',status:'',statusIndex:0,keyword:'',list:[],page:0,more:false,loading:false,error:''},
+ ...guard(internal),data:{internal,sources,labels:LABELS,kinds:[{value:'',label:'全部'},{value:'consult',label:'咨询'},{value:'appointment',label:'预约'},{value:'order',label:'代理下单'}],statuses:[{value:'',label:'全部状态'},...Object.keys(LABELS).map(value=>({value,label:LABELS[value]}))],kind:'',status:'',statusIndex:0,keyword:'',list:[],page:0,more:false,loading:false,error:''},
  onLoad(query){const status=query.status||'';this.setData({status,statusIndex:Math.max(0,this.data.statuses.findIndex(s=>s.value===status))});return this.load(true);},
  onShow(){if(this._loaded&&!this.data.loading)return this.load(true);},
  onUnload(){this._revision=(this._revision||0)+1;},

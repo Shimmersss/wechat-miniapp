@@ -97,7 +97,8 @@ test("真实公开商品与分享：服务端渠道定价/白名单字段/单机
   assert.equal((await link([a], "peer", "customer")).status, 403);
   assert.equal((await link([a], "customer", "warehouse")).status, 403);
   assert.equal((await link([a], "customer", null)).status, 401);
-  assert.equal((await link([a], "agent")).status, 503);
+  // 员工不能生成代理渠道分享，只有审核通过的代理本人可以
+  assert.equal((await link([a], "agent")).status, 403);
   const peer = (await link([a], "peer", "sales")).data;
   assert.equal(
     (await f.api("GET", "/shop/shares/" + peer.shareId, undefined, null))

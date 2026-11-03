@@ -4,6 +4,7 @@ const { PERM, fail, text, json, page, list, audit } = require("./core");
 const { unitSelect } = require("./stock");
 const { shareService } = require("./share-service");
 module.exports = async function (app, { pool, config, route, providers }) {
+  const { cents, money } = require("./validation");
   const service = shareService({ config });
   function metadata(link, units) {
     const one = units.length === 1,
@@ -62,37 +63,56 @@ module.exports = async function (app, { pool, config, route, providers }) {
           if (
             !u ||
             u.status !== "in_stock" ||
-            !(channel === "peer"
-              ? json(u.share_flags).sharePeer
-              : json(u.share_flags).showInShop)
+            !json(u.share_flags)[service.flagOf(channel)]
           )
             fail(409, "所选设备不可对外分享");
           units.push(u);
         }
         const kind = r.user.staffNo
           ? "staff"
-          : r.user.role === "peer"
-            ? "peer"
+          : ["peer", "agent"].includes(r.user.role)
+            ? r.user.role
             : "customer";
+        // 代理分享价 = 代理底价 + 代理本人对该台的加价（框架文档 3.2、十三.1），一并快照
+        for (const u of units) {
+          if (channel !== "agent") continue;
+          const m = await one(
+            db,
+            "SELECT markup FROM agent_markups WHERE agent_id=? AND unit_id=?",
+            [r.user.id, u.id],
+          );
+          u.markupCents = m ? cents(m.markup) : 0;
+          u.agentPrice = money(cents(u.agent_base) + u.markupCents);
+        }
         await db.execute(
           "INSERT INTO share_links(id,owner_id,owner_kind,channel,expires_at) VALUES (?,?,?,?,?)",
           [shareId, r.user.id, kind, channel, expires],
         );
         for (const u of units)
           await db.execute(
-            "INSERT INTO share_items(share_id,unit_id,price_version,price) VALUES (?,?,?,?)",
+            "INSERT INTO share_items(share_id,unit_id,price_version,price,markup) VALUES (?,?,?,?,?)",
             [
               shareId,
               u.id,
               u.price_version,
-              channel === "peer" ? u.wholesale : u.retail,
+              channel === "peer"
+                ? u.wholesale
+                : channel === "agent"
+                  ? u.agentPrice
+                  : u.retail,
+              channel === "agent" ? money(u.markupCents) : null,
             ],
           );
         await audit(db, r, "生成商品分享", shareId, {
           after: { channel, unitIds: ids, expiresAt: expires },
         });
         const views = await Promise.all(
-          units.map((u) => service.publicView(db, u, { channel })),
+          units.map((u) =>
+            service.publicView(db, u, {
+              channel,
+              ...(channel === "agent" ? { price: Number(u.agentPrice) } : {}),
+            }),
+          ),
         );
         return metadata({ id: shareId, channel, expires_at: expires }, views);
       });
@@ -216,10 +236,9 @@ module.exports = async function (app, { pool, config, route, providers }) {
         ? " AND u.id IN (" + ctx.items.map(() => "?").join(",") + ")"
         : "",
       params = ctx ? ctx.items.map((u) => u.id) : [],
-      flag =
-        ctx?.link.channel === "peer" || (!ctx && r.user?.role === "peer")
-          ? "sharePeer"
-          : "showInShop";
+      flag = service.flagOf(
+        ctx ? ctx.link.channel : r.user?.role === "peer" ? "peer" : "customer",
+      );
     const [rows] = await pool.execute(
       "SELECT DISTINCT m.brand,m.brand_label FROM units u JOIN models m ON m.id=u.model_id WHERE u.status='in_stock' AND JSON_EXTRACT(u.share_flags,'$." +
         flag +
@@ -248,10 +267,9 @@ module.exports = async function (app, { pool, config, route, providers }) {
     const ctx = await service.context(pool, r),
       p = page(r.query),
       q = r.query,
-      flag =
-        ctx?.link.channel === "peer" || (!ctx && r.user?.role === "peer")
-          ? "sharePeer"
-          : "showInShop";
+      flag = service.flagOf(
+        ctx ? ctx.link.channel : r.user?.role === "peer" ? "peer" : "customer",
+      );
     const where = [
         "u.status='in_stock'",
         "JSON_EXTRACT(u.share_flags,'$." + flag + "')=TRUE",
@@ -300,7 +318,11 @@ module.exports = async function (app, { pool, config, route, providers }) {
       await Promise.all(
         rows.map((u) =>
           service.publicView(pool, u, {
-            channel: flag === "sharePeer" ? "peer" : "customer",
+            channel: ctx
+              ? ctx.link.channel
+              : flag === "sharePeer"
+                ? "peer"
+                : "customer",
             price: service.snapshotPrice(ctx, u),
           }),
         ),

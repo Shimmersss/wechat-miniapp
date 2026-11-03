@@ -18,6 +18,7 @@ module.exports = function (
     staffUnit,
     resolveShare,
     repair,
+    agents,
   },
 ) {
   const events = (db.visitEvents = db.visitEvents || []),
@@ -365,6 +366,28 @@ module.exports = function (
             count: (db.customerRequests || []).filter((r) => r.status === "new")
               .length,
             url: "/packages/staff/consults/index?status=new",
+          });
+        const agentQueue = agents.pending(perms);
+        if (agentQueue.applications !== undefined)
+          todos.push({
+            key: "agentApplications",
+            text: "代理申请待审核",
+            count: agentQueue.applications,
+            url: "/packages/staff/agents/review",
+          });
+        if (agentQueue.lockedOrders !== undefined)
+          todos.push({
+            key: "agentOrders",
+            text: "代理订单待确认成交",
+            count: agentQueue.lockedOrders,
+            url: "/packages/staff/agents/orders?status=locked",
+          });
+        if (agentQueue.pendingEarnings !== undefined)
+          todos.push({
+            key: "agentEarnings",
+            text: "代理收益待转账（笔）",
+            count: agentQueue.pendingEarnings,
+            url: "/packages/staff/agents/settlement?status=pending",
           });
         if (perms.includes(PERM.LOAN_MANAGE)) {
           const loans = db.loanTransactions || [],

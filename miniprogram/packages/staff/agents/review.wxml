@@ -1,22 +1,26 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <scroll-view scroll-x class="mb">
-    <view class="chips nowrap">
-      <view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view>
-    </view>
-  </scroll-view>
-  <todo-block items="{{todos}}" />
+  <view wx:if="{{settings}}" class="card">
+    <view class="row"><text class="h3">默认加价上限</text><text class="tiny muted">锁库 {{settings.lockMinutes}} 分钟</text></view>
+    <view class="row gap-sm mt"><text class="small muted">每台 ¥</text><input class="input flex-1" type="digit" value="{{defaultDraft}}" bindinput="onDefaultDraft" disabled="{{saving}}" /><button class="btn btn-primary btn-sm" bindtap="onSaveDefault" disabled="{{saving}}">保存</button></view>
+    <view class="tiny muted mt-sm">固定金额；审核通过时未单独填写的代理使用此上限。</view>
+  </view>
+  <view class="chips mb"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
 
   <view wx:for="{{list}}" wx:key="id" class="card">
-    <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.name}} · {{item.region}}</text>
-      <status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" />
-    </view>
-    <view class="row mt-sm">
-      <text class="small muted">{{item.phone}} · {{item.appliedAt}}</text>
-      <text class="small"></text>
-    </view>
+    <view class="row"><text class="h3 ellipsis flex-1">{{item.name}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view class="small muted mt-sm">{{item.phone}} · {{item.region}}</view>
+    <view class="tiny muted mt-sm">申请于 {{item.appliedText}}{{item.inviterName ? ' · 邀请人 ' + item.inviterName : ''}}{{item.inviteCode ? ' · 邀请码 ' + item.inviteCode : ''}}</view>
+    <view wx:if="{{item.reviewRemark}}" class="tiny muted mt-sm">审核说明：{{item.reviewRemark}}</view>
+    <block wx:if="{{item.status === 'pending'}}">
+      <view class="row gap-sm mt"><text class="small muted">加价上限 ¥</text><input class="input flex-1" type="digit" value="{{drafts[item.id]}}" data-id="{{item.id}}" bindinput="onDraft" placeholder="留空用默认 {{settings.defaultMarkupMax}}" disabled="{{saving}}" /></view>
+      <view class="grid-2 mt"><button class="btn btn-line" data-id="{{item.id}}" data-approve="0" bindtap="onReview" disabled="{{saving}}">拒绝</button><button class="btn btn-primary" data-id="{{item.id}}" data-approve="1" bindtap="onReview" disabled="{{saving}}">通过</button></view>
+    </block>
+    <block wx:elif="{{item.status === 'active' || item.status === 'disabled'}}">
+      <view class="row gap-sm mt"><text class="small muted">加价上限 ¥</text><input class="input flex-1" type="digit" value="{{drafts[item.id]}}" data-id="{{item.id}}" bindinput="onDraft" disabled="{{saving}}" /><button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onSaveMarkup" disabled="{{saving}}">保存</button></view>
+      <button class="btn {{item.status === 'active' ? 'btn-soft' : 'btn-primary'}} btn-block mt" data-id="{{item.id}}" bindtap="onToggle" disabled="{{saving}}">{{item.status === 'active' ? '停用代理' : '恢复代理'}}</button>
+    </block>
   </view>
-
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无记录" />
 </view>

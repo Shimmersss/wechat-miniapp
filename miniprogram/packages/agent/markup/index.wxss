@@ -1,1 +1,3 @@
-.focus { border: 2rpx solid var(--c-gold); }
+.focus { box-shadow: inset 0 0 0 3rpx var(--c-ink); }
+.notice.error { background: var(--c-red-soft); color: var(--c-red); }
+.share { text-align: right; }
