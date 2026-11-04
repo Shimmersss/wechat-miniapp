@@ -19,3 +19,19 @@ test('员工与权限 mock：增改停用解绑、老板保护、角色改动即
  role='boss';const logs=(await call('/audit-logs','GET',{action:'调整角色权限与字段可见性'})).data;assert.equal(logs.total,2);assert.equal(logs.list[0].actorName,'老板');
  assert.ok((await call('/audit-logs/filters')).data.actions.includes('新增员工'));
 });
+
+test('供应商 mock：保留接口权限但撤销字段权限时，查询和增改均拒绝',async()=>{
+ role='boss';const manager=(await call('/roles')).data.list.find(r=>r.key==='manager');
+ const supplier=(await call('/suppliers','POST',{name:'字段撤权验证'})).data;
+ try {
+  assert.equal((await call('/roles/manager','PUT',{permissions:manager.permissions,visibleFields:manager.visibleFields.filter(f=>f!=='supplier'),reason:'验证撤权',version:manager.version})).code,0);
+  role='manager';
+  assert.equal((await call('/suppliers')).code,403);
+  assert.equal((await call('/suppliers','POST',{name:'不应创建'})).code,403);
+  assert.equal((await call('/suppliers/'+supplier.id,'PUT',{name:'不应修改'})).code,403);
+ } finally {
+  role='boss';const current=(await call('/roles')).data.list.find(r=>r.key==='manager');
+  await call('/roles/manager','PUT',{permissions:manager.permissions,visibleFields:manager.visibleFields,reason:'还原验证配置',version:current.version});
+ }
+ role='manager';assert.equal((await call('/suppliers')).code,0);role='boss';
+});
