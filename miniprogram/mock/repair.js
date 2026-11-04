@@ -88,6 +88,7 @@ module.exports = function (
       ids.add(v.fileId);
       const f = uploadedFiles.get(v.fileId) || fail(400, "附件不存在");
       if((db.loanTransactions||[]).some(o=>o.photos.some(p=>p.fileId===f.fileId)))fail(400,"借还凭证不能作为维修附件");
+      if((db.salesTransactions||[]).some(o=>(o.receipts||[]).some(p=>p.fileId===f.fileId)))fail(400,"收款凭证不能作为维修凭证");
       if (f.scope !== "internal") fail(400, "维修附件须单独上传为内部图片");
       if (
         canReadFile(v.fileId) === false ||

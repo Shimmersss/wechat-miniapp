@@ -1,17 +1,53 @@
-<wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
-  <todo-block items="{{todos}}" />
+  <view class="search-bar">
+    <image class="search-icon" src="/assets/icons/search-gray.svg" />
+    <input class="search-input" value="{{input}}" placeholder="搜索品牌 / 型号 / 内存 / 颜色" confirm-type="search" focus="{{!modelId && !keyword}}" bindinput="onInput" bindconfirm="onSearch" />
+    <text wx:if="{{input}}" class="search-clear" bindtap="onClearInput">清除</text>
+  </view>
 
-  <view wx:for="{{list}}" wx:key="id" class="card" bindtap="onItemTap" data-id="{{item.id}}">
-    <view class="row">
-      <text class="h3 ellipsis flex-1">{{item.name}}</text>
-      
-    </view>
-    <view class="row mt-sm">
-      <text class="small muted">{{item.storage}} · {{item.color}} · {{item.grade}}</text>
-      <text class="small">¥{{f.money(item.price)}}</text>
+  <view wx:if="{{!keyword && !modelId && history.length}}" class="history">
+    <view class="row"><text class="small muted">历史搜索</text><text class="tiny muted" bindtap="onClearHistory">清空</text></view>
+    <view class="chips mt-sm">
+      <view wx:for="{{history}}" wx:key="*this" class="chip" data-value="{{item}}" bindtap="onHistoryTap">{{item}}</view>
     </view>
   </view>
 
-  <empty-state wx:if="{{!loading && !list.length}}" />
+  <view class="toolbar">
+    <view wx:if="{{modelId}}" class="chip active" bindtap="onClearModel">型号：{{modelName || '所选型号'}} · 取消</view>
+    <view class="filter-toggle {{filterCount ? 'on' : ''}}" bindtap="onToggleFilter">
+      <image class="filter-icon" src="/assets/icons/{{filterCount ? 'layers' : 'layers-gray'}}.svg" />筛选{{filterCount ? '（' + filterCount + '）' : ''}}
+    </view>
+  </view>
+
+  <view wx:if="{{showFilter}}" class="card filter-panel">
+    <view class="filter-label">新机 / 二手</view>
+    <view class="chips">
+      <view wx:for="{{conditionOptions}}" wx:key="value" class="chip {{condition === item.value ? 'active' : ''}}" data-field="condition" data-value="{{item.value}}" bindtap="onPick">{{item.label}}</view>
+    </view>
+    <view class="filter-label">成色</view>
+    <view class="chips">
+      <view wx:for="{{gradeOptions}}" wx:key="*this" class="chip {{grade === item ? 'active' : ''}}" data-field="grade" data-value="{{item}}" bindtap="onPick">{{item}}</view>
+    </view>
+    <view class="filter-label">电池健康</view>
+    <view class="chips">
+      <view wx:for="{{batteryOptions}}" wx:key="value" class="chip {{batteryMin === item.value ? 'active' : ''}}" data-field="batteryMin" data-value="{{item.value}}" bindtap="onPick">{{item.label}}</view>
+    </view>
+    <view class="filter-label">价格区间（元）</view>
+    <view class="price-row">
+      <input class="input price-input" type="digit" placeholder="最低价" value="{{priceMinDraft}}" data-field="priceMin" bindinput="onPriceInput" />
+      <text class="muted">—</text>
+      <input class="input price-input" type="digit" placeholder="最高价" value="{{priceMaxDraft}}" data-field="priceMax" bindinput="onPriceInput" />
+      <button class="btn btn-line btn-sm" bindtap="onApplyPrice">确定</button>
+    </view>
+    <button wx:if="{{filterCount}}" class="btn btn-line btn-sm mt" bindtap="onResetFilter">重置筛选</button>
+  </view>
+
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="onRetry">重试</button></view>
+  <view class="grid-2">
+    <product-card wx:for="{{list}}" wx:key="id" unit="{{item}}" bind:select="onUnitSelect" />
+  </view>
+
+  <view wx:if="{{loading}}" class="tiny muted end">加载中…</view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="没有符合条件的现货，换个条件试试" />
+  <view wx:if="{{list.length && !hasMore}}" class="tiny muted end">— 已经到底了 —</view>
 </view>

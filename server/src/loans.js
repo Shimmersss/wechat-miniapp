@@ -13,7 +13,7 @@ const {
 const { integer, date } = require("./validation");
 const { stockService, canSee } = require("./stock");
 const { digest } = require("./repair-service");
-const { canReadInternal } = require("./repair-files");
+const { canReadInternal, lockFiles, fileLinks } = require("./repair-files");
 const { isPhone, isImei } = require("../../miniprogram/utils/validate");
 const closedFlags = JSON.stringify({
   showInShop: false,
@@ -62,27 +62,17 @@ module.exports = async function (app, { pool, config, route }) {
       (required && !values.length)
     )
       fail(400, "交接凭证须为1～9张内部图片");
-    const result = [];
-    for (const v of values) {
-      const target = text(v?.fileId, "凭证", 36);
-      if (result.some((f) => f.id === target)) fail(400, "凭证重复");
-      const f = await one(db, "SELECT * FROM files WHERE id=? FOR SHARE", [
-        target,
-      ]);
+    const result = [],
+      ids = values.map((v) => text(v?.fileId, "凭证", 36));
+    if (new Set(ids).size !== ids.length) fail(400, "凭证重复");
+    // 排他锁 + 锁定读取，防止与入库/维修/收款凭证并发认领同一文件
+    const locked = await lockFiles(db, ids);
+    for (const target of ids) {
+      const f = locked.get(target);
       if (!f || f.scope !== "internal" || !f.mime.startsWith("image/"))
         fail(400, "借还凭证须单独上传为内部图片");
-      if (
-        (await one(
-          db,
-          "SELECT unit_id FROM unit_files WHERE file_id=? LIMIT 1",
-          [target],
-        )) ||
-        (await one(
-          db,
-          "SELECT order_id FROM repair_files WHERE file_id=? LIMIT 1",
-          [target],
-        ))
-      )
+      const links = await fileLinks(db, target);
+      if (links.unit || links.repair || links.sales)
         fail(400, "其他业务凭证不能用作借还附件");
       if (
         f.owner_id !== r.user.id &&

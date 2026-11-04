@@ -1,0 +1,202 @@
+{
+  "date": "2026-11-04",
+  "method": "Real HTTP/MySQL, uncommitted runtime-account inventory fixtures, sequential local requests; timings are local observations rather than production load guarantees",
+  "checks": {
+    "priceDraft": {
+      "unconfirmedPaginationTotal": 21,
+      "unconfirmedOtherFilterPageSize": 20,
+      "appliedMatches": 1,
+      "passed": true
+    },
+    "noCandidateCap": {
+      "candidates": 20000,
+      "fullTotal": 20000,
+      "olderPrice100Match": 1,
+      "passed": true
+    }
+  },
+  "samples": [
+    {
+      "candidates": 2001,
+      "kind": "unfiltered",
+      "returnedTotal": 2001,
+      "requestMs": [
+        24.5,
+        20.7,
+        22.4
+      ],
+      "heapDeltaMiB": [
+        1.1,
+        1.1,
+        1.1
+      ]
+    },
+    {
+      "candidates": 2001,
+      "kind": "broad_price",
+      "returnedTotal": 2001,
+      "requestMs": [
+        19.8,
+        19.5,
+        20.8
+      ],
+      "heapDeltaMiB": [
+        1.6,
+        1.1,
+        1
+      ]
+    },
+    {
+      "candidates": 2001,
+      "kind": "battery",
+      "returnedTotal": 2001,
+      "requestMs": [
+        29.5,
+        27.7,
+        28.6
+      ],
+      "heapDeltaMiB": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "candidates": 2001,
+      "kind": "selective_price",
+      "returnedTotal": 1,
+      "requestMs": [
+        8.8,
+        8.3,
+        8.5
+      ],
+      "heapDeltaMiB": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    {
+      "candidates": 10000,
+      "kind": "unfiltered",
+      "returnedTotal": 10000,
+      "requestMs": [
+        318.1,
+        84,
+        75.6
+      ],
+      "heapDeltaMiB": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "candidates": 10000,
+      "kind": "broad_price",
+      "returnedTotal": 10000,
+      "requestMs": [
+        84.7,
+        96.6,
+        78.6
+      ],
+      "heapDeltaMiB": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "candidates": 10000,
+      "kind": "battery",
+      "returnedTotal": 10000,
+      "requestMs": [
+        135.5,
+        125.7,
+        133.1
+      ],
+      "heapDeltaMiB": [
+        0.9,
+        1,
+        1
+      ]
+    },
+    {
+      "candidates": 10000,
+      "kind": "selective_price",
+      "returnedTotal": 1,
+      "requestMs": [
+        32.9,
+        33.5,
+        33.2
+      ],
+      "heapDeltaMiB": [
+        0.3,
+        0.5,
+        0.3
+      ]
+    },
+    {
+      "candidates": 20000,
+      "kind": "unfiltered",
+      "returnedTotal": 20000,
+      "requestMs": [
+        360.1,
+        365.8,
+        213.6
+      ],
+      "heapDeltaMiB": [
+        1,
+        1.2,
+        1
+      ]
+    },
+    {
+      "candidates": 20000,
+      "kind": "broad_price",
+      "returnedTotal": 20000,
+      "requestMs": [
+        208.9,
+        207,
+        204.2
+      ],
+      "heapDeltaMiB": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "candidates": 20000,
+      "kind": "battery",
+      "returnedTotal": 20000,
+      "requestMs": [
+        326.6,
+        293.7,
+        341.8
+      ],
+      "heapDeltaMiB": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "candidates": 20000,
+      "kind": "selective_price",
+      "returnedTotal": 1,
+      "requestMs": [
+        95,
+        95.3,
+        95.3
+      ],
+      "heapDeltaMiB": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    }
+  ],
+  "seedRowJsonBytes": 3483,
+  "inventoryTransactionRolledBack": true
+}

@@ -131,6 +131,9 @@ const CONDITION_TYPE = [
   { value: 'new', label: '新机' }
 ];
 
+/** 顾客端搜索的成色选项，与默认手机模板“成色”下拉一致；按模板公开取值精确匹配 */
+const GRADE_OPTIONS = ['准新', '未激活', '99新', '98新', '97新', '95新', '9成新'];
+
 module.exports = {
   UNIT_STATUS,
   UNIT_TRANSITIONS,
@@ -147,5 +150,6 @@ module.exports = {
   CHANNEL,
   PRICE_TYPE,
   DEVICE_CATEGORY,
-  CONDITION_TYPE
+  CONDITION_TYPE,
+  GRADE_OPTIONS
 };

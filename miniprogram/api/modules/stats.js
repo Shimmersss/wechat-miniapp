@@ -12,6 +12,11 @@ module.exports = {
   visitTrend: params => http.get('/stats/visit-trend', params),
   visits: (params) => http.get('/stats/visits', params),
   ageing: (params) => http.get('/stats/ageing', params),
+  /**
+   * 代理收益对账 {range?,from?,to?} → {list:[{agentId,agentName,soldQty,salesAmount,earned,returnedQty,reversed,net,settled,pending}],summary,from,to,definition}
+   * 成交收益按收款、冲回按退货、已转账按标记时间统计；pending 为当前累计待转账。需代理审核或收益转账权限
+   */
+  agentEarnings: (params) => http.get('/stats/agent-earnings', params),
   /** {requestKey,range?/from?/to?,reason} → {id,filename,expiresAt,rows}；生成15分钟内可取的固定快照，需导出权限和原因 */
   exportReport: (data) => http.post('/stats/export', data, { loading: true }),
   /** id → {id,filename,expiresAt,rows,csv}；仅创建人且当前仍有权限可取，权限变化会裁剪成本/毛利列 */

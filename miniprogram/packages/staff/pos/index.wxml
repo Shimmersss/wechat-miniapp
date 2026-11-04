@@ -20,9 +20,12 @@
    <view class="field"><view class="field-label">电话（选填）</view><input class="input" value="{{phone}}" data-field="phone" bindinput="onInput" maxlength="30" disabled="{{saving || pending || loading}}" /></view>
    <view class="field"><view class="field-label">备注</view><textarea class="textarea" value="{{remark}}" data-field="remark" bindinput="onInput" maxlength="1000" disabled="{{saving || pending || loading}}" /></view>
    <picker range="{{payMethods}}" value="{{payIndex}}" bindchange="onPayChange" disabled="{{saving || pending || loading}}"><view class="picker">{{payMethods[payIndex]}}</view></picker>
+   <view class="field-label mt">收款凭证（选填，最多9张，仅内部可见）</view>
+   <view class="receipts"><view wx:for="{{receipts}}" wx:key="fileId" class="receipt"><image src="{{item.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" bindtap="onRemoveReceipt">移除</text></view></view>
+   <button class="btn btn-line btn-block mt-sm" bindtap="onReceipts" loading="{{uploading}}" disabled="{{saving || pending || loading || uploading || receipts.length >= 9}}">添加收款截图 / 小票照片</button>
   </section-card>
   <view wx:if="{{pending}}" class="notice">提交结果未知，已锁定本单。原样重试可防止重复扣库。<button class="btn btn-primary btn-block mt" bindtap="onRetry" loading="{{saving}}" disabled="{{saving}}">原样重试</button></view>
   <view wx:else class="card"><view class="h2">合计 {{total !== null ? '¥'+f.maskMoney(total,privacy) : '待核算'}}</view><button class="btn btn-primary btn-block mt" bindtap="onCheckout" loading="{{saving}}" disabled="{{saving || loading || quoting || !quote}}">确认已收款并出库</button></view>
  </block>
- <todo-block items="{{['收款凭证 / 发票', '实际收款码与小票打印']}}" />
+ <todo-block items="{{['实际收款码与小票打印']}}" />
 </view><staff-tabbar active="pos" />

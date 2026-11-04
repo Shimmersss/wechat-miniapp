@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-04",
+  "method": "Real HTTP/MySQL, independent fixtures, deliberate transaction scheduling barrier immediately before cross-domain INSERT (no fake database responses)",
+  "fileId": "7c9772ee-d6b6-4195-80e8-1a9d512a06b7",
+  "saleOrderId": "23c151b7-4da8-4d5b-a44c-996ae61a03ae",
+  "repairOrderId": "d04592af-041e-4f97-bc13-7d900f3363da",
+  "salesReadBefore": 403,
+  "reachedInsertDomains": [
+    "sales",
+    "repair"
+  ],
+  "operations": [
+    {
+      "domain": "saleReceipt",
+      "status": 200,
+      "message": "ok"
+    },
+    {
+      "domain": "repairExpense",
+      "status": 200,
+      "message": "ok"
+    }
+  ],
+  "linkCounts": {
+    "sales": 1,
+    "expense": 1
+  },
+  "salesReadAfter": 200,
+  "salesSignedContentStatus": 200,
+  "warehouseReadAfter": 403,
+  "expenseOnlyControl": {
+    "fileId": "8492d092-6897-4d3a-91d4-41d9003c2fe1",
+    "salesStatus": 403
+  },
+  "dualLinkedSalesStillReadable": 200,
+  "uninstrumentedTrials": [
+    {
+      "fileId": "76b64998-4a0f-44c8-b9a1-9713fbcad77a",
+      "salesStatus": 200,
+      "repairStatus": 200
+    },
+    {
+      "fileId": "7f4cc56c-a7ac-43fa-92c7-52a39767339f",
+      "salesStatus": 200,
+      "repairStatus": 200
+    },
+    {
+      "fileId": "1353dd4f-742a-47cc-89b4-661f6ef5189e",
+      "salesStatus": 200,
+      "repairStatus": 200
+    }
+  ]
+}

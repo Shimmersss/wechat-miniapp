@@ -13,6 +13,7 @@ const {
 } = require("./core");
 const { cents, money } = require("./validation");
 const { stockService, canSee } = require("./stock");
+const { lockFiles, fileLinks } = require("./repair-files");
 const PAY = ["微信", "支付宝", "现金", "银行卡", "分期"];
 const canonical = (v) =>
   Array.isArray(v)
@@ -31,6 +32,56 @@ module.exports = async function (
   const stock = stockService({ config }),
     read = (r) =>
       requirePerm(r, PERM.SALES_CREATE, PERM.REFUND, PERM.STATS_VIEW);
+  /** 收款凭证：本人上传（老板/店长可引用他人）的内部图片，最多9张；不能复用其他业务的附件 */
+  async function receiptFiles(db, values, r, required = false) {
+    if (values === undefined) values = [];
+    if (
+      !Array.isArray(values) ||
+      values.length > 9 ||
+      (required && !values.length)
+    )
+      fail(400, "收款凭证须为1～9张内部图片");
+    const result = [],
+      ids = values.map((v) => text(v?.fileId, "收款凭证", 36));
+    if (new Set(ids).size !== ids.length) fail(400, "收款凭证重复");
+    // 排他锁 + 锁定读取，防止与入库/维修/借还并发认领同一文件
+    const locked = await lockFiles(db, ids);
+    for (const target of ids) {
+      const f = locked.get(target);
+      if (!f || f.scope !== "internal" || !f.mime.startsWith("image/"))
+        fail(400, "收款凭证须单独上传为内部图片");
+      const links = await fileLinks(db, target);
+      if (links.unit || links.repair || links.loan)
+        fail(400, "其他业务凭证不能用作收款凭证");
+      if (
+        f.owner_id !== r.user.id &&
+        !["boss", "manager"].includes(r.user.role)
+      )
+        fail(403, "无权引用他人的收款凭证");
+      result.push(f);
+    }
+    return result;
+  }
+  /** 关联收款凭证；同一文件只能属于一张销售单，已属于本单的视为重试 */
+  async function attachReceipts(db, orderId, files, r) {
+    const added = [];
+    for (const f of files) {
+      const linked = await one(
+        db,
+        "SELECT order_id FROM sales_files WHERE file_id=? FOR SHARE",
+        [f.id],
+      );
+      if (linked && linked.order_id !== orderId)
+        fail(409, "该凭证已关联其他销售单");
+      if (linked) continue;
+      await db.execute(
+        "INSERT INTO sales_files (order_id,file_id,added_by) VALUES (?,?,?)",
+        [orderId, f.id, r.user.id],
+      );
+      added.push(f.id);
+    }
+    return added;
+  }
   async function order(db, target, lock = false) {
     if (lock) {
       if (
@@ -250,6 +301,7 @@ module.exports = async function (
       fail(400, "请确认实际收款并选择付款方式");
     const digest = hash(JSON.stringify(canonical({ ...d, items: input })));
     return transaction(pool, async (db) => {
+      const receipts = await receiptFiles(db, d.receipts, r);
       const prior = await one(
         db,
         "SELECT id,request_hash FROM sales_orders WHERE request_key=?",
@@ -335,12 +387,14 @@ module.exports = async function (
         );
       }
       await customerRequests.recordSale(db, r, referral, target);
+      await attachReceipts(db, target, receipts, r);
       await audit(db, r, "销售收款出库", target, {
         after: {
           unitIds: input.map((x) => x.unitId),
           amount: Number(p.total),
           payMethod: pay,
           ...(referral ? { customerRequestId: referral.id } : {}),
+          ...(receipts.length ? { receipts: receipts.length } : {}),
         },
         reason,
       });
@@ -408,9 +462,58 @@ module.exports = async function (
       p,
     );
   });
+  /** 销售单里出现过的销售员，供列表按销售员筛选 */
+  route("GET", "/sales-orders/sellers", async (r) => {
+    read(r);
+    const [rows] = await pool.query(
+      "SELECT o.seller_id id,COALESCE(MAX(s.name),MAX(u.nickname)) name FROM sales_orders o JOIN users u ON u.id=o.seller_id LEFT JOIN staff s ON s.user_id=u.id GROUP BY o.seller_id ORDER BY name,id",
+    );
+    return rows.map((x) => ({ id: x.id, name: x.name || "未命名" }));
+  });
+  async function receiptsOf(db, orderId, r) {
+    const [rows] = await db.execute(
+      "SELECT f.*,s.created_at added_at,COALESCE(st.name,u.nickname) added_by_name FROM sales_files s JOIN files f ON f.id=s.file_id JOIN users u ON u.id=s.added_by LEFT JOIN staff st ON st.user_id=u.id WHERE s.order_id=? ORDER BY s.created_at,s.file_id",
+      [orderId],
+    );
+    return rows.map((f) => ({
+      ...stock.fileView(f, r),
+      addedAt: f.added_at,
+      addedBy: f.added_by_name,
+    }));
+  }
+  async function detail(db, o, r) {
+    return {
+      ...(await view(db, o, r)),
+      agentSources: await agents.saleSources(db, o.id, r.user),
+      receipts: await receiptsOf(db, o.id, r),
+    };
+  }
   route("GET", "/sales-orders/:id", async (r) => {
     read(r);
-    return view(pool, await order(pool, r.params.id), r);
+    return detail(pool, await order(pool, r.params.id), r);
+  });
+  /** 补传收款凭证：开单或退款权限，需说明，写审计；已关联本单的文件原样重试不重复记录 */
+  route("POST", "/sales-orders/:id/receipts", async (r) => {
+    requirePerm(r, PERM.SALES_CREATE, PERM.REFUND);
+    const d = r.body || {},
+      reason = text(d.reason, "补传说明", 500);
+    return transaction(pool, async (db) => {
+      const o = await order(db, r.params.id, true),
+        files = await receiptFiles(db, d.receipts, r, true),
+        added = await attachReceipts(db, o.id, files, r);
+      const total = await one(
+        db,
+        "SELECT COUNT(*) n FROM sales_files WHERE order_id=?",
+        [o.id],
+      );
+      if (Number(total.n) > 20) fail(400, "每张销售单最多20张收款凭证");
+      if (added.length)
+        await audit(db, r, "补传收款凭证", o.id, {
+          after: { fileIds: added },
+          reason,
+        });
+      return detail(db, o, r);
+    });
   });
   route("POST", "/sales-orders/:id/refund", async (r) => {
     requirePerm(r, PERM.REFUND);
@@ -437,7 +540,7 @@ module.exports = async function (
         );
       if (previous) {
         if (previous.request_hash !== digest) fail(409, "退款提交标识冲突");
-        return view(db, o, r);
+        return detail(db, o, r);
       }
       const planned = [],
         seen = new Set();
@@ -526,7 +629,7 @@ module.exports = async function (
         },
         reason,
       });
-      return view(db, o, r);
+      return detail(db, o, r);
     });
   });
 };

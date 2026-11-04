@@ -15,7 +15,9 @@ test('代理 mock：申请审核、加价上限、代理分享价、链接下单
  role='agent';assert.equal((await call('/shop/orders','POST',{requestKey:key(),unitId:unit.id,name:'自己',phone:'13900000001'},{'X-Channel':share.shareId})).code,400);
  role='peer';const placed=await call('/shop/orders','POST',{requestKey:key(),unitId:unit.id,name:'李顾客',phone:'13900000002'},{'X-Channel':share.shareId});assert.equal(placed.code,0,placed.message);
  assert.equal(unit.status,'locked');assert.equal(placed.data.agentOrder.markup,undefined);
- role='sales';const req=(await call('/customer-requests/'+placed.data.id)).data;assert.equal(req.canStartSale,true);assert.equal(req.agentOrder.markup,200);
+ role='sales';const req=(await call('/customer-requests/'+placed.data.id)).data;assert.equal(req.canStartSale,true);assert.equal(req.agentOrder.markup,undefined);
+ const salesRow=(await call('/admin/agent-orders')).data.list.find(o=>o.id===placed.data.id);assert.equal(salesRow.markup,undefined);assert.equal(salesRow.agentBase,undefined);
+ role='boss';assert.equal((await call('/customer-requests/'+placed.data.id)).data.agentOrder.markup,200);role='finance';const financeRow=(await call('/admin/agent-orders')).data.list.find(o=>o.id===placed.data.id);assert.equal(financeRow.markup,200);assert.equal(financeRow.agentBase,unit.agentBase);role='sales';
  assert.equal((await call('/sales/lookup','GET',{code:unit.id})).code,409);
  const looked=(await call('/sales/lookup','GET',{code:unit.id,customerRequestId:req.id})).data;const item={unitId:unit.id,channel:'agent',priceVersion:looked.priceVersion||1};
  assert.equal((await call('/sales/quote','POST',{customerRequestId:req.id,items:[{...item,price:'1'}]})).code,400);
@@ -25,6 +27,11 @@ test('代理 mock：申请审核、加价上限、代理分享价、链接下单
  assert.equal((await call('/admin/agent-earnings/settle','POST',{ids:[e.id],reason:'微信转账'})).data.settled,1);
  role='boss';await call('/sales-orders/'+sale.id+'/refund','POST',{requestKey:key(),kind:'return',reason:'退货',items:[{itemId:sale.items[0].id}]});
  role='agent';mine=(await call('/agent/commissions')).data;assert.equal(mine.summary.settledAmount,200);assert.equal(mine.summary.pendingAmount,-200);
+ role='sales';let src=(await call('/sales-orders/'+sale.id)).data.agentSources;assert.equal(src.length,1);assert.equal(src[0].sharePrice,unit.agentBase+200);assert.ok(src[0].agentName);assert.equal(src[0].markup,undefined);assert.equal(src[0].earnings,undefined);
+ role='finance';src=(await call('/sales-orders/'+sale.id)).data.agentSources[0];assert.equal(src.markup,200);assert.deepEqual(src.earnings.map(e=>[e.kind,e.amount,e.status]).sort(),[['earning',200,'settled'],['reversal',-200,'pending']]);
+ const agentId=(await call('/admin/agent-earnings')).data.list.find(x=>x.orderId===req.id).agentId,report=(await call('/stats/agent-earnings','GET',{range:'day'})).data,row=report.list.find(x=>x.agentId===agentId);
+ assert.ok(row.soldQty>=1&&row.earned>=200&&row.returnedQty>=1&&row.reversed>=200&&row.settled>=200);assert.equal(row.net,Math.round((row.earned-row.reversed)*100)/100);assert.equal(row.pending,-200);
+ role='sales';assert.equal((await call('/stats/agent-earnings','GET',{range:'day'})).code,403);
  role='boss';
 });
 test('代理 mock：顾客取消下单释放锁库，停用代理后分享失效',async()=>{

@@ -145,3 +145,16 @@ test("借还mock保存单据/设备/归还检查，拒绝空凭证和未复检�
   assert.ok(dash.repair);
   assert.equal(typeof dash.repair.internalRepairCost, "number");
 });
+
+test("库存详情借还入口 mock：在借还单中的设备带单据，无借还权限不返回", async () => {
+  role = "boss";
+  const u = db.units.find((x) => x.status === "in_stock" && (!x.ownership || x.ownership === "own"));
+  assert.ok(u);
+  assert.equal((await call("/units/" + u.id)).data.loan, undefined);
+  const r = await call("/loans", "POST", { requestKey: key(), type: "loan_out", unitIds: [u.id], counterparty: "详情入口", phone: "13800000002", dueAt: "2030-01-01", reason: "验证入口" });
+  assert.equal(r.code, 0, r.message);
+  assert.deepEqual((await call("/units/" + u.id)).data.loan, { id: r.data.id, no: r.data.no, type: "loan_out" });
+  role = "sales";
+  assert.equal((await call("/units/" + u.id)).data.loan, undefined);
+  role = "boss";
+});

@@ -39,6 +39,8 @@ createPage({
     canInventory: false,
     canRepairStats: false,
     repair: null,
+    canAgent: false,
+    agentReport: null,
     trendMetric: "amount",
     trendMetrics: [
       { value: "amount", label: "销售净额" },
@@ -56,6 +58,7 @@ createPage({
       ]),
       canInventory: can(this.data.user, PERM.INVENTORY_VIEW),
       canExport: can(this.data.user, PERM.EXPORT),
+      canAgent: can(this.data.user, [PERM.AGENT_SETTLE, PERM.AGENT_REVIEW]),
     });
     return this.load();
   },
@@ -67,17 +70,27 @@ createPage({
       params = { range: this.data.range };
     this.setData({ loading: true, error: "" });
     try {
-      const [overview, visits, trend, visitTrend, breakdown, repair] =
-        await Promise.all([
-          api.stats.overview(params),
-          api.stats.visits(params),
-          api.stats.trend(params),
-          api.stats.visitTrend(params),
-          api.stats.breakdown({ ...params, dimension: this.data.dimension }),
-          this.data.canRepairStats
-            ? api.repair.stats(params)
-            : Promise.resolve(null),
-        ]);
+      const [
+        overview,
+        visits,
+        trend,
+        visitTrend,
+        breakdown,
+        repair,
+        agentReport,
+      ] = await Promise.all([
+        api.stats.overview(params),
+        api.stats.visits(params),
+        api.stats.trend(params),
+        api.stats.visitTrend(params),
+        api.stats.breakdown({ ...params, dimension: this.data.dimension }),
+        this.data.canRepairStats
+          ? api.repair.stats(params)
+          : Promise.resolve(null),
+        this.data.canAgent
+          ? api.stats.agentEarnings(params)
+          : Promise.resolve(null),
+      ]);
       if (revision !== this.revision) return;
       const rows = trend.list.map((row) => ({
         ...row,
@@ -87,6 +100,7 @@ createPage({
         overview,
         visits,
         repair,
+        agentReport,
         trend: rows,
         breakdown: breakdown.list,
         trendMetric:
@@ -230,6 +244,15 @@ createPage({
     } finally {
       this.setData({ exporting: false });
     }
+  },
+  /** 代理对账：点代理进入收益转账，只看该代理的待转账记录 */
+  onAgentTap(e) {
+    const { id, name } = e.currentTarget.dataset;
+    this.$go(ROUTES.AGENT_SETTLEMENT, {
+      agentId: id,
+      agentName: name,
+      status: "pending",
+    });
   },
   onUnit(e) {
     this.$go(ROUTES.INVENTORY_DETAIL, { id: e.currentTarget.dataset.id });

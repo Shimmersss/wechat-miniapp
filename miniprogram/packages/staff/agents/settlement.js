@@ -15,11 +15,11 @@ createPage({
   permission: [PERM.AGENT_SETTLE, PERM.AGENT_REVIEW],
   data: {
     list: [], summary: null, selected: {}, selectedCount: 0, selectedAmount: 0, page: 1, total: 0, hasMore: true,
-    loading: false, saving: false, error: '', canSettle: false, status: 'pending',
+    loading: false, saving: false, error: '', canSettle: false, status: 'pending', agentId: '', agentName: '',
     filters: [{ value: 'pending', label: '待转账' }, { value: 'settled', label: '已转账' }, { value: 'reversed', label: '已冲回' }, { value: '', label: '全部' }]
   },
   onLoad(query = {}) {
-    this.setData({ statusMap: SETTLEMENT_STATUS, canSettle: can(this.data.user, PERM.AGENT_SETTLE), status: query.status !== undefined && (SETTLEMENT_STATUS[query.status] || query.status === '') ? query.status : 'pending' });
+    this.setData({ statusMap: SETTLEMENT_STATUS, canSettle: can(this.data.user, PERM.AGENT_SETTLE), status: query.status !== undefined && (SETTLEMENT_STATUS[query.status] || query.status === '') ? query.status : 'pending', agentId: query.agentId || '', agentName: query.agentName ? decodeURIComponent(query.agentName) : '' });
     return this.load(true);
   },
   onPullDownRefresh() { this.load(true).finally(() => wx.stopPullDownRefresh()); },
@@ -28,7 +28,7 @@ createPage({
     const revision = this.revision = (this.revision || 0) + 1, page = reset ? 1 : this.data.page + 1;
     this.setData({ loading: true, error: '', ...(reset ? { selected: {}, selectedCount: 0, selectedAmount: 0 } : {}) });
     try {
-      const res = await api.adminAgent.settlements({ status: this.data.status || undefined, page, pageSize: 50 });
+      const res = await api.adminAgent.settlements({ status: this.data.status || undefined, agentId: this.data.agentId || undefined, page, pageSize: 50 });
       if (revision !== this.revision) return;
       const rows = res.list.map((e) => ({ ...e, createdText: date(new Date(e.createdAt)), settledText: e.settledAt ? date(new Date(e.settledAt)) : '' }));
       const list = reset ? rows : this.data.list.concat(rows);
@@ -36,6 +36,8 @@ createPage({
     } catch (e) { if (revision === this.revision) this.setData({ error: e.message }); }
     finally { if (revision === this.revision) this.setData({ loading: false }); }
   },
+  /** 从经营统计“代理收益对账”进入时只看该代理，可切回全部 */
+  onAllAgents() { this.setData({ agentId: '', agentName: '' }); return this.load(true); },
   onFilter(e) { this.setData({ status: e.currentTarget.dataset.value }); return this.load(true); },
   pick(selected) {
     const rows = this.data.list.filter((e) => selected[e.id]);

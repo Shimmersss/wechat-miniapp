@@ -1,0 +1,1 @@
+.receipts { display: flex; flex-wrap: wrap; gap: 16rpx; } .receipts image { width: 160rpx; height: 160rpx; border-radius: var(--radius-sm); }

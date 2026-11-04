@@ -356,3 +356,39 @@ test("借还未知收费明确拒绝、串码整单原子性、归还证据必�
   const signed = (await client(f, "boss").loan.detail(o.id)).photos[0].url;
   assert.equal(await fileStatus(signed), 200);
 });
+
+test("库存详情借还入口：所在未完结借还单仅借还权限可见，归还待复检仍可跳转", async () => {
+  const id = (await unit()).id;
+  assert.equal((await f.api("GET", "/units/" + id)).data.loan, undefined);
+  const o = await out([id]);
+  let detail = (await f.api("GET", "/units/" + id)).data;
+  assert.deepEqual(detail.loan, { id: o.id, no: o.no, type: "loan_out" });
+  assert.equal(
+    (await f.api("GET", "/units/" + id, undefined, "sales")).data.loan,
+    undefined,
+  );
+  // 前一用例撤销了库管的借还权限，这里由老板登记归还
+  await back(o, [id], "boss");
+  detail = (await f.api("GET", "/units/" + id)).data;
+  assert.equal(detail.status, "recheck");
+  assert.equal(detail.loan.id, o.id);
+  // R2-5：本页复检通过后，回包仍带未完结借还单（复检后才能到单据里完结）
+  const form = (await f.api("GET", "/units/" + id + "/recheck-form")).data;
+  const rechecked = await f.api("POST", "/units/" + id + "/recheck", {
+    inspectionVersion: form.inspectionVersion,
+    result: "pass",
+    attributes: {},
+    reason: "复检回包验证",
+  });
+  assert.equal(rechecked.status, 200, rechecked.message);
+  assert.equal(rechecked.data.status, "in_stock");
+  assert.equal(rechecked.data.loan.id, o.id);
+  // 改价回包同样保留
+  const priced = await f.api("PATCH", "/units/" + id + "/price", {
+    retail: "1999",
+    priceVersion: rechecked.data.priceVersion,
+    reason: "改价回包验证",
+  });
+  assert.equal(priced.status, 200, priced.message);
+  assert.equal(priced.data.loan.id, o.id);
+});

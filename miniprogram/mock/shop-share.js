@@ -11,6 +11,12 @@ module.exports=function(db,{fail,currentRole,requirePermission,paginate,publicUn
  function metadata(s){const single=s.units.length===1,u=s.units[0];return{shareId:s.shareId,channel:s.channel,path:(single?'/packages/shop/product/index':'/packages/shop/collection/index')+'?s='+s.shareId,title:single?u.name+' '+u.storage+' ¥'+u.price:'夏目数码 · '+s.units.length+'台精选设备',price:single?u.price:undefined,imageUrl:u.cover,expireAt:new Date(s.expiresAt).toISOString(),units:s.units};}
  function context(h){return h&&h['X-Channel']?resolve(h['X-Channel']):null;}
  function eligible(h){const c=context(h),channel=c?c.channel:currentRole()==='peer'?'peer':'customer';return{c,channel,units:db.units.filter(u=>u.status==='in_stock'&&u.flags[flagOf(channel)]&&(!c||c.snapshots.some(i=>i.id===u.id)))};}
+ /** 成色/电池下限/价格区间，只按公开视图里的取值筛选（与服务端一致） */
+ function factFilters(d){const set=v=>v!==undefined&&v!=='',amount=(v,label)=>{if(!/^\d{1,9}(\.\d{1,2})?$/.test(String(v)))fail(400,label+'须为非负金额，最多两位小数');return Number(v);};
+ const grade=set(d.grade)?String(d.grade):'',min=set(d.priceMin)?amount(d.priceMin,'最低价'):null,max=set(d.priceMax)?amount(d.priceMax,'最高价'):null;let battery=null;
+ if(set(d.batteryMin)){if(!/^\d{1,3}$/.test(String(d.batteryMin))||Number(d.batteryMin)>100)fail(400,'电池健康须为0～100的整数');battery=Number(d.batteryMin);}
+ if(min!==null&&max!==null&&min>max)fail(400,'最低价不能高于最高价');if(!grade&&min===null&&max===null&&battery===null)return null;
+ return u=>(!grade||u.grade===grade)&&(min===null||u.price>=min)&&(max===null||u.price<=max)&&(battery===null||(Number.isFinite(u.battery)&&u.battery>=battery));}
  function view(u,c,channel){return publicUnit(u,{channel,price:c?c.snapshots.find(i=>i.id===u.id).price:undefined});}
  return{resolve,routes:[
  ['POST','/share/links',d=>{
@@ -24,7 +30,7 @@ module.exports=function(db,{fail,currentRole,requirePermission,paginate,publicUn
  ['GET','/share/links/:id/copywriting',(d,h,p)=>{const s=resolve(p.id);return{text:s.units.map(u=>u.name+' '+u.storage+' '+u.color+' ¥'+u.price+'\n'+(u.desc||'')).join('\n\n'),shareId:s.shareId};}],
  ['GET','/share/links/:id/poster',(d,h,p)=>({...metadata(resolve(p.id)),qrcode:null,qrcodeStatus:'unconfigured',message:'暂无法生成可扫码海报，请使用小程序卡片分享'})],
  ['GET','/shop/home',(d,h)=>{const {units}=eligible(h),brands=[...new Set(units.map(u=>u.brand))];return{todayStock:units.length,brands:[{value:'all',label:'全部'},...brands.map(b=>(db.brands||[]).find(i=>i.value===b)||{value:b,label:b})],banners:[]};}],
- ['GET','/shop/units',(d,h)=>{let {units,c,channel}=eligible(h);if(d.brand&&d.brand!=='all')units=units.filter(u=>u.brand===d.brand);if(d.category)units=units.filter(u=>(u.category||db.models.find(m=>m.id===u.modelId)?.category)===d.category);if(d.modelId)units=units.filter(u=>u.modelId===d.modelId);if(d.condition)units=units.filter(u=>u.condition===d.condition);if(d.keyword)units=units.filter(u=>(u.name+u.storage+u.color).toLowerCase().includes(String(d.keyword).toLowerCase()));return paginate(units.map(u=>view(u,c,channel)),d);}],
+ ['GET','/shop/units',(d,h)=>{let {units,c,channel}=eligible(h);if(d.brand&&d.brand!=='all')units=units.filter(u=>u.brand===d.brand);if(d.category)units=units.filter(u=>(u.category||db.models.find(m=>m.id===u.modelId)?.category)===d.category);if(d.modelId)units=units.filter(u=>u.modelId===d.modelId);if(d.condition)units=units.filter(u=>u.condition===d.condition);if(d.keyword)units=units.filter(u=>(u.name+u.storage+u.color).toLowerCase().includes(String(d.keyword).toLowerCase()));const facts=factFilters(d),rows=units.map(u=>view(u,c,channel));return paginate(facts?rows.filter(facts):rows,d);}],
  ['GET','/shop/units/:id',(d,h,p)=>{const {units,c,channel}=eligible(h),u=units.find(u=>u.id===p.id);if(!u)fail(404,'商品不存在或已下架');return view(u,c,channel);}]
  ]};
 };

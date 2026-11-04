@@ -2,16 +2,33 @@ const {createPage}=require('../../../utils/page');
 const api=require('../../../api/index');
 const {PERM}=require('../../../constants/roles');
 const {can}=require('../../../utils/permission');
-const {SALES_STATUS}=require('../../../constants/status');
+const {SALES_STATUS,SETTLEMENT_STATUS}=require('../../../constants/status');
 const {confirmSensitive}=require('../../../utils/confirm');
 const {ROUTES}=require('../../../utils/router');
 const events=require('../../../utils/events');
+const {upload}=require('../../../utils/request');
 let seq=0;
 createPage({
  requireStaff:true,permission:[PERM.SALES_CREATE,PERM.REFUND,PERM.STATS_VIEW],
- data:{id:'',detail:null,error:'',loading:false,saving:false,canRefund:false,editor:null,pending:null,todos:['收款凭证 / 发票','代理订单归因信息（随代理业务接入）']},
- onLoad(q){this.setData({id:q.id,statusMap:SALES_STATUS,canRefund:can(this.data.user,PERM.REFUND)});return this.load();},
+ data:{id:'',detail:null,error:'',loading:false,saving:false,canRefund:false,editor:null,pending:null,canReceipt:false,uploading:false},
+ onLoad(q){this.setData({id:q.id,statusMap:SALES_STATUS,settlementMap:SETTLEMENT_STATUS,canRefund:can(this.data.user,PERM.REFUND),canReceipt:can(this.data.user,[PERM.SALES_CREATE,PERM.REFUND])});return this.load();},
  async load(){if(this.data.saving||this.data.pending)return;this.setData({loading:true,error:''});try{this.setData({detail:await api.sales.detail(this.data.id)});}catch(e){this.setData({error:e.message});}finally{this.setData({loading:false});}},
+ /** 收款凭证：签名地址有效期短，预览前重新获取 */
+ async onPreviewReceipt(e){try{const url=(await api.file.detail(e.currentTarget.dataset.id)).url;wx.previewImage({current:url,urls:[url]});}catch(err){this.$toast(err.message);}},
+ /** 补传收款凭证：选图上传为内部凭证，填写说明后关联本单；失败可直接重试，已关联的不会重复记录 */
+ async onAddReceipts(){
+  if(!this.data.canReceipt||this.data.uploading||this.data.saving||!this.data.detail)return;
+  const room=Math.min(9,20-(this.data.detail.receipts||[]).length);if(room<=0)return this.$toast('每张销售单最多20张收款凭证');
+  this.setData({uploading:true,error:''});
+  try{
+   const res=await wx.chooseMedia({count:room,mediaType:['image'],sizeType:['compressed']});
+   const files=await Promise.all(res.tempFiles.map(f=>upload({filePath:f.tempFilePath,scope:'internal',bizType:'sales_receipt'})));
+   const confirmation=await confirmSensitive({title:'补传收款凭证',content:'填写补传说明，将记录到操作日志',needReason:true});
+   if(!confirmation.confirmed)return;
+   this.setData({detail:await api.sales.addReceipts(this.data.id,{receipts:files.map(f=>({fileId:f.fileId})),reason:confirmation.reason})});
+  }catch(e){if(!/cancel/.test(e.errMsg||''))this.setData({error:e.message||e.errMsg||'凭证未完成上传'});}
+  finally{this.setData({uploading:false});}
+ },
  onPullDownRefresh(){if(this.data.editor||this.data.pending||this.data.saving){wx.stopPullDownRefresh();return;}this.load().finally(()=>wx.stopPullDownRefresh());},
  onRefund(){if(!this.data.canRefund||this.data.saving||this.data.pending)return;this.setData({editor:{kind:'return',items:this.data.detail.items.filter(i=>i.returnable).map(i=>({...i,selected:false,amount:''}))}});},
  onKind(e){if(!this.data.saving&&!this.data.pending)this.setData({'editor.kind':e.currentTarget.dataset.value});},

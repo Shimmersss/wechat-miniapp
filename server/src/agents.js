@@ -281,7 +281,13 @@ module.exports = async function (app, { pool, config, route, shareService }) {
   // ---------- 代理本人：概览、订单、收益 ----------
   const ORDER_SELECT = `SELECT a.*,s.status lock_status,s.sale_order_id,s.release_reason,c.name customer_name,c.phone customer_phone,c.unit_snapshot,c.created_at requested_at,cs.status request_status
     FROM agent_orders a JOIN agent_order_states s ON s.request_id=a.request_id JOIN customer_requests c ON c.id=a.request_id JOIN customer_request_states cs ON cs.request_id=a.request_id`;
-  function orderView(row, internal) {
+  /** 代理加价与代理底价属代理财务信息：仅代理审核或收益转账权限的员工可见 */
+  const agentFinance = (user) =>
+    !!user &&
+    (user.permissions.includes(PERM.AGENT_REVIEW) ||
+      user.permissions.includes(PERM.AGENT_SETTLE));
+  /** internal=门店员工视图；finance=是否可见加价/底价（代理本人查看自己的订单时为 true） */
+  function orderView(row, internal, finance = !internal) {
     const unit = json(row.unit_snapshot) || {};
     return {
       id: row.request_id,
@@ -291,7 +297,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       status: row.lock_status,
       requestStatus: row.request_status,
       sharePrice: Number(row.share_price),
-      markup: Number(row.markup),
+      ...(finance ? { markup: Number(row.markup) } : {}),
       lockExpiresAt: row.lock_expires_at,
       releaseReason: row.release_reason || "",
       createdAt: row.created_at,
@@ -304,7 +310,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
             agentId: row.agent_id,
             agentName: row.agent_name || null,
             saleOrderId: row.sale_order_id,
-            agentBase: Number(row.agent_base),
+            ...(finance ? { agentBase: Number(row.agent_base) } : {}),
           }
         : {}),
     };
@@ -658,7 +664,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
         [...args, p.pageSize, p.offset],
       );
     return list(
-      rows.map((o) => orderView(o, true)),
+      rows.map((o) => orderView(o, true, agentFinance(r.user))),
       count.n,
       p,
     );
@@ -899,7 +905,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       });
     }
   }
-  async function requestView(db, requestId, internal) {
+  async function requestView(db, requestId, internal, user) {
     const o = await orderFor(db, requestId);
     if (!o) return null;
     return {
@@ -909,7 +915,7 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       lockExpiresAt: o.lock_expires_at,
       ...(internal
         ? {
-            markup: Number(o.markup),
+            ...(agentFinance(user) ? { markup: Number(o.markup) } : {}),
             agentId: o.agent_id,
             agentName: o.agent_name,
           }
@@ -951,11 +957,51 @@ module.exports = async function (app, { pool, config, route, shareService }) {
       );
     return out;
   }
+  /**
+   * 销售单的代理来源：每台代理成交设备一条。代理名称与分享价随销售单可见；
+   * 加价与收益（成交/冲回、待转账/已转账）仅代理审核或收益转账权限可见。
+   */
+  async function saleSources(db, saleOrderId, user) {
+    const [rows] = await db.execute(
+      "SELECT a.request_id,a.unit_id,a.share_price,a.markup,g.name agent_name FROM agent_orders a JOIN agent_order_states s ON s.request_id=a.request_id JOIN agents g ON g.user_id=a.agent_id WHERE s.sale_order_id=? ORDER BY a.created_at,a.request_id",
+      [saleOrderId],
+    );
+    if (!rows.length) return [];
+    const finance =
+      user.permissions.includes(PERM.AGENT_REVIEW) ||
+      user.permissions.includes(PERM.AGENT_SETTLE);
+    const [earned] = finance
+      ? await db.execute(
+          "SELECT e.request_id,e.kind,e.amount,s.status,s.settled_at FROM agent_earnings e JOIN agent_earning_states s ON s.earning_id=e.id WHERE e.sale_order_id=? ORDER BY e.created_at,e.id",
+          [saleOrderId],
+        )
+      : [[]];
+    return rows.map((x) => ({
+      orderId: x.request_id,
+      unitId: x.unit_id,
+      agentName: x.agent_name,
+      sharePrice: Number(x.share_price),
+      ...(finance
+        ? {
+            markup: Number(x.markup),
+            earnings: earned
+              .filter((e) => e.request_id === x.request_id)
+              .map((e) => ({
+                kind: e.kind,
+                amount: (e.kind === "reversal" ? -1 : 1) * Number(e.amount),
+                status: e.status,
+                settledAt: e.settled_at,
+              })),
+          }
+        : {}),
+    }));
+  }
   return {
     lock,
     release,
     releaseExpired,
     saleItem,
+    saleSources,
     recordSale,
     onReturn,
     requestView,

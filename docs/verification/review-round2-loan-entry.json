@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-04",
+  "scope": "inventory loan entry, runtime account uncommitted fixtures + actual page controllers + real HTTP/MySQL",
+  "checks": [
+    {
+      "case": "owned in-stock navigation",
+      "canLoanOut": true,
+      "correctUnitId": true
+    },
+    {
+      "case": "loan editor unitId prefill via actual HTTP",
+      "units": 1,
+      "correctUnitId": true
+    },
+    {
+      "case": "active association loaned_out",
+      "loanRetained": true,
+      "duplicateLoanEntryHidden": true,
+      "navigationCorrect": true
+    },
+    {
+      "case": "active association recheck",
+      "loanRetained": true,
+      "duplicateLoanEntryHidden": true,
+      "navigationCorrect": true
+    },
+    {
+      "case": "active association in_stock",
+      "loanRetained": true,
+      "duplicateLoanEntryHidden": true,
+      "navigationCorrect": true
+    },
+    {
+      "case": "sales lacks loan:manage",
+      "loanOmitted": true,
+      "loanEntryHidden": true,
+      "loanDetailStatus": 403
+    },
+    {
+      "case": "borrowed unit",
+      "newLoanOutHidden": true
+    }
+  ],
+  "fixtureRolledBack": true,
+  "setupNote": "First run failed because review-only order number exceeded VARCHAR(40); fixture corrected to 39 characters and transaction rerun without relaxing assertions"
+}

@@ -24,6 +24,8 @@ createPage({
 
   onLoad(query = {}) {
     this.setData({ today: new Date(Date.now() + 28800000).toISOString().slice(0, 10), 'form.type': query.type === 'borrow_in' ? 'borrow_in' : 'loan_out' });
+    // 库存详情“出借给同行”带入设备
+    if (query.unitId && query.type !== 'borrow_in') this.addUnits([query.unitId]);
     this.offUnits = events.on('loan:units-selected', (ids) => { if (this.picking) { this.picking = false; this.addUnits(ids); } });
     this.offModel = events.on('loan:model-selected', (model) => {
       const index = this.modelRow;

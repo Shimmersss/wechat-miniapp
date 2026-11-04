@@ -5,7 +5,8 @@ const { ROUTES } = require('../../utils/router');
 createPage({
   data: {
     categories: [],
-    activeIndex: 0
+    activeIndex: 0,
+    condition: 'used'
   },
 
   onShow() {
@@ -16,8 +17,14 @@ createPage({
     this.setData({ activeIndex: e.currentTarget.dataset.index });
   },
 
+  onConditionTap(e) {
+    this.setData({ condition: e.currentTarget.dataset.value });
+  },
+
+  /** 已建档型号按 modelId 精确筛选；未建档的展示型号退回关键词搜索 */
   onModelTap(e) {
-    // TODO(codex): 搜索页支持 model 参数精确筛选
-    this.$go(ROUTES.SEARCH, { keyword: e.currentTarget.dataset.model });
+    const { id, name } = e.currentTarget.dataset;
+    const query = id ? { modelId: id, modelName: name } : { keyword: name };
+    this.$go(ROUTES.SEARCH, { ...query, condition: this.data.condition });
   }
 });

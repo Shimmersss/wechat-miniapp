@@ -31,6 +31,7 @@ module.exports = {
     token: 'xm_token',
     user: 'xm_user',
     channel: 'xm_channel',
-    visitorId: 'xm_vid'
+    visitorId: 'xm_vid',
+    searchHistory: 'xm_search_history'
   }
 };

@@ -48,6 +48,8 @@ module.exports = async function files(app, { pool, config, route }) {
         PERM.REPAIR_HANDLE,
         PERM.REPAIR_CASH,
         PERM.LOAN_MANAGE,
+        PERM.SALES_CREATE,
+        PERM.REFUND,
       );
       let tempPath,
         scope,
@@ -92,6 +94,9 @@ module.exports = async function files(app, { pool, config, route }) {
             PERM.REPAIR_HANDLE,
             PERM.REPAIR_CASH,
             PERM.LOAN_MANAGE,
+            // 销售收款凭证
+            PERM.SALES_CREATE,
+            PERM.REFUND,
           );
         const { fileTypeFromFile } = await import("file-type");
         try {

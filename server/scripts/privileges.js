@@ -27,6 +27,7 @@ const immutable = new Set([
   "sales_items",
   "sales_refunds",
   "sales_refund_items",
+  "sales_files",
 ]);
 const deletable = new Set([
   "sessions",

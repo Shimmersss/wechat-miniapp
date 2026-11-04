@@ -5,6 +5,7 @@ const { cents, money, flags } = require("./validation");
 const { isImei } = require("../../miniprogram/utils/validate");
 const { validateValues } = require("../../miniprogram/utils/template");
 const { signFile } = require("./files");
+const { lockFiles, fileLinks } = require("./repair-files");
 /** 敏感字段可见性：按登录时加载的角色配置（roles.visible_fields）判断，未配置时用默认表 */
 function canSee(user, field) {
   if (!user) return false;
@@ -39,35 +40,25 @@ function stockService({ config }) {
     if (input === undefined) return [];
     if (!Array.isArray(input) || input.length > 9)
       fail(400, "每个相册最多九个文件");
-    const result = [];
-    for (const value of input) {
-      const fileId = text(value?.fileId, "文件标识", 36);
+    const result = [],
+      ids = input.map((value) => text(value?.fileId, "文件标识", 36));
+    // 内部凭证：排他锁 + 锁定读取，防止与维修/借还/收款凭证并发认领同一文件
+    const locked = scope === "internal" ? await lockFiles(db, ids) : new Map();
+    for (const fileId of ids) {
       if (result.some((f) => f.fileId === fileId))
         fail(400, "相册中存在重复文件");
-      let file = cache.get(fileId);
+      let file = locked.get(fileId) || cache.get(fileId);
       if (!file) {
         file = await one(db, "SELECT * FROM files WHERE id=?", [fileId]);
         if (file) cache.set(fileId, file);
       }
       if (!file || file.scope !== scope) fail(400, "文件不存在或上传范围不符");
-      if (
-        scope === "internal" &&
-        (await one(
-          db,
-          "SELECT order_id FROM repair_files WHERE file_id=? LIMIT 1",
-          [fileId],
-        ))
-      )
-        fail(400, "维修附件不能用作入库凭证");
-      if (
-        scope === "internal" &&
-        (await one(
-          db,
-          "SELECT order_id FROM loan_files WHERE file_id=? LIMIT 1",
-          [fileId],
-        ))
-      )
-        fail(400, "借还附件不能作为入库凭证");
+      if (scope === "internal") {
+        const links = await fileLinks(db, fileId);
+        if (links.repair) fail(400, "维修附件不能用作入库凭证");
+        if (links.loan) fail(400, "借还附件不能作为入库凭证");
+        if (links.sales) fail(400, "收款凭证不能作为入库凭证");
+      }
       if (imagesOnly && !file.mime.startsWith("image/"))
         fail(400, "该模板字段只接受图片");
       if (

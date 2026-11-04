@@ -263,6 +263,39 @@ module.exports = async function (app, { pool, config, route, providers }) {
       banners: [],
     };
   });
+  /** 顾客端筛选：成色、电池健康下限、价格区间；无此类条件返回 null */
+  function factFilters(q) {
+    const amount = (v, label) => {
+      if (!/^\d{1,9}(\.\d{1,2})?$/.test(String(v)))
+        fail(400, label + "须为非负金额，最多两位小数");
+      return Number(v);
+    };
+    const grade = q.grade ? text(q.grade, "成色", 20) : "",
+      min =
+        q.priceMin !== undefined && q.priceMin !== ""
+          ? amount(q.priceMin, "最低价")
+          : null,
+      max =
+        q.priceMax !== undefined && q.priceMax !== ""
+          ? amount(q.priceMax, "最高价")
+          : null;
+    let battery = null;
+    if (q.batteryMin !== undefined && q.batteryMin !== "") {
+      if (!/^\d{1,3}$/.test(String(q.batteryMin)) || Number(q.batteryMin) > 100)
+        fail(400, "电池健康须为0～100的整数");
+      battery = Number(q.batteryMin);
+    }
+    if (min !== null && max !== null && min > max)
+      fail(400, "最低价不能高于最高价");
+    if (!grade && min === null && max === null && battery === null) return null;
+    const test = (u) =>
+      (!grade || u.grade === grade) &&
+      (min === null || u.price >= min) &&
+      (max === null || u.price <= max) &&
+      (battery === null ||
+        (Number.isFinite(u.battery) && u.battery >= battery));
+    return Object.assign(test, { min, max, grade, battery });
+  }
   route("GET", "/shop/units", async (r) => {
     const ctx = await service.context(pool, r),
       p = page(r.query),
@@ -303,33 +336,91 @@ module.exports = async function (app, { pool, config, route, providers }) {
       const k = "%" + text(q.keyword, "搜索", 100) + "%";
       args.push(k, k, k);
     }
-    const clause = " WHERE " + where.join(" AND "),
-      count = await one(
-        pool,
-        "SELECT COUNT(*) n FROM units u JOIN models m ON m.id=u.model_id" +
-          clause,
-        args,
-      );
-    const [rows] = await pool.query(
-      unitSelect + clause + " ORDER BY u.created_at DESC,u.id LIMIT ? OFFSET ?",
-      [...args, p.pageSize, p.offset],
-    );
-    return list(
-      await Promise.all(
-        rows.map((u) =>
-          service.publicView(pool, u, {
-            channel: ctx
-              ? ctx.link.channel
-              : flag === "sharePeer"
-                ? "peer"
-                : "customer",
+    const channel = ctx
+        ? ctx.link.channel
+        : flag === "sharePeer"
+          ? "peer"
+          : "customer",
+      facts = factFilters(q),
+      clause = " WHERE " + where.join(" AND "),
+      order = " ORDER BY u.created_at DESC,u.id",
+      view = (u) =>
+        service.publicView(pool, u, {
+          channel,
+          price: service.snapshotPrice(ctx, u),
+        });
+    if (facts && ctx) {
+      // 分享链接最多50台，按快照价与公开取值在应用内筛选后分页
+      const [rows] = await pool.query(unitSelect + clause + order, args);
+      const matched = rows.filter((u) =>
+        facts(
+          service.publicFacts(u, {
+            channel,
             price: service.snapshotPrice(ctx, u),
           }),
         ),
-      ),
-      count.n,
-      p,
+      );
+      return list(
+        await Promise.all(
+          matched.slice(p.offset, p.offset + p.pageSize).map(view),
+        ),
+        matched.length,
+        p,
+      );
+    }
+    if (facts) {
+      // 非分享渠道：价格/成色/电池全部在数据库筛选、计数与分页，不把候选全量取回应用。
+      // 成色与电池只按该渠道模板公开（非内部）的字段取值，口径与 publicFacts 一致，未公开的设备不会被筛中。
+      const audience = channel === "peer" ? "peer" : "customer",
+        visible =
+          "EXISTS (SELECT 1 FROM JSON_TABLE(u.template_snapshot,'$.fields[*]' COLUMNS(k VARCHAR(80) PATH '$.key',vis JSON PATH '$.visibility')) t WHERE t.k=? AND JSON_CONTAINS(t.vis,JSON_QUOTE(?)) AND NOT JSON_CONTAINS(t.vis,JSON_QUOTE('internal')))",
+        price = channel === "peer" ? "u.wholesale" : "u.retail";
+      if (facts.min !== null) {
+        where.push(price + ">=?");
+        args.push(facts.min);
+      }
+      if (facts.max !== null) {
+        where.push(price + "<=?");
+        args.push(facts.max);
+      }
+      if (facts.grade) {
+        where.push(
+          visible + " AND JSON_UNQUOTE(JSON_EXTRACT(u.attributes,'$.grade'))=?",
+        );
+        args.push("grade", audience, facts.grade);
+      }
+      if (facts.battery !== null) {
+        const value =
+          "REPLACE(JSON_UNQUOTE(JSON_EXTRACT(u.attributes,'$.battery')),'%','')";
+        where.push(
+          visible +
+            " AND " +
+            value +
+            " REGEXP '^[0-9]+([.][0-9]+)?$' AND CAST(" +
+            value +
+            " AS DECIMAL(20,6))>=?",
+        );
+        args.push("battery", audience, facts.battery);
+      }
+    }
+    const filtered = " WHERE " + where.join(" AND ");
+    const [rows] = await pool.query(
+      unitSelect + filtered + order + " LIMIT ? OFFSET ?",
+      [...args, p.pageSize, p.offset],
     );
+    // 本页不满且非空（或首页为空）时总数已确定，省去一次计数扫描
+    const total =
+      rows.length < p.pageSize && (rows.length || !p.offset)
+        ? p.offset + rows.length
+        : (
+            await one(
+              pool,
+              "SELECT COUNT(*) n FROM units u JOIN models m ON m.id=u.model_id" +
+                filtered,
+              args,
+            )
+          ).n;
+    return list(await Promise.all(rows.map(view)), total, p);
   });
   route("GET", "/shop/units/:id", async (r) =>
     service.unit(pool, r.params.id, r, await service.context(pool, r)),

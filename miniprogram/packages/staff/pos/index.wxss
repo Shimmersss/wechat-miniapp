@@ -2,3 +2,6 @@
 .scan-icon { font-size: 80rpx; color: #fff; }
 .remove { width: 48rpx; text-align: center; color: var(--c-muted); font-size: 36rpx; margin-left: 12rpx; }
 .checkout { display: flex; align-items: center; justify-content: space-between; background: var(--c-surface); border-radius: var(--radius-lg); padding: 24rpx 28rpx; box-shadow: var(--shadow); }
+.receipts { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.receipt { display: flex; flex-direction: column; align-items: center; gap: 8rpx; }
+.receipt image { width: 160rpx; height: 160rpx; border-radius: var(--radius-sm); }

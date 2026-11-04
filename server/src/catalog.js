@@ -390,7 +390,7 @@ module.exports = async function catalog(app, { pool, route }) {
           series = { label: model.series, models: [] };
           brand.series.push(series);
         }
-        series.models.push(model.name);
+        series.models.push({ id: model.id, name: model.name });
       }
       return { ...category, brands };
     });
