@@ -6,7 +6,7 @@
   <view wx:for="{{list}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="onOpen">
     <view class="row"><text class="h3 ellipsis flex-1">{{item.name}} {{item.storage}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
     <view class="row mt-sm"><text class="small">{{item.customerName}} · {{item.customerPhone}}</text><price-tag value="{{item.sharePrice}}" size="sm" /></view>
-    <view class="row mt-sm"><text class="tiny muted">代理 {{item.agentName}} · 加价 ¥{{item.markup}}</text><text class="tiny {{item.status === 'locked' ? 'price' : 'muted'}}">{{item.status === 'locked' ? '锁定至 ' + item.lockText : item.status === 'released' ? item.releaseReason : item.createdText}}</text></view>
+    <view class="row mt-sm"><text class="tiny muted">代理 {{item.agentName}} · 加价 {{item.markup !== undefined ? '¥' + item.markup : '无权限查看'}}</text><text class="tiny {{item.status === 'locked' ? 'price' : 'muted'}}">{{item.status === 'locked' ? '锁定至 ' + item.lockText : item.status === 'released' ? item.releaseReason : item.createdText}}</text></view>
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无代理订单" />
 </view>

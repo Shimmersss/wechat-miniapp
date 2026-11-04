@@ -1,7 +1,7 @@
 const { one } = require("./db");
 const { PERM, fail, id, text, json, requirePerm, hash } = require("./core");
 const { canSee, stockService } = require("./stock");
-const { canReadInternal } = require("./repair-files");
+const { canReadInternal, lockFiles, fileLinks } = require("./repair-files");
 const { cents, money } = require("./validation");
 const canonical = (v) =>
   Array.isArray(v)
@@ -82,33 +82,19 @@ function repairService({ config }) {
     if (values === undefined) return [];
     if (!Array.isArray(values) || values.length > 9)
       fail(400, "每组附件最多9张");
-    const seen = new Set(),
-      result = [];
-    for (const v of values) {
-      const target = text(v?.fileId, "附件编号", 36);
-      if (seen.has(target)) fail(400, "附件重复");
-      seen.add(target);
-      const f = await one(db, "SELECT * FROM files WHERE id=? FOR SHARE", [
-        target,
-      ]);
+    const result = [],
+      ids = values.map((v) => text(v?.fileId, "附件编号", 36));
+    if (new Set(ids).size !== ids.length) fail(400, "附件重复");
+    // 排他锁 + 锁定读取，防止与入库/借还/收款凭证并发认领同一文件
+    const locked = await lockFiles(db, ids);
+    for (const target of ids) {
+      const f = locked.get(target);
       if (!f || f.scope !== "internal" || !f.mime.startsWith("image/"))
         fail(400, "维修附件须单独上传为内部图片");
-      if (
-        await one(
-          db,
-          "SELECT unit_id FROM unit_files WHERE file_id=? LIMIT 1",
-          [target],
-        )
-      )
-        fail(400, "入库凭证不能用作维修附件");
-      if (
-        await one(
-          db,
-          "SELECT order_id FROM loan_files WHERE file_id=? LIMIT 1",
-          [target],
-        )
-      )
-        fail(400, "借还附件不能作为维修凭证");
+      const links = await fileLinks(db, target);
+      if (links.unit) fail(400, "入库凭证不能用作维修附件");
+      if (links.loan) fail(400, "借还附件不能作为维修凭证");
+      if (links.sales) fail(400, "收款凭证不能作为维修凭证");
       if (!(await canReadInternal(db, f, r.user))) fail(403, "无权引用此附件");
       result.push(f);
     }

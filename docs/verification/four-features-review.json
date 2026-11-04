@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-04",
+  "method": "Actual page controllers with real HTTP/MySQL; bulk inventory fixtures in an uncommitted runtime-account transaction; rolled back after verification",
+  "checks": {
+    "priceDraftPagination": {
+      "initialTotal": 21,
+      "initialPageSize": 20,
+      "unconfirmedMax": 100,
+      "confirmedFilterCount": 0,
+      "pageAfterScroll": 2,
+      "displayedOutOfRange": 20,
+      "hasMore": false,
+      "cheapUnitOmitted": true
+    },
+    "explicitPriceConfirmation": "passes",
+    "category_used": {
+      "total": 20,
+      "modelExact": true
+    },
+    "category_new": {
+      "total": 1,
+      "modelExact": true
+    },
+    "similar": {
+      "count": 4,
+      "excludesCurrent": true,
+      "sameModel": true
+    },
+    "inventoryCap": {
+      "actualEligible": 2001,
+      "filteredTotalWithNoExclusion": 2000,
+      "expectedPriceMax100Matches": 1,
+      "actualPriceMax100Matches": 0,
+      "omittedUnitStillReadable": true,
+      "omittedUnitPrice": 100
+    }
+  },
+  "transactionRolledBack": true
+}

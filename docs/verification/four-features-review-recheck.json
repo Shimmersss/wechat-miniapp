@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-04",
+  "method": "Current code recheck against real HTTP/MySQL with uncommitted runtime-account fixtures",
+  "checks": {
+    "unconfirmedPricePagination": {
+      "listLength": 21,
+      "expected": 21,
+      "cheapUnitIncluded": true,
+      "appliedPriceMax": "",
+      "draft": "100"
+    },
+    "confirmedPrice": {
+      "listLength": 1,
+      "price": 100
+    },
+    "inventoryCap": {
+      "eligible": 2001,
+      "priceMin0Total": 2001,
+      "priceMax100Total": 1,
+      "olderMatchingUnitIncluded": true
+    }
+  },
+  "transactionRolledBack": true
+}

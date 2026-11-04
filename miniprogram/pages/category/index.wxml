@@ -4,15 +4,15 @@
   </scroll-view>
   <scroll-view scroll-y class="main">
     <view class="chips mb">
-      <view class="chip active">二手机</view>
-      <view class="chip">新机</view>
+      <view class="chip {{condition === 'used' ? 'active' : ''}}" data-value="used" bindtap="onConditionTap">二手机</view>
+      <view class="chip {{condition === 'new' ? 'active' : ''}}" data-value="new" bindtap="onConditionTap">新机</view>
     </view>
     <block wx:for="{{categories[activeIndex].brands}}" wx:for-item="brand" wx:key="value">
       <view class="brand-title">{{brand.label}}</view>
       <block wx:for="{{brand.series}}" wx:for-item="series" wx:key="label">
         <view class="series-title">{{series.label}}</view>
         <view class="model-grid">
-          <view wx:for="{{series.models}}" wx:for-item="model" wx:key="*this" class="model" data-model="{{model}}" bindtap="onModelTap">{{model}}</view>
+          <view wx:for="{{series.models}}" wx:for-item="model" wx:key="name" class="model" data-id="{{model.id}}" data-name="{{model.name}}" bindtap="onModelTap">{{model.name}}</view>
         </view>
       </block>
     </block>

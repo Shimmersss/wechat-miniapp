@@ -1,0 +1,45 @@
+HTML 内容 Webview: packages/staff/loans/edit, URL: 127.0.0.1:20617/__pageframe__/packages/staff/loans/edit
+							196 文本 出借给同行
+							197 文本 从同行借入
+							198 文本 出借算业务出库，不计销售；设备关闭分享，归还后须复检才能恢复可售。首期不收押金、逾期费和损坏赔偿。
+							199 文本 出借设备
+							200 文本 1 台
+							201 文本栏 (settable) 
+设备编号 / 完整 IMEI
+								202 文本栏 (settable)
+								203 文本 设备编号 / 完整 IMEI
+							204 按钮 添加
+							205 按钮 扫码
+							206 按钮 从库存选择（可多选）
+							207 文本 iPhone 16 Pro 512G
+							208 文本 35****3231 · 原色
+							209 按钮 移除
+							210 文本 对方与归还
+							211 container
+								212 text 对方（同行 / 门店）  *
+							213 文本栏 (settable) 
+
+								214 文本栏 (settable)
+							215 container
+								216 text 联系电话  *
+							217 文本栏 (settable) 
+
+								218 文本栏 (settable)
+							219 container
+								220 text 应归还日期  *
+							221 文本 选择日期
+							222 container
+								223 text 交接说明  *
+							224 container
+								225 文本 如：同行急用，当面交接，外观无划痕
+								226 文本输入区 (settable)
+								227 文本 a
+							228 文本 备注（选填）
+							229 文本栏 (settable) 
+
+								230 文本栏 (settable)
+							231 文本 交接照片
+							232 文本 选填 · 仅内部可见
+							233 按钮 添加交接照片
+							234 按钮 确认出借
+						235 

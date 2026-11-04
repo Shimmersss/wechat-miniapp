@@ -80,6 +80,9 @@ module.exports = function (
         (db.repairTransactions || []).some((o) =>
           o.files.some((v) => v.fileId === f.fileId),
         ) ||
+        (db.salesTransactions || []).some((o) =>
+          (o.receipts || []).some((v) => v.fileId === f.fileId),
+        ) ||
         db.units.some((u) =>
           [
             ...(u.receiptImages || []),

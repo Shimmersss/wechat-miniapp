@@ -4,7 +4,7 @@ const IMG = '/assets/images';
 
 const units = [
   {
-    id: 'u1', name: 'iPhone 17 Pro', brand: 'apple', category: 'phone', condition: 'used',
+    id: 'u1', modelId: 'm_17p', name: 'iPhone 17 Pro', brand: 'apple', category: 'phone', condition: 'used',
     storage: '256G', color: '冰川蓝', grade: '99新', battery: '96%', version: '国行',
     retail: 7299, wholesale: 6999, agentBase: 7000, cost: 6450,
     imei1: '356789124501231', status: 'in_stock', ageDays: 3,
@@ -24,7 +24,7 @@ const units = [
     flags: { showInShop: true, sharePeer: true, shareAgent: false }
   },
   {
-    id: 'u3', name: 'iPhone 16 Pro', brand: 'apple', category: 'phone', condition: 'used',
+    id: 'u3', modelId: 'm_16p', name: 'iPhone 16 Pro', brand: 'apple', category: 'phone', condition: 'used',
     storage: '512G', color: '原色', grade: '95新', battery: '92%', version: '国行',
     retail: 6199, wholesale: 5900, agentBase: 5900, cost: 5400,
     imei1: '356789124503231', status: 'in_stock', ageDays: 32,

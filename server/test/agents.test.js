@@ -257,8 +257,25 @@ test("加价上限、代理分享价快照、链接下单锁库、按分享价�
   const internal = (
     await f.api("GET", "/customer-requests/" + req.id, undefined, "sales")
   ).data;
-  assert.equal(internal.agentOrder.markup, 200);
+  // 销售可开单，但看不到代理加价/底价（R2-2）；代理审核/转账权限可见
+  assert.equal(internal.agentOrder.markup, undefined);
   assert.equal(internal.canStartSale, true);
+  assert.equal(
+    (await f.api("GET", "/customer-requests/" + req.id, undefined, "boss")).data
+      .agentOrder.markup,
+    200,
+  );
+  const salesRow = (
+    await f.api("GET", "/admin/agent-orders", undefined, "sales")
+  ).data.list.find((o) => o.id === req.id);
+  assert.equal(salesRow.markup, undefined);
+  assert.equal(salesRow.agentBase, undefined);
+  assert.equal(salesRow.sharePrice, 1300);
+  const financeRow = (
+    await f.api("GET", "/admin/agent-orders", undefined, "finance")
+  ).data.list.find((o) => o.id === req.id);
+  assert.equal(financeRow.markup, 200);
+  assert.equal(financeRow.agentBase, 1100);
   const unitView = (
     await f.api(
       "GET",
@@ -379,6 +396,9 @@ test("加价上限、代理分享价快照、链接下单锁库、按分享价�
     items: [{ itemId }],
   });
   assert.equal(r.status, 200);
+  // R2-4：退款回包为完整详情，代理来源仍在
+  assert.equal(r.data.agentSources.length, 1);
+  assert.equal(r.data.agentSources[0].orderId, req.id);
   const mine = (await agent("GET", "/agent/commissions")).data;
   assert.ok(
     mine.list.some(
@@ -388,6 +408,66 @@ test("加价上限、代理分享价快照、链接下单锁库、按分享价�
   );
   assert.equal(mine.summary.pendingAmount, -200);
   assert.equal(mine.summary.settledAmount, 200);
+  // 销售详情代理来源：销售只看到代理与分享价，财务另见加价与收益状态
+  const bySales = (
+    await f.api("GET", "/sales-orders/" + sale.id, undefined, "sales")
+  ).data.agentSources;
+  assert.equal(bySales.length, 1);
+  assert.equal(bySales[0].orderId, req.id);
+  assert.equal(bySales[0].sharePrice, 1300);
+  assert.ok(bySales[0].agentName);
+  assert.equal(bySales[0].markup, undefined);
+  assert.equal(bySales[0].earnings, undefined);
+  const byFinance = (
+    await f.api("GET", "/sales-orders/" + sale.id, undefined, "finance")
+  ).data.agentSources[0];
+  assert.equal(byFinance.markup, 200);
+  assert.deepEqual(
+    byFinance.earnings.map((e) => [e.kind, e.amount, e.status]),
+    [
+      ["earning", 200, "settled"],
+      ["reversal", -200, "pending"],
+    ],
+  );
+  // 经营统计代理对账：本期成交200、退货冲回200、已转账200、当前待转账-200
+  const report = await f.api(
+    "GET",
+    "/stats/agent-earnings?range=day",
+    undefined,
+    "finance",
+  );
+  assert.equal(report.status, 200, report.message);
+  const mineRow = report.data.list.find((x) => x.agentId === f.users.customer);
+  assert.deepEqual(
+    [
+      mineRow.soldQty,
+      mineRow.salesAmount,
+      mineRow.earned,
+      mineRow.returnedQty,
+      mineRow.reversed,
+      mineRow.net,
+      mineRow.settled,
+      mineRow.pending,
+    ],
+    [1, 1300, 200, 1, 200, 0, 200, -200],
+  );
+  assert.ok(report.data.summary.soldQty >= 1);
+  assert.equal(
+    (await f.api("GET", "/stats/agent-earnings?range=day", undefined, "sales"))
+      .status,
+    403,
+  );
+  assert.equal(
+    (
+      await f.api(
+        "GET",
+        "/stats/agent-earnings?range=year",
+        undefined,
+        "finance",
+      )
+    ).status,
+    400,
+  );
 });
 
 test("取消与到期释放锁库；未转账收益退货直接冲回；停用代理后分享失效", async () => {

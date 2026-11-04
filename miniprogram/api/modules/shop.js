@@ -8,7 +8,10 @@ const { http } = require('../../utils/request');
 module.exports = {
   /** 首页：banner、当前在售现货数、品牌筛选项 */
   home: () => http.get('/shop/home'),
-  /** 商品列表 { keyword, brand, category, condition, page, pageSize } → { list, total } */
+  /**
+   * 商品列表 { keyword, brand, category, modelId, condition(used|new), grade, priceMin, priceMax, batteryMin, page, pageSize } → { list, total }
+   * 成色/电池/价格按当前渠道公开可见的取值由服务端筛选；价格为当前渠道价（零售/同行/分享快照）
+   */
   units: (params) => http.get('/shop/units', params),
   /** 单机详情（一机一档），price 字段已由服务端按身份计算 */
   unit: (id, shareId) => http.get(`/shop/units/${id}`,undefined,shareId !== undefined?{header:{'X-Channel':shareId}}:undefined),

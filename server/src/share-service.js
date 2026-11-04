@@ -78,6 +78,34 @@ function shareService({ config }) {
     }
     return { link, items };
   }
+  /** 模板中对该渠道公开、且非内部的参数取值；未公开的参数不参与展示或筛选 */
+  function visibleValue(u, channel, key) {
+    const audience = channel === "peer" ? "peer" : "customer",
+      fields = json(u.template_snapshot).fields || [];
+    return fields.some(
+      (f) =>
+        f.key === key &&
+        f.visibility.includes(audience) &&
+        !f.visibility.includes("internal"),
+    )
+      ? json(u.attributes)[key]
+      : undefined;
+  }
+  /** 公开筛选用的成色/电池/价格，与 publicView 展示口径一致 */
+  function publicFacts(u, { channel = "customer", price } = {}) {
+    const battery = visibleValue(u, channel, "battery");
+    return {
+      grade: visibleValue(u, channel, "grade") || "",
+      battery:
+        battery === undefined || battery === ""
+          ? undefined
+          : Number(String(battery).replace("%", "")),
+      price:
+        price === undefined
+          ? Number(channel === "peer" ? u.wholesale : u.retail)
+          : Number(price),
+    };
+  }
   async function publicView(db, u, { channel = "customer", price } = {}) {
     const a = json(u.attributes),
       snapshot = json(u.template_snapshot),
@@ -210,6 +238,7 @@ function shareService({ config }) {
     canCreate,
     resolve,
     publicView,
+    publicFacts,
     context,
     unit,
     snapshotPrice,

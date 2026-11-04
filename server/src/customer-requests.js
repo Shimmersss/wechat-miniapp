@@ -90,7 +90,7 @@ module.exports = async function (
     const state = TRANSITIONS[row.kind][row.status] || [];
     const agentOrder =
       row.kind === "order"
-        ? await agents.requestView(db, row.id, internal)
+        ? await agents.requestView(db, row.id, internal, r?.user)
         : null;
     let canStartSale = false;
     if (

@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-04",
+  "method": "Actual inventory page controller -> real HTTP/API/MySQL; only independently created verification fixtures",
+  "issue": "Loan card disappears after inline inventory recheck although loan remains active",
+  "before": {
+    "status": "recheck",
+    "loanId": "0057e6a0-d3d8-4e6d-902d-85fc1f029ce7",
+    "canRecheck": true
+  },
+  "after": {
+    "status": "in_stock",
+    "loanFieldPresent": false,
+    "loanCardVisible": false,
+    "onOpenLoanNavigated": false
+  },
+  "serverStillAssociated": {
+    "loanId": "0057e6a0-d3d8-4e6d-902d-85fc1f029ce7",
+    "orderStatus": "returned_recheck"
+  },
+  "manualRefreshRestoresCard": true,
+  "normalCompletionAfterRefresh": {
+    "status": "closed",
+    "associationRemoved": true
+  },
+  "fixture": {
+    "modelId": "41a08111-a958-4681-970a-f6c0b4332dc0",
+    "unitId": "d32b3ec4-a43a-4d07-81e3-52c705969647",
+    "orderId": "0057e6a0-d3d8-4e6d-902d-85fc1f029ce7",
+    "persistedAsVerificationEvidence": true
+  }
+}

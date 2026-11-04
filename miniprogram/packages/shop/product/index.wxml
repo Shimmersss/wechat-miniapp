@@ -36,7 +36,11 @@
     <section-card wx:if="{{unit.publicFields.length}}" title="单机检测与参数">
       <view wx:for="{{unit.publicFields}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><view wx:if="{{item.type === 'image'}}"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" class="report-photo" src="{{photo.url}}" mode="aspectFill" /></view><text wx:else>{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text></view>
     </section-card>
-    <todo-block items="{{['相似在售推荐']}}" />
+    <section-card wx:if="{{similar.length}}" title="相似在售">
+      <view class="grid-2">
+        <product-card wx:for="{{similar}}" wx:key="id" unit="{{item}}" bind:select="onSimilarSelect" />
+      </view>
+    </section-card>
   </view>
 
   <view class="footer-space"></view>

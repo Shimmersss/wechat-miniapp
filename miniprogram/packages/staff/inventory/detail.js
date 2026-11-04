@@ -13,7 +13,7 @@ createPage({
     ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false,
     priceLabels: { retail: '零售价', wholesale: '批发价', agentBase: '代理底价' },
     docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检' },
-    todos: ['借还的状态操作入口（随对应业务单据接通）'] },
+    loanTypeLabels: { loan_out: '出借单', borrow_in: '借入单' }, canLoan: false, canLoanOut: false },
   onLoad(query) { this.setData({ id: query.id, statusMap: UNIT_STATUS }); return this.load(); },
   onShow() { if (this.loaded && !this.data.mutating && !this.data.priceEditor && !this.data.recheckEditor) this.load(); },
   onUnload() { this.destroyed = true; },
@@ -28,6 +28,8 @@ createPage({
       if (this.destroyed) return;
       this.setData({ detail, canPrice: can(this.data.user, PERM.PRICE_EDIT), canShare: can(this.data.user, PERM.SHARE), canLabel: can(this.data.user, PERM.LABEL_PRINT),
         canRepair: can(this.data.user, PERM.REPAIR_HANDLE) && detail.status === 'in_stock' && detail.ownership !== 'borrowed',
+        canLoan: can(this.data.user, PERM.LOAN_MANAGE),
+        canLoanOut: can(this.data.user, PERM.LOAN_MANAGE) && (UNIT_TRANSITIONS[detail.status] || {}).loaned_out === 'loan_out' && detail.ownership !== 'borrowed' && !detail.loan,
         canSell: can(this.data.user, PERM.SALES_CREATE) && (UNIT_TRANSITIONS[detail.status] || {}).sold === 'sales_order' && detail.ownership !== 'borrowed',
         canRecheck: can(this.data.user, PERM.ACCEPTANCE) && (detail.availableActions || []).includes('recheck') });
       this.loaded = true; await this.loadLedger(true);
@@ -56,6 +58,9 @@ createPage({
   },
   onLabel() { if (this.data.canLabel) this.$go(ROUTES.INVENTORY_LABEL, { id: this.data.id }); },
   onRepair() { if(this.data.canRepair&&!this.data.mutating)this.$go(ROUTES.REPAIR_EDIT,{unitId:this.data.id}); },
+  /** 借还入口：在库自有设备可发起出借；在借还单中的设备跳到对应单据（归还、复检后完结在单据里办理） */
+  onLoanOut() { if (this.data.canLoanOut && !this.data.mutating) this.$go(ROUTES.LOAN_EDIT, { type: 'loan_out', unitId: this.data.id }); },
+  onOpenLoan() { if (this.data.detail.loan) this.$go(ROUTES.LOAN_DETAIL, { id: this.data.detail.loan.id }); },
   onSell() { if (this.data.canSell && !this.data.mutating) this.$go(ROUTES.POS, { unitId: this.data.id }); },
   onShare() { if (this.data.canShare && this.data.detail.status === 'in_stock') this.$go(ROUTES.SHARE, { unitId: this.data.id }); },
   onEditPrice() {
@@ -120,8 +125,9 @@ createPage({
       const confirmation = await confirmSensitive({ title: editor.result === 'pass' ? '确认复检通过' : '登记复检未通过', content: '填写复检说明，将保留检查记录与库存流水', needReason: true });
       if (!confirmation.confirmed) return;
       const detail = await api.inventory.recheck(this.data.id, { result: editor.result, attributes, inspectionVersion: editor.inspectionVersion, reason: confirmation.reason });
-      this.setData({ detail, recheckEditor: null, canRecheck: can(this.data.user, PERM.ACCEPTANCE) && detail.status === 'recheck' });
-      await this.loadLedger(true); events.emit('inventory:changed', { id: detail.id });
+      // 复检会改变状态：重新加载完整详情，按新状态重算可售/出借/送修入口与借还单卡片
+      this.setData({ detail, recheckEditor: null });
+      await this.load(); events.emit('inventory:changed', { id: detail.id });
     } catch (e) { if (Number(e.code) === 409) this.setData({ 'recheckEditor.conflict': true }); this.$toast(e.message); }
     finally { this.setData({ mutating: false }); }
   }

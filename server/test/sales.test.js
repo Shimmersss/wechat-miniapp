@@ -146,10 +146,14 @@ test("真实退款：差价累计上限、退货复检、同请求重放与旧�
     ).status,
     403,
   );
-  const replay = await Promise.all([1,2].map(()=>f.api("POST","/sales-orders/"+order.id+"/refund",adjustment)));
-  assert.ok(replay.every(x=>x.status===200));
-  assert.equal(replay[0].data.refunds.length,1);
-  assert.equal(replay[1].data.refunds.length,1);
+  const replay = await Promise.all(
+    [1, 2].map(() =>
+      f.api("POST", "/sales-orders/" + order.id + "/refund", adjustment),
+    ),
+  );
+  assert.ok(replay.every((x) => x.status === 200));
+  assert.equal(replay[0].data.refunds.length, 1);
+  assert.equal(replay[1].data.refunds.length, 1);
   r = replay[0];
   assert.equal(r.status, 200);
   assert.equal(r.data.netAmount, 1200.33);
@@ -253,4 +257,146 @@ test("真实统计：型号按成交/退款快照汇总、利润裁剪和空日�
     (await f.api("GET", "/stats/overview", undefined, "customer")).status,
     403,
   );
+});
+
+test("销售员筛选：选项只列出有销售单的员工，按 sellerId 过滤", async () => {
+  const id = await unit();
+  const r = await f.api(
+    "POST",
+    "/sales-orders",
+    sale([id], "seller_" + id),
+    "sales",
+  );
+  assert.equal(r.status, 200, r.message);
+  const sellers = await f.api(
+    "GET",
+    "/sales-orders/sellers",
+    undefined,
+    "sales",
+  );
+  assert.equal(sellers.status, 200);
+  assert.ok(sellers.data.some((s) => s.id === f.users.sales && s.name));
+  const list = await f.api(
+    "GET",
+    "/sales-orders?pageSize=100&sellerId=" + f.users.sales,
+    undefined,
+    "boss",
+  );
+  assert.ok(list.data.list.length > 0);
+  assert.ok(list.data.list.every((o) => o.sellerId === f.users.sales));
+  assert.ok(list.data.list.some((o) => o.id === r.data.id));
+  assert.equal(
+    (await f.api("GET", "/sales-orders/sellers", undefined, "customer")).status,
+    403,
+  );
+});
+
+test("收款凭证：开单可选上传、补传需说明且可重试、按销售权限读取、不能跨单或跨业务复用", async () => {
+  const mine = await f.upload("internal", "sales"),
+    boss = await f.upload("internal", "boss"),
+    pub = await f.upload("public", "boss");
+  const id = await unit();
+  // 不能引用他人的或公开图片
+  for (const [file, status] of [
+    [boss, 403],
+    [pub, 400],
+  ]) {
+    const bad = await f.api(
+      "POST",
+      "/sales-orders",
+      { ...sale([id], "receipt_bad_" + file.fileId), receipts: [file] },
+      "sales",
+    );
+    assert.equal(bad.status, status, bad.message);
+  }
+  const created = await f.api(
+    "POST",
+    "/sales-orders",
+    { ...sale([id], "receipt_" + id), receipts: [{ fileId: mine.fileId }] },
+    "sales",
+  );
+  assert.equal(created.status, 200, created.message);
+  let detail = (
+    await f.api("GET", "/sales-orders/" + created.data.id, undefined, "sales")
+  ).data;
+  assert.deepEqual(
+    detail.receipts.map((x) => x.fileId),
+    [mine.fileId],
+  );
+  assert.ok(detail.receipts[0].url);
+  // 库管没有销售权限，看不到收款凭证；老板可以
+  assert.equal(
+    (await f.api("GET", "/files/" + mine.fileId, undefined, "warehouse"))
+      .status,
+    403,
+  );
+  assert.equal(
+    (await f.api("GET", "/files/" + mine.fileId, undefined, "boss")).status,
+    200,
+  );
+  // 补传：缺说明拒绝；成功后原样重试不重复；库管无权补传
+  const more = await f.upload("internal", "sales"),
+    body = { receipts: [{ fileId: more.fileId }], reason: "补传小票" },
+    url = "/sales-orders/" + created.data.id + "/receipts";
+  assert.equal(
+    (await f.api("POST", url, { receipts: body.receipts }, "sales")).status,
+    400,
+  );
+  assert.equal((await f.api("POST", url, body, "warehouse")).status, 403);
+  detail = (await f.api("POST", url, body, "sales")).data;
+  // R2-4：退款首次与重放都返回完整详情，不丢收款凭证/代理来源
+  const refund = {
+    requestKey: "receipt_refund_" + created.data.id,
+    kind: "adjustment",
+    reason: "回包验证差价",
+    items: [{ itemId: detail.items[0].id, amount: "1" }],
+  };
+  for (let i = 0; i < 2; i++) {
+    const r = await f.api(
+      "POST",
+      "/sales-orders/" + created.data.id + "/refund",
+      refund,
+    );
+    assert.equal(r.status, 200, r.message);
+    assert.equal(r.data.receipts.length, 2);
+    assert.deepEqual(r.data.agentSources, []);
+  }
+  assert.equal(detail.receipts.length, 2);
+  assert.equal(
+    (await f.api("POST", url, body, "sales")).data.receipts.length,
+    2,
+  );
+  const [logs] = await f.admin.execute(
+    "SELECT COUNT(*) n FROM audit_logs WHERE action='补传收款凭证' AND object_id=?",
+    [created.data.id],
+  );
+  assert.equal(Number(logs[0].n), 1);
+  // 已关联的凭证不能用于另一张销售单或入库
+  const other = await unit();
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        "/sales-orders",
+        {
+          ...sale([other], "receipt_reuse_" + other),
+          receipts: [{ fileId: mine.fileId }],
+        },
+        "sales",
+      )
+    ).status,
+    409,
+  );
+  const reused = JSON.parse(
+    JSON.stringify(payload).replace(
+      /"fileId":"[^"]+"/,
+      '"fileId":"' + mine.fileId + '"',
+    ),
+  );
+  const inbound = await f.api("POST", "/inbound/units", {
+    ...reused,
+    imei1: imei(),
+  });
+  assert.equal(inbound.status, 400);
+  assert.match(inbound.message, /收款凭证/);
 });

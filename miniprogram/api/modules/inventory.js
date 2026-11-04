@@ -4,6 +4,7 @@ const { http } = require('../../utils/request');
 module.exports = {
   /** { status?, keyword?, imei?, modelId?, ageingOver?, minPrice?, maxPrice?, page?, pageSize? } → { list, total, counts, summary:{ inStock, retailTotal, costTotal? } }；summary 为全库在库（in_stock）汇总，不随筛选变化，costTotal 仅成本可见角色返回；串码仅完整精确匹配 */
   list: (params) => http.get('/units', params),
+  /** 单台档案；有借还权限且设备在未完结借还单中时带 loan{id,no,type} */
   detail: (id) => http.get(`/units/${id}`),
   /** 改价 { retail?, wholesale?, agentBase?, reason, priceVersion } → 最新员工单机视图；需改价与库存权限，写审计 */
   updatePrice: (id, data) => http.patch(`/units/${id}/price`, data, { loading: true }),

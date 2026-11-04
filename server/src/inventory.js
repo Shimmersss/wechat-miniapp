@@ -195,9 +195,25 @@ module.exports = async function inventory(app, { pool, config, route }) {
       },
     };
   });
+  /**
+   * 单台详情契约：GET、改价、复检都返回同一结构，页面整体替换 detail 时不丢字段。
+   * loan 为设备所在的未完结借还单（出借中/借入在库/出借归还待复检/复检后未完结），仅借还权限可见。
+   */
+  async function unitDetail(db, row, request) {
+    const view = await stock.view(db, row, request);
+    if (request.user.permissions.includes(PERM.LOAN_MANAGE)) {
+      const loan = await one(
+        db,
+        "SELECT o.id,o.no,o.type FROM loan_active_units a JOIN loan_orders o ON o.id=a.order_id WHERE a.unit_id=?",
+        [view.id],
+      );
+      if (loan) view.loan = { id: loan.id, no: loan.no, type: loan.type };
+    }
+    return view;
+  }
   route("GET", "/units/:id", async (request) => {
     requirePerm(request, PERM.INVENTORY_VIEW);
-    return stock.view(pool, await stock.get(pool, request.params.id), request);
+    return unitDetail(pool, await stock.get(pool, request.params.id), request);
   });
   route("PATCH", "/units/:id/price", async (request) => {
     requirePerm(request, PERM.PRICE_EDIT);
@@ -245,7 +261,7 @@ module.exports = async function inventory(app, { pool, config, route }) {
         after,
         reason,
       });
-      return stock.view(db, await stock.get(db, row.id), request);
+      return unitDetail(db, await stock.get(db, row.id), request);
     });
   });
   // 批量开关“允许代理转发”（框架文档 十三.7）：整批成功或整批回滚，逐台审计
@@ -456,7 +472,7 @@ module.exports = async function inventory(app, { pool, config, route }) {
         after: { status: next, result: d.result },
         reason,
       });
-      return stock.view(db, await stock.get(db, row.id), request);
+      return unitDetail(db, await stock.get(db, row.id), request);
     });
   });
   await require("./stocktake")(app, { pool, route, stock });

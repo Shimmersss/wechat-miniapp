@@ -1,0 +1,14 @@
+.search-input { flex: 1; height: 80rpx; font-size: 28rpx; color: var(--c-ink); }
+.search-clear { flex-shrink: 0; padding-left: 20rpx; font-size: 26rpx; color: var(--c-muted); }
+.history { margin-top: 28rpx; }
+.toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 16rpx; margin: 24rpx 0; }
+.toolbar .chip.active { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.filter-toggle { display: flex; align-items: center; flex-shrink: 0; padding: 12rpx 24rpx; border-radius: var(--radius-pill); background: var(--c-surface); color: var(--c-muted); font-size: 26rpx; }
+.filter-toggle.on { color: var(--c-ink); font-weight: 600; }
+.filter-icon { width: 32rpx; height: 32rpx; margin-right: 8rpx; }
+.filter-panel { margin-bottom: var(--gap); }
+.filter-label { font-size: 26rpx; color: var(--c-muted); margin: 24rpx 0 14rpx; }
+.filter-label:first-child { margin-top: 0; }
+.price-row { display: flex; align-items: center; gap: 12rpx; }
+.price-input { flex: 1; min-width: 0; }
+.end { text-align: center; padding: 40rpx 0 10rpx; }

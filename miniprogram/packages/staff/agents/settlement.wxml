@@ -1,5 +1,6 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
 <view class="container">
+  <view wx:if="{{agentId}}" class="notice">仅看代理 {{agentName || agentId}} 的收益记录<button class="btn btn-line btn-sm" bindtap="onAllAgents">查看全部代理</button></view>
   <view wx:if="{{summary}}" class="card grid-2">
     <view><view class="tiny muted">待转账合计（含冲回抵扣）</view><view class="h1 num">¥{{f.maskMoney(summary.pendingAmount, privacy)}}</view></view>
     <view><view class="tiny muted">已转账累计</view><view class="h1 num">¥{{f.maskMoney(summary.settledAmount, privacy)}}</view></view>

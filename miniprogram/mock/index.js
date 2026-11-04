@@ -31,9 +31,9 @@ const ROLE_KEY = 'xm_mock_role';
 const uploadedFiles = new Map();
 let fileSequence = 0;
 function registerFile({ filePath, scope }) {
-  requirePermission(PERM.INBOUND, PERM.ACCEPTANCE, PERM.PURCHASE_MANAGE, PERM.REPAIR_HANDLE, PERM.REPAIR_CASH, PERM.LOAN_MANAGE);
+  requirePermission(PERM.INBOUND, PERM.ACCEPTANCE, PERM.PURCHASE_MANAGE, PERM.REPAIR_HANDLE, PERM.REPAIR_CASH, PERM.LOAN_MANAGE, PERM.SALES_CREATE, PERM.REFUND);
   if (!['public', 'internal'].includes(scope)) fail(400, '文件范围无效');
-  if (scope === 'internal') requirePermission(PERM.INBOUND, PERM.ACCEPTANCE, PERM.PURCHASE_MANAGE, PERM.REPAIR_HANDLE, PERM.REPAIR_CASH, PERM.LOAN_MANAGE);
+  if (scope === 'internal') requirePermission(PERM.INBOUND, PERM.ACCEPTANCE, PERM.PURCHASE_MANAGE, PERM.REPAIR_HANDLE, PERM.REPAIR_CASH, PERM.LOAN_MANAGE, PERM.SALES_CREATE, PERM.REFUND);
   if (scope === 'public') requirePermission(PERM.INBOUND, PERM.ACCEPTANCE, PERM.PURCHASE_MANAGE);
   const file = { fileId: `mock_file_${Date.now()}_${++fileSequence}`, url: filePath, scope, ownerRole: currentRole() };
   uploadedFiles.set(file.fileId, file);
@@ -119,6 +119,7 @@ function validatePurchaseFiles(input, scope, trustedIds = new Set()) {
     if (file.scope !== scope) fail(400, '文件范围不符');
     if(scope==='internal' && loanMock.canReadFile(file.fileId)!==undefined)fail(400,'借还附件不能用作入库凭证');
     if (scope === 'internal' && repairMock.canReadFile(file.fileId) !== undefined) fail(400, '维修附件不能用作入库凭证');
+    if (scope === 'internal' && salesReceipt(file.fileId)) fail(400, '收款凭证不能作为入库凭证');
     if (scope === 'internal' && file.ownerRole !== currentRole() && !['boss', 'manager', 'purchaser'].includes(currentRole()) && !trustedIds.has(file.fileId)) fail(403, '无权限使用该凭证');
     const { ownerRole, ...view } = file; return view;
   });
@@ -128,9 +129,12 @@ const shopShare = createShopShare(db, {fail, currentRole, requirePermission, pag
 const customerRequests=createCustomerRequests(db,{fail,currentRole,requirePermission,paginate,clone,shopShare,publicUnit,agents:agentsMock});
 const repairMock=createRepair(db,{fail,currentRole,requirePermission,paginate,clone,uploadedFiles});
 const loanMock=createLoans(db,{fail,currentRole,requirePermission,paginate,clone,uploadedFiles});
+/** 已关联销售单的收款凭证 */
+const salesReceipt = id => (db.salesTransactions || []).some(o => (o.receipts || []).some(f => f.fileId === id));
 const routes = [
   ['GET', '/files/:id', (d, h, p) => {
     const file = uploadedFiles.get(p.id) || fail(404, '文件不存在');
+    if(file.scope==='internal'&&salesReceipt(file.fileId)){requirePermission(PERM.SALES_CREATE,PERM.REFUND,PERM.STATS_VIEW);const { ownerRole, ...view } = file;return view;}
     if(file.scope==='internal'){
       const loanLinked=loanMock.canReadFile(file.fileId);if(loanLinked===false)fail(403,'无权限查看借还凭证');
       const linked=loanLinked===true?true:repairMock.canReadFile(file.fileId);
@@ -157,13 +161,14 @@ const routes = [
   // ---------- shop ----------
   ...shopShare.routes,
   ['GET', '/shop/categories', () => db.categories.map(c => {
-    const brands = clone(c.brands || []);
+    // 型号返回 { id, name }，分类页据此按型号精确筛选；种子里没有建档的型号 id 为 null
+    const brands = clone(c.brands || []).map(b => ({ ...b, series: b.series.map(s => ({ ...s, models: s.models.map(name => { const m = db.models.find(m => m.name === name); return { id: m ? m.id : null, name }; }) })) }));
     db.models.filter(m => m.category === c.value).forEach(m => {
       let b = brands.find(b => b.value === m.brand);
       if (!b) { b = { value: m.brand, label: m.brandLabel, series: [] }; brands.push(b); }
       let series = b.series.find(s => s.label === m.series);
       if (!series) { series = { label: m.series, models: [] }; b.series.push(series); }
-      if (!series.models.includes(m.name)) series.models.push(m.name);
+      if (!series.models.some(x => x.name === m.name)) series.models.push({ id: m.id, name: m.name });
     });
     return { value: c.value, label: c.label, brands };
   })],
@@ -238,7 +243,7 @@ const routes = [
 
   ...createInventoryRoutes(db, {fail, requirePermission, clone, paginate, currentRole, staffUnit, validateFiles: validatePurchaseFiles}),
 
-  ...createSalesRoutes(db, {fail, requirePermission, paginate, clone, currentRole, staffUnit, customerRequests, agents: agentsMock}),
+  ...createSalesRoutes(db, {fail, requirePermission, paginate, clone, currentRole, staffUnit, customerRequests, agents: agentsMock, uploadedFiles}),
 
 
   ...repairMock.routes,

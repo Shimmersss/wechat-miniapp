@@ -115,3 +115,54 @@ test("仅s打开商品/合集，失效时清旧商品；迟到分享结果不能
   assert.equal(staff.data.active, "peer");
   api.share.createLink = original;
 });
+test("顾客搜索页：价格输入只是草稿，点确定前翻页/切换筛选不带入价格", async () => {
+  const calls = [],
+    stub = {
+      shop: {
+        units: async (q) => {
+          calls.push(q);
+          return { list: [{ id: "x" + calls.length }], total: 100 };
+        },
+      },
+    };
+  const p = page(
+    "miniprogram/packages/shop/search/index.js",
+    stub,
+    "customer",
+    {
+      wx: {
+        getStorageSync: () => [],
+        setStorageSync() {},
+        removeStorageSync() {},
+      },
+    },
+  );
+  await p.onLoad({});
+  const field = (name, value) => ({
+    currentTarget: { dataset: { field: name } },
+    detail: { value },
+  });
+  p.onPriceInput(field("priceMin", "100"));
+  p.onPriceInput(field("priceMax", "200"));
+  await p.onReachBottom();
+  await p.onPick({
+    currentTarget: { dataset: { field: "grade", value: "99新" } },
+  });
+  for (const q of calls) {
+    assert.equal(q.priceMin, undefined);
+    assert.equal(q.priceMax, undefined);
+  }
+  assert.equal(p.data.filterCount, 1);
+  await p.onApplyPrice();
+  assert.equal(calls.at(-1).priceMin, "100");
+  assert.equal(calls.at(-1).priceMax, "200");
+  assert.equal(calls.at(-1).grade, "99新");
+  assert.equal(p.data.filterCount, 2);
+  p.onPriceInput(field("priceMin", "300"));
+  await p.onApplyPrice();
+  assert.match(p.notices.at(-1), /最低价不能高于最高价/);
+  assert.equal(p.data.priceMin, "100");
+  await p.onResetFilter();
+  assert.equal(p.data.priceMinDraft, "");
+  assert.equal(calls.at(-1).priceMin, undefined);
+});

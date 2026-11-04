@@ -137,6 +137,85 @@ module.exports = async function (app, { pool, route }) {
     }
     return list(result, result.length, { page: 1, pageSize: result.length });
   });
+  /**
+   * 代理收益对账：期间内成交产生的收益、退货冲回、期间内标记已转账，及当前累计待转账；按代理拆分。
+   * 仅代理审核或收益转账权限可查看。
+   */
+  route("GET", "/stats/agent-earnings", async (r) => {
+    requirePerm(r, PERM.AGENT_SETTLE, PERM.AGENT_REVIEW);
+    const { start, end } = period(r.query),
+      range = [start, end];
+    const [earned] = await pool.query(
+      "SELECT e.agent_id,COUNT(*) qty,SUM(a.share_price) sales,SUM(e.amount) amount FROM agent_earnings e JOIN agent_orders a ON a.request_id=e.request_id WHERE e.kind='earning' AND e.created_at>=? AND e.created_at<? GROUP BY e.agent_id",
+      range,
+    );
+    // 退货冲回按退货发生时间：未转账的收益直接作废，已转账的生成负数记录，两者都计入
+    const [reversed] = await pool.query(
+      "SELECT e.agent_id,COUNT(*) qty,SUM(e.amount) amount FROM sales_refunds rf JOIN sales_refund_items ri ON ri.refund_id=rf.id JOIN sales_items i ON i.id=ri.sale_item_id JOIN agent_earnings e ON e.sale_order_id=i.order_id AND e.kind='earning' JOIN agent_orders a ON a.request_id=e.request_id AND a.unit_id=i.unit_id WHERE rf.kind='return' AND rf.created_at>=? AND rf.created_at<? GROUP BY e.agent_id",
+      range,
+    );
+    const [settled] = await pool.query(
+      "SELECT e.agent_id,SUM(IF(e.kind='reversal',-e.amount,e.amount)) amount FROM agent_earnings e JOIN agent_earning_states s ON s.earning_id=e.id WHERE s.status='settled' AND s.settled_at>=? AND s.settled_at<? GROUP BY e.agent_id",
+      range,
+    );
+    const [pending] = await pool.query(
+      "SELECT e.agent_id,SUM(IF(e.kind='reversal',-e.amount,e.amount)) amount FROM agent_earnings e JOIN agent_earning_states s ON s.earning_id=e.id WHERE s.status='pending' GROUP BY e.agent_id",
+    );
+    const ids = [
+      ...new Set(
+        [earned, reversed, settled, pending].flat().map((x) => x.agent_id),
+      ),
+    ];
+    const [names] = ids.length
+      ? await pool.query(
+          "SELECT user_id,name FROM agents WHERE user_id IN (?)",
+          [ids],
+        )
+      : [[]];
+    const pick = (rows, id, key = "amount") =>
+      Number((rows.find((x) => x.agent_id === id) || {})[key] || 0);
+    const rows = ids
+      .map((id) => {
+        const row = {
+          agentId: id,
+          agentName: (names.find((n) => n.user_id === id) || {}).name || "",
+          soldQty: pick(earned, id, "qty"),
+          salesAmount: pick(earned, id, "sales"),
+          earned: pick(earned, id),
+          returnedQty: pick(reversed, id, "qty"),
+          reversed: pick(reversed, id),
+          settled: pick(settled, id),
+          pending: pick(pending, id),
+        };
+        return {
+          ...row,
+          net: Math.round((row.earned - row.reversed) * 100) / 100,
+        };
+      })
+      .filter((x) => x.soldQty || x.returnedQty || x.settled || x.pending)
+      .sort((a, b) => b.pending - a.pending || b.earned - a.earned);
+    const total = (key) =>
+      Math.round(rows.reduce((n, x) => n + x[key] * 100, 0)) / 100;
+    return {
+      ...list(rows, rows.length, { page: 1, pageSize: rows.length || 1 }),
+      summary: Object.fromEntries(
+        [
+          "soldQty",
+          "salesAmount",
+          "earned",
+          "returnedQty",
+          "reversed",
+          "net",
+          "settled",
+          "pending",
+        ].map((k) => [k, total(k)]),
+      ),
+      from: start,
+      to: end,
+      definition:
+        "成交收益按收款时间，退货冲回按退货时间，已转账按标记时间；待转账为当前累计（含已转账后退货生成的负数冲回）。",
+    };
+  });
   return { overview };
 };
 module.exports.period = period;

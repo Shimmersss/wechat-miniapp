@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-04",
+  "scope": "agent permission paths, refund response integration, cross-period reconciliation",
+  "checks": {
+    "permissionBypass": {
+      "salesDetailMarkupOmitted": true,
+      "customerRequestStatus": 200,
+      "customerRequestMarkup": 200,
+      "adminAgentOrderStatus": 200,
+      "adminAgentOrderMarkup": 200,
+      "adminAgentOrderBase": 1100,
+      "salesReportStatus": 403
+    },
+    "refundResponseLoss": {
+      "beforeAgentSources": 1,
+      "afterAgentSources": null,
+      "afterReceipts": null,
+      "refundAmount": 1,
+      "afterRefreshAgentSources": 1
+    },
+    "crossPeriodSettledThenReturn": {
+      "october": {
+        "agentId": "947f4941-d654-4e44-a3fe-fc90bc666486",
+        "agentName": "代理审查本人",
+        "soldQty": 1,
+        "salesAmount": 1300,
+        "earned": 200,
+        "returnedQty": 0,
+        "reversed": 0,
+        "settled": 200,
+        "pending": -200,
+        "net": 200
+      },
+      "november": {
+        "agentId": "947f4941-d654-4e44-a3fe-fc90bc666486",
+        "agentName": "代理审查本人",
+        "soldQty": 0,
+        "salesAmount": 0,
+        "earned": 0,
+        "returnedQty": 1,
+        "reversed": 200,
+        "settled": 0,
+        "pending": -200,
+        "net": -200
+      },
+      "result": "pass"
+    },
+    "agentFilter": {
+      "allRowsMatchRequestedAgent": true,
+      "pendingAmount": -200
+    },
+    "receiptLossWithPhoto": {
+      "saleId": "677b84dd-da5f-459b-af0e-1cfde8ff33cc",
+      "fileId": "1964bad6-a3e3-4ee1-9ee1-1158e71832e6",
+      "beforeReceipts": 1,
+      "refundKind": "adjustment",
+      "refundAmount": 1,
+      "afterControllerReceipts": null,
+      "afterGetRefreshReceipts": 1,
+      "sameFileIdAfterRefresh": true,
+      "fileMetadataStatus": 200,
+      "signedContentStatus": 200,
+      "authenticatedContentStatus": 200,
+      "contentBytes": 68,
+      "conclusion": "Response/controller drops the field; sales_files link and file content remain intact"
+    }
+  },
+  "timestampFixtureRolledBack": true,
+  "fixtureIds": {
+    "agentId": "947f4941-d654-4e44-a3fe-fc90bc666486",
+    "requestId": "32122bac-6e63-403c-be4d-40f128c260be",
+    "saleId": "462322bf-55ae-4c51-a73b-ce8f92837dae"
+  }
+}
