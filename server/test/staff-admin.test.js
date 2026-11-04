@@ -276,3 +276,37 @@ test("操作日志：筛选、按查看人字段权限脱敏、无权限拒绝",
   assert.ok(filters.actions.includes("脱敏验证"));
   assert.equal((await f.api("GET", "/audit-logs?from=2026/11/01")).status, 400);
 });
+
+test("供应商字段撤权拒绝读写，审计代理底价沿用库存授权", async () => {
+  const f = await fixture(["boss", "manager", "warehouse"]);
+  const [saved] = await f.admin.execute("SELECT role_key,permissions,visible_fields FROM roles WHERE role_key IN ('manager','warehouse')");
+  const encode = v => v === null || typeof v === "string" ? v : JSON.stringify(v);
+  try {
+    const supplier = await f.api("POST", "/suppliers", { name: "权限回归_" + crypto.randomUUID() });
+    assert.equal(supplier.status, 200);
+    await f.admin.execute("UPDATE roles SET visible_fields=JSON_ARRAY() WHERE role_key='manager'");
+    for (const [method, url, body] of [
+      ["GET", "/suppliers", undefined],
+      ["POST", "/suppliers", { name: "不应创建" }],
+      ["PUT", "/suppliers/" + supplier.data.id, { name: "不应修改" }],
+    ]) assert.equal((await f.api(method, url, body, "manager")).status, 403);
+    assert.equal((await f.api("GET", "/suppliers")).status, 200);
+    const w = saved.find(r => r.role_key === "warehouse");
+    const perms = typeof w.permissions === "string" ? JSON.parse(w.permissions) : w.permissions;
+    await f.admin.execute("UPDATE roles SET permissions=? WHERE role_key='warehouse'", [JSON.stringify([...new Set([...perms, "audit:view"])])]);
+    const target = "price_redact_" + crypto.randomUUID();
+    await f.admin.execute("INSERT INTO audit_logs(actor_id,action,object_id,before_data,after_data,reason,request_id,ip) VALUES (?,?,?,?,?,?,?,?)", [f.users.boss, "修改库存价格", target, JSON.stringify({agentBase:2400}), JSON.stringify({retail:3000,nested:[{agentBase:2500,agent_base:2500}]}), "权限回归", "review", "127.0.0.1"]);
+    const hidden = (await f.api("GET", "/audit-logs?objectId=" + target, undefined, "warehouse")).data.list[0];
+    assert.equal(hidden.before.agentBase, "无权限查看");
+    assert.deepEqual(hidden.after.nested, [{agentBase:"无权限查看",agent_base:"无权限查看"}]);
+    assert.equal(hidden.after.retail, 3000);
+    for (const role of ["boss", "manager"]) {
+      const log = (await f.api("GET", "/audit-logs?objectId=" + target, undefined, role)).data.list[0];
+      assert.equal(log.before.agentBase, 2400);
+      assert.equal(log.after.nested[0].agentBase, 2500);
+    }
+  } finally {
+    for (const row of saved) await f.admin.execute("UPDATE roles SET permissions=?,visible_fields=? WHERE role_key=?", [encode(row.permissions), encode(row.visible_fields), row.role_key]);
+    await f.close();
+  }
+});

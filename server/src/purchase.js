@@ -165,6 +165,7 @@ module.exports = async function purchase(app, { pool, config, route }) {
   }
   route("GET", "/suppliers", async (request) => {
     requirePerm(request, PERM.SUPPLIER_VIEW);
+    if (!canSee(request.user, "supplier")) fail(403, "无权限查看供应商");
     const p = page(request.query),
       where = [],
       args = [];
@@ -199,6 +200,7 @@ module.exports = async function purchase(app, { pool, config, route }) {
   async function saveSupplier(request, supplierId) {
     manage(request);
     requirePerm(request, PERM.SUPPLIER_VIEW);
+    if (!canSee(request.user, "supplier")) fail(403, "无权限查看供应商");
     const d = supplierPayload(request.body || {});
     if (typeof d.active !== "boolean") fail(400, "供应商状态无效");
     return transaction(pool, async (db) => {
@@ -231,6 +233,7 @@ module.exports = async function purchase(app, { pool, config, route }) {
   async function saveOrder(request, orderId) {
     manage(request);
     requirePerm(request, PERM.SUPPLIER_VIEW);
+    if (!canSee(request.user, "supplier")) fail(403, "无权限查看供应商");
     const d = request.body || {},
       supplierId = text(d.supplierId, "供应商", 36),
       expectedAt = date(d.expectedAt, "预计到货日期"),

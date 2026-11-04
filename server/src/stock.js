@@ -8,6 +8,8 @@ const { signFile } = require("./files");
 /** 敏感字段可见性：按登录时加载的角色配置（roles.visible_fields）判断，未配置时用默认表 */
 function canSee(user, field) {
   if (!user) return false;
+  if (field === "agentBase")
+    return ["boss", "manager", "purchaser"].includes(user.role);
   if (!SENSITIVE_FIELDS[field]) return true;
   return Array.isArray(user.visibleFields)
     ? user.visibleFields.includes(field)
@@ -401,7 +403,7 @@ function stockService({ config }) {
       result.internalNote = row.internal_note;
     if (canSee(request.user, "wholesalePrice"))
       result.wholesale = Number(row.wholesale);
-    if (["boss", "manager", "purchaser"].includes(request.user.role))
+    if (canSee(request.user, "agentBase"))
       result.agentBase = Number(row.agent_base);
     const receipt = [
       ...new Map(

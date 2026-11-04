@@ -8,7 +8,8 @@ module.exports = function purchase(db, { fail, requirePermission, clone, paginat
   const batches = {};
   const visible = key => !SENSITIVE_FIELDS[key] || SENSITIVE_FIELDS[key].includes(currentRole());
   const read = () => requirePermission(PERM.PURCHASE_MANAGE, PERM.ACCEPTANCE);
-  const manage = () => { requirePermission(PERM.PURCHASE_MANAGE); requirePermission(PERM.SUPPLIER_VIEW); };
+  const supplierAccess = () => { requirePermission(PERM.SUPPLIER_VIEW); if (!visible('supplier')) fail(403, '无权限查看供应商'); };
+  const manage = () => { requirePermission(PERM.PURCHASE_MANAGE); supplierAccess(); };
   const note = (action, target) => db.auditLogs.unshift({ id: makeId('audit'), operator: currentRole(), time: new Date().toISOString(), action, detail: target });
   const amount = (v, label) => { if (!/^\d{1,12}(\.\d{1,2})?$/.test(String(v))) fail(400, label + '须为非负金额，最多两位小数'); return Math.round(Number(v) * 100); };
   const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.keys(value).sort().reduce((o, k) => { o[k] = canonical(value[k]); return o; }, {}) : value;
@@ -123,7 +124,7 @@ module.exports = function purchase(db, { fail, requirePermission, clone, paginat
     batches[key] = { signature, result }; note('采购到货验收', po.id); return clone(result);
   }
   return [
-    ['GET', '/suppliers', d => { requirePermission(PERM.SUPPLIER_VIEW); let rows = db.suppliers; if (d.active !== undefined) { if (!['true', 'false'].includes(String(d.active))) fail(400, '供应商状态无效'); rows = rows.filter(s => s.active === (String(d.active) === 'true')); } if (d.keyword) rows = rows.filter(s => s.name.includes(d.keyword)); return clone(paginate(rows, d)); }],
+    ['GET', '/suppliers', d => { supplierAccess(); let rows = db.suppliers; if (d.active !== undefined) { if (!['true', 'false'].includes(String(d.active))) fail(400, '供应商状态无效'); rows = rows.filter(s => s.active === (String(d.active) === 'true')); } if (d.keyword) rows = rows.filter(s => s.name.includes(d.keyword)); return clone(paginate(rows, d)); }],
     ['POST', '/suppliers', d => saveSupplier(d)], ['PUT', '/suppliers/:id', (d, h, p) => saveSupplier(d, p.id)],
     ['GET', '/purchase-orders', d => {
       read(); let rows = db.purchaseOrders;

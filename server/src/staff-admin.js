@@ -314,6 +314,7 @@ module.exports = async function (app, { pool, route }) {
       [/internalNote/i, "internalNote"],
       [/imei/i, "fullImei"],
       [/wholesale/i, "wholesalePrice"],
+      [/agent_?base/i, "agentBase"],
     ].filter(([, field]) => !canSee(user, field));
     const walk = (v) =>
       Array.isArray(v)
