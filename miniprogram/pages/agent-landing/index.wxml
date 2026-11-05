@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container has-tabbar">
   <view class="hero">
     <status-pill text="夏目数码代理计划" tone="gold" />
@@ -30,3 +31,4 @@
   </button>
   <view class="tabbar-space"></view>
 </view>
+</theme-shell>

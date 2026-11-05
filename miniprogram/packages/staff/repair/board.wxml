@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line mt" bindtap="onSearch">重试</button></view>
  <view wx:if="{{stats}}" class="card"><view class="grid-4"><metric-item label="今日开单" value="{{stats.created}}" /><metric-item label="队列完成率" value="{{f.percent(stats.completionRate,privacy)}}" /><metric-item label="平均完工时长" value="{{f.money(stats.avgHours)}}h" /><metric-item label="维修毛利" value="{{stats.profit !== undefined ? '¥'+f.maskMoney(stats.profit,privacy) : '无权限查看'}}" /></view><view class="tiny muted mt">{{stats.definition}}</view></view>
@@ -10,3 +11,4 @@
  <scroll-view wx:if="{{swimlanes}}" scroll-x class="mb"><view class="repair-lanes"><view wx:for="{{columns}}" wx:for-item="col" wx:key="key" class="repair-lane"><view class="h3 mb">{{col.label}} · {{col.list.length}}</view><view wx:for="{{col.list}}" wx:key="id" class="card ticket {{item.overdue ? 'overdue' : ''}}" data-id="{{item.id}}" bindtap="onTicketTap"><view class="h3">{{item.model}}</view><view class="small muted mt-sm">{{item.fault}}</view><view class="tiny muted mt-sm">{{item.customer || '本店维修'}} · {{item.engineer}}</view><view class="small gold mt-sm">{{item.quote !== null ? '报价 ¥'+f.maskMoney(item.quote,privacy) : '待报价'}}</view><view class="chips mt-sm"><status-pill wx:if="{{item.overdue}}" text="超时" tone="red"/><status-pill wx:if="{{item.waitingParts}}" text="待配件" tone="orange"/></view></view><view wx:if="{{!loading && !col.list.length}}" class="tiny muted">暂无工单</view></view></view></scroll-view>
  <button wx:if="{{more}}" class="btn btn-line" bindtap="onMore" loading="{{loading}}" disabled="{{loading}}">继续加载工单</button><view class="footer-space"></view><view wx:if="{{canCreate}}" class="footer-bar"><button class="btn btn-primary" bindtap="onCreate">＋ 维修开单</button></view>
 </view>
+</theme-shell>

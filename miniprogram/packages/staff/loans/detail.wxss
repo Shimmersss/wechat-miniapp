@@ -1,7 +1,7 @@
 .notice.error { background: var(--c-red-soft); color: var(--c-red); }
 .item { gap: 16rpx; }
 .return { padding: 24rpx 0; border-bottom: 1rpx solid var(--c-line); }
-.check { width: 40rpx; height: 40rpx; border-radius: 50%; border: 2rpx solid var(--c-ink-4); margin-right: 16rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: #fff; }
+.check { width: 40rpx; height: 40rpx; border-radius: 50%; border: 2rpx solid var(--c-ink-4); margin-right: 16rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: var(--c-on-ink); }
 .check.on { background: var(--c-ink); border-color: var(--c-ink); }
 .photos { display: flex; flex-wrap: wrap; gap: 16rpx; }
 .photo { display: flex; flex-direction: column; align-items: center; gap: 6rpx; }

@@ -344,3 +344,28 @@
 - 性能（用审查脚本副本、本机串行、每项3次）：2万台宽价格筛选 ~400-480ms/140MiB → ~205ms/1MiB；电池筛选 ~390ms/138MiB → ~290-340ms/1MiB；唯一价格匹配 ~80ms → ~95ms；无筛选不变。证据 docs/verification/search-perf-sql-pushdown.json。
 - 验证：后端 76/76、小程序 31/31，git diff --check 通过。常驻 API 需重启加载。
 - 补：黑盒审查 P3（docs/verification/BLACKBOX_REVIEW_2026-11-04.md）普通入口进入商品详情时 `share` 为 undefined 触发 setData 告警，改为初始化 null。
+
+
+## 2026-11-04 · 文档漂移修正（仅文档，未改业务代码）
+
+- 用户要求“先修文档漂移”。依据是 2026-11-04 对页面控制器、mock、服务端路由的实际核对，不是沿用历史结论。
+- `AGENTS.md`：待实现清单按代码事实逐条重写——阶段 A 的登录/模板/采购/验收/单台批量入库/库存/收银/统计由 `[ ]` 改为 `[x]`；阶段 B 维修、分渠道分享、阶段 C 邀请卡片同样更正；仍为 `[ ]` 的只保留真实缺口并写明依据（蓝牙标签打印 `TODO(codex)`、收银凭证、顾客搜索页裸列表、分类 chip 未绑定、分类点型号未传 `modelId`、销售员筛选、相似推荐、邀请海报成图、正式小程序码）。“还需要的外部条件”删除已实现的“后端服务”项，改为列出真实缺失的微信/短信/域名配置。
+- `AGENTS.md` 运行小节：原来让在本机跑 `npm --prefix server start` / `db:start`，与 Ubuntu 的 systemd + Docker 实际部署冲突（抢 3000 端口、Homebrew 脚本不可用）。改为指向 `scripts/local-dev.sh`，并注明手工命令仅用于非 systemd 环境；补上“无热重载、改完须 restart”。
+- `docs/ACCEPTANCE.md`：修正遗留的 macOS 路径 `/Volumes/macos扩展/微信小程序` 为本机 `/home/smxvjv/Desktop/weixinapp`；删除“员工/角色权限管理与审计筛选仍有缺口”的失效结论（迁移 019 已实现并有 `staff-admin.test.js`）；把顾客搜索页/分类 chip 从“真机走查待做”改为明确功能缺口；技术验证数字更新为 2026-11-04 复跑结果。
+- `server/README.md`：删除“Node.js 26、Homebrew MySQL 9.6”的过期环境描述，改为本机实际的 Node 22.23.4 + Docker MySQL 8.4.13；手工启动命令标注为“其它环境用”，本机入口改为 `local-dev.sh`。
+- `docs/PROGRESS.md`：总体表与分模块表更新（标签打印补充“蓝牙未接”、收银补充凭证待办、顾客端列出搜索/分类/相似推荐缺口、分渠道分享区分“Canvas 已实现”与“小程序码待配”）；复核小节改为 2026-11-04 实测数字（后端 67/67、小程序 25/25、主包按分包边界实测约 0.38 MB）；“发现的问题”新增第 5 条记录本次文档漂移及其处理；“建议下一步”改为按缺口优先级排序。
+- `docs/IMPLEMENTATION.md`：代理一行从“页面/mock，不作为完成证据”更正为“已有真实后端与集成测试”；同步复跑数字并列出明确功能缺口。
+- 根 `README.md`：原内容与 `docs/IMPLEMENTATION.md` 重复且无项目说明，重写为项目简介 + 快速开始 + 目录 + 文档指引 + 测试 + 当前状态，指向 `AGENTS.md`/交接文档/验收说明。
+
+### 验证
+
+- `node --test tests/*.test.js`：25/25 通过（未改业务代码，作为回归确认）。
+- `app.json` 声明的 53 个页面，`.js/.wxml/.json/.wxss` 全部存在（缺 0）。
+- 逐条核对文档声明与代码：迁移 19 个；`label.js` 仍含 1 处 `TODO(codex)`；`shop/search` 的 `todos` 仍有 3 项；`pages/category/index.wxml` 的 2 个 `bindtap` 分别是侧栏分类与型号点击，“二手机/新机”两个 chip 确实无绑定；`pages/category/index.js` 无 `modelId`；`sales/list.js` 的 `sellerId` 只出现在待办文案中，未用于请求。
+- 全文检索确认不再残留 `/Volumes/macos`、`Node.js 26`、`Homebrew MySQL 9.6` 等过期表述；历史数字仅保留在明确标注日期的对比说明中。
+
+### 边界
+
+- 本次只改文档，未改任何业务代码、mock、服务端逻辑或数据库；`docs/开发环境交接文档.md` 由用户提供，未修改。
+- 未重启 API、未重置数据库或上传目录；未安装依赖、未新增容器/镜像。
+- 文档中的“已实现”均以页面控制器中的实际调用为依据，不代表真机、正式微信/SMS 或生产部署已验证。

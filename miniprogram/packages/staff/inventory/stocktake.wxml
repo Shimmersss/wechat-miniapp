@@ -1,6 +1,7 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
- <view class="notice">按所选状态和型号比对。盘点只保存差异与记录，不自动改库存；同一设备的两个 IMEI 只计为一台。</view>
+ <view class="notice">按所选状态和型号比对。</view>
  <view wx:if="{{error}}" class="notice">{{error}}</view>
  <view wx:if="{{!result}}" class="card">
   <button class="btn btn-soft btn-block mb" bindtap="onChooseModel" disabled="{{saving || pending}}">{{model ? model.name : '全部型号（点击选择）'}}</button><button wx:if="{{model}}" class="btn btn-line btn-sm mb" bindtap="onClearModel" disabled="{{saving || pending}}">清除型号限制</button>
@@ -9,9 +10,10 @@
   <view class="small muted mt">已记录 {{codes.length}} 个编号</view><view wx:for="{{codes}}" wx:key="*this" class="list-item"><text class="small">{{item}}</text><button class="btn btn-line btn-sm" data-code="{{item}}" bindtap="onRemove" disabled="{{saving || pending}}">移除</button></view>
   <button wx:if="{{!pending}}" class="btn btn-primary btn-block mt" bindtap="onSubmit" loading="{{saving}}" disabled="{{saving}}">保存盘点结果</button><view wx:else class="notice mt">结果未知，保留原内容重试以防重复记录。<button class="btn btn-primary btn-block mt" bindtap="send" loading="{{saving}}" disabled="{{saving}}">原样重试</button></view>
  </view>
- <view wx:if="{{result}}" class="card"><view class="h2">盘点结果</view><view class="small muted mt">{{result.time}} · {{result.operator}}</view><view class="mt">应有 {{result.expectedCount}} · 扫描编号 {{result.scannedCount}} · 匹配 {{result.matched}} 台</view><view class="mt">缺少 {{result.missing.length}} 台 · 范围外/未知 {{result.extra.length}} 个</view><view class="tiny muted mt">计数为盘点时结果，以下设备资料按当前权限与状态显示。</view>
+ <view wx:if="{{result}}" class="card"><view class="h2">盘点结果</view><view class="small muted mt">{{result.time}} · {{result.operator}}</view><view class="mt">应有 {{result.expectedCount}} · 扫描编号 {{result.scannedCount}} · 匹配 {{result.matched}} 台</view><view class="mt">缺少 {{result.missing.length}} 台 · 范围外/未知 {{result.extra.length}} 个</view><view class="tiny muted mt"></view>
   <view wx:for="{{result.missing}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onUnit"><view><view class="small">{{item.name}}</view><view class="tiny muted">{{item.imeiMasked}} · {{f.label(statusMap,item.status)}}</view></view><text>查看 ›</text></view>
   <view wx:for="{{result.extra}}" wx:key="code" class="list-item small">{{item.code}} · {{item.reason}}</view><button class="btn btn-soft btn-block mt" bindtap="onNew">开始新盘点</button>
  </view>
  <section-card title="历史盘点"><view wx:for="{{history}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onRecord"><view><view class="small">{{item.time}} · {{item.operator}}</view><view class="tiny muted">应有 {{item.expectedCount}} · 匹配 {{item.matched}} · 缺少 {{item.missingCount}} · 异常 {{item.extraCount}}</view></view><text>›</text></view><button wx:if="{{historyMore}}" class="btn btn-line btn-block mt" bindtap="onMore" loading="{{historyLoading}}">加载更多</button></section-card>
 </view>
+</theme-shell>

@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <frost-nav title="{{brand.name}}" />
 <view class="frost">
   <view class="aura"></view>
@@ -44,3 +45,4 @@
   </view>
   <frost-tabbar active="home" />
 </view>
+</theme-shell>

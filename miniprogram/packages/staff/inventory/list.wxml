@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container {{picking ? 'picking' : 'has-staff-tabbar'}}">
   <view wx:if="{{summary && !picking}}" class="card summary">
     <view class="summary-label">在库</view>
@@ -46,3 +47,4 @@
   <button class="btn btn-primary" bindtap="onConfirmPick" disabled="{{!selectedCount}}">{{pickFor === 'loan' ? '加入出借单' : '去收银'}}（{{selectedCount}} 台）</button>
 </view>
 <staff-tabbar wx:else active="inventory" />
+</theme-shell>

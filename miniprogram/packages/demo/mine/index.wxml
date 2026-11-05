@@ -1,3 +1,4 @@
+<theme-shell>
 <frost-nav title="我的" />
 <view class="frost">
   <view class="aura"></view>
@@ -32,3 +33,4 @@
   </view>
   <frost-tabbar active="mine" />
 </view>
+</theme-shell>

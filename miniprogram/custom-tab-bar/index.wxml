@@ -1,6 +1,10 @@
-<view class="tabbar">
-  <view wx:for="{{tabs}}" wx:key="path" class="tab {{selected === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTap">
-    <image class="icon" src="/assets/icons/{{item.icon}}{{selected === index ? '' : '-gray'}}.svg" />
-    <text class="text">{{item.text}}</text>
+<!-- 自定义 tabBar 由框架渲染，不在页面的 theme-shell 内，
+     所以这里要自己带一层主题作用域，否则拿不到 --c-* 变量。 -->
+<view class="tabbar-scope {{dark ? 'theme-root theme-dark' : 'theme-root'}}">
+  <view class="tabbar">
+    <view wx:for="{{tabs}}" wx:key="path" class="tab {{selected === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTap">
+      <image class="icon" src="/assets/icons/{{item.icon}}{{selected === index ? '' : '-gray'}}{{dark ? '-light' : ''}}.svg" />
+      <text class="text">{{item.text}}</text>
+    </view>
   </view>
 </view>

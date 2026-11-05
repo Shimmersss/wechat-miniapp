@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
  <block wx:if="{{detail}}">
@@ -28,7 +29,7 @@
   </section-card>
   <view wx:if="{{canRecheck}}" class="card"><button class="btn btn-primary btn-block" bindtap="onOpenRecheck" disabled="{{mutating || priceEditor || recheckEditor}}">填写库存复检</button></view>
   <view wx:if="{{recheckEditor}}" class="card">
-   <view class="h2 mb">复检 · 入库模板 v{{recheckEditor.templateVersion}}</view><view class="small muted mb">只保存改动字段；未获授权的原凭证由后台保留。</view>
+   <view class="h2 mb">复检 · 入库模板 v{{recheckEditor.templateVersion}}</view><view class="small muted mb"></view>
    <template-fields fields="{{recheckEditor.fields}}" values="{{recheckEditor.values}}" bindchange="onRecheckField" bindbusy="onFieldBusy" disabled="{{mutating || recheckEditor.conflict}}" />
    <view class="chips mt"><view class="chip {{recheckEditor.result === 'pass' ? 'active' : ''}}" data-value="pass" bindtap="onRecheckResult">通过</view><view class="chip {{recheckEditor.result === 'fail' ? 'active' : ''}}" data-value="fail" bindtap="onRecheckResult">未通过</view></view>
    <view wx:if="{{recheckEditor.conflict}}" class="notice mt">记录已变化，请关闭并重新加载核对。</view>
@@ -47,3 +48,4 @@
  </block>
  <block wx:if="{{priceEditor}}"><view class="price-mask"></view><scroll-view scroll-y class="price-panel"><view class="h2 mb">修改单机价格</view><view wx:for="{{priceEditor.keys}}" wx:key="*this" class="field"><view class="field-label">{{priceLabels[item]}}（元）</view><input class="input" type="digit" value="{{priceEditor.values[item]}}" data-field="{{item}}" bindinput="onPriceInput" disabled="{{mutating || priceConflict}}" /></view><view wx:if="{{priceConflict}}" class="notice">价格已变化。关闭并刷新后重新核对。<button class="btn btn-soft" bindtap="onRefreshPrice">刷新价格</button></view><view class="row gap-sm"><button class="btn btn-line" bindtap="onClosePrice" disabled="{{mutating}}">取消</button><button class="btn btn-primary" bindtap="onSavePrice" loading="{{mutating}}" disabled="{{mutating || priceConflict}}">填写原因并保存</button></view></scroll-view></block>
 </view>
+</theme-shell>

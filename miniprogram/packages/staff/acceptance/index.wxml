@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="notice">逐台核对实机。通过后生成库存；异常保留记录，不进入可售。供应商与成本沿用采购单；入库后再在库存详情开启展示和分享。</view>
   <view wx:if="{{error}}" class="notice">{{error}}<button wx:if="{{!pending && !editor && !items.length}}" class="btn btn-line btn-sm mt-sm" bindtap="load">重新加载</button></view>
@@ -43,3 +44,4 @@
     <view class="footer-space"></view><view wx:if="{{!exceptionId && !pending && !editor}}" class="footer-bar"><button class="btn btn-primary" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || loading || editor || busy > 0 || uploading || !items.length || !form.canAccept}}">确认本批验收（{{items.length}}台）</button></view>
   </block>
 </view>
+</theme-shell>

@@ -19,3 +19,12 @@
 .icon { width: 46rpx; height: 46rpx; }
 .text { font-size: 22rpx; line-height: 1.2; font-weight: 600; }
 .active { color: var(--c-ink); }
+
+/* tabBar 外层的主题作用域只用来承接 CSS 变量，
+ * 不能撑满全屏（.theme-root 自带 min-height:100vh），否则会盖住页面内容。
+ * 用双类名提高特异性，避免和 .theme-root 打架。 */
+.tabbar-scope.theme-root {
+  min-height: 0;
+  background: transparent;
+  color: var(--c-ink);
+}

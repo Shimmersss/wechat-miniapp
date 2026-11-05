@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view wx:if="{{selecting}}" class="notice mb">选择标准型号，使用其当前已发布的入库模板。</view>
   <view wx:else class="row gap-sm mb"><button class="btn btn-soft btn-sm add-category" bindtap="onAddCategory">新增分类</button><button class="btn btn-line btn-sm" bindtap="onRenameCategory">修改分类名</button><button class="btn btn-primary btn-sm add-model" bindtap="onAddModel" disabled="{{loading}}">新增型号</button></view>
@@ -14,9 +15,10 @@
       <view class="field"><view class="field-label required">系列</view><input class="input" value="{{modelEditor.series}}" data-field="series" bindinput="onModelInput" maxlength="50" disabled="{{saving}}" /></view>
       <view class="field"><view class="field-label required">标准型号</view><input class="input" value="{{modelEditor.name}}" data-field="name" bindinput="onModelInput" maxlength="50" disabled="{{saving}}" /></view>
       <view wx:if="{{!modelEditor.id}}" class="field"><view class="field-label required">复制基础模板（创建独立版本）</view><picker range="{{baseTemplates}}" range-key="name" value="{{templateIndex}}" bindchange="onTemplatePick" disabled="{{saving}}"><view class="input">{{baseTemplates[templateIndex].name}} ▾</view></picker></view>
-      <view class="field"><view class="field-label">已核验 TAC（IMEI 前 8 位，每行一个，选填）</view><textarea class="textarea" value="{{modelEditor.tacsText}}" data-field="tacsText" bindinput="onModelInput" maxlength="1000" disabled="{{saving}}" /><view class="tiny muted mt-sm">只填写已核验的数据。留空不影响手动选择型号，不会自动从历史入库学习型号。</view></view>
+      <view class="field"><view class="field-label">已核验 TAC（IMEI 前 8 位，每行一个，选填）</view><textarea class="textarea" value="{{modelEditor.tacsText}}" data-field="tacsText" bindinput="onModelInput" maxlength="1000" disabled="{{saving}}" /></view>
       <view class="field"><view class="field-label">核验来源（填写 TAC 时必填）</view><input class="input" value="{{modelEditor.tacSource}}" data-field="tacSource" bindinput="onModelInput" maxlength="200" disabled="{{saving}}" /></view>
       <view class="row gap-sm"><button class="btn btn-line" bindtap="onCloseEditor" disabled="{{saving}}">取消</button><button class="btn btn-primary save-model" bindtap="onSaveModel" loading="{{saving}}" disabled="{{saving}}">保存型号</button></view>
     </block>
   </scroll-view></view>
 </view>
+</theme-shell>

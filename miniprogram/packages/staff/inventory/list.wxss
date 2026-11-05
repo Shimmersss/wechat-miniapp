@@ -12,7 +12,7 @@
 .action { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-ink); white-space: nowrap; }
 .action-icon { width: 88rpx; height: 88rpx; border-radius: 28rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; }
 .action-icon image { width: 48rpx; height: 48rpx; }
-.check { width: 40rpx; height: 40rpx; border-radius: 50%; border: 2rpx solid var(--c-ink-4); margin-right: 16rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: #fff; }
+.check { width: 40rpx; height: 40rpx; border-radius: 50%; border: 2rpx solid var(--c-ink-4); margin-right: 16rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: var(--c-on-ink); }
 .check.on { background: var(--c-ink); border-color: var(--c-ink); }
 .unit.picked { box-shadow: inset 0 0 0 3rpx var(--c-ink); }
 .unit.unpickable { opacity: .45; }

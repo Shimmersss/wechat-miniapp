@@ -1,0 +1,6 @@
+/* 主题外壳只负责撑满并承接变量，不产生任何视觉。
+ * 具体配色由 styles/theme.wxss 里的 .theme-root / .theme-dark 提供。 */
+:host {
+  display: block;
+  min-height: 100%;
+}

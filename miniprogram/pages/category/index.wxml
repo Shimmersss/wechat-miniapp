@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="layout">
   <scroll-view scroll-y class="side">
     <view wx:for="{{categories}}" wx:key="value" class="side-item {{activeIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onCategoryTap">{{item.label}}</view>
@@ -19,3 +20,4 @@
     <empty-state wx:if="{{categories.length && !categories[activeIndex].brands.length}}" text="该分类暂无型号" />
   </scroll-view>
 </view>
+</theme-shell>

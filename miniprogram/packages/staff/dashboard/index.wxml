@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container has-staff-tabbar">
   <brand-header>
     <view slot="right" class="row-start gap-sm">
@@ -8,40 +9,13 @@
   </brand-header>
 
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
-  <block wx:if="{{stats}}">
-    <section-card dark="{{true}}" title="今日经营" more-url="/packages/staff/stats/index">
-      <view class="grid-4">
-        <metric-item dark="{{true}}" highlight="{{true}}" label="今日销售净额" value="¥{{f.maskMoney(stats.sales.amount, privacy)}}" />
-        <metric-item dark="{{true}}" highlight="{{true}}" label="毛利" value="{{stats.sales.profit !== undefined ? '¥' + f.maskMoney(stats.sales.profit, privacy) : '无权限查看'}}" />
-        <metric-item dark="{{true}}" label="毛利率" value="{{stats.sales.margin !== undefined ? f.percent(stats.sales.margin, privacy) : '无权限查看'}}" />
-        <metric-item dark="{{true}}" label="动销率" value="{{f.percent(stats.sales.sellThrough, privacy)}}" />
-      </view>
-      <view class="tiny dark-hint mt">今日成交 {{stats.sales.count}} 台</view>
-    </section-card>
-
-    <section-card title="库存" more-url="/packages/staff/inventory/list">
-      <view class="grid-3">
-        <metric-item label="在库（台）" value="{{stats.inventory.inStock}}" />
-        <metric-item label="在库成本" value="{{stats.inventory.stockCost !== undefined ? '¥' + f.maskMoney(stats.inventory.stockCost, privacy) : '无权限查看'}}" />
-        <metric-item label="今日入库" value="{{stats.inventory.todayInbound}}" />
-      </view>
-      <view class="tiny muted mt">在途 {{stats.inventory.inTransit}} · 待复检 {{stats.inventory.recheck}} · 维修 {{stats.inventory.repairing}} · 出借 {{stats.inventory.loanedOut}}</view>
-    </section-card>
-
-    <section-card title="今日访问" more-url="/packages/staff/stats/index">
-      <view class="grid-4">
-        <metric-item align="center" label="访客 UV" value="{{stats.visits.uv}}" />
-        <metric-item align="center" label="浏览 PV" value="{{f.money(stats.visits.pv)}}" />
-        <metric-item align="center" label="咨询点击" value="{{stats.visits.consultClicks}}" />
-        <metric-item align="center" label="代理来源" value="{{stats.visits.bySource.agent}}" />
-      </view>
-      <view class="tiny muted mt">实际提交 {{stats.visits.consults}} 人 · 预约意向 {{stats.visits.appointments}} 条</view>
-      <view class="divider"></view>
-      <view class="tiny muted">自然 {{stats.visits.bySource.natural}} · 顾客分享 {{stats.visits.bySource.customer}} · 同行 {{stats.visits.bySource.peer}} · 代理 {{stats.visits.bySource.agent}} · 未核验 {{stats.visits.bySource.unverified}}</view>
-    </section-card>
-  </block>
-
-  <section-card wx:if="{{stats.repair}}" title="今日维修"><view class="grid-3"><metric-item label="开单" value="{{stats.repair.created}}"/><metric-item label="完工" value="{{stats.repair.completed}}"/><metric-item label="维修实收净额" value="¥{{f.maskMoney(stats.repair.revenue,privacy)}}"/><metric-item label="维修毛利" value="{{stats.repair.profit !== undefined ? '¥'+f.maskMoney(stats.repair.profit,privacy) : '无权限查看'}}"/></view><view class="tiny muted mt">收退款按发生期；本店机维修成本另列，未并入销售。</view></section-card>
+  <section-card wx:if="{{stats}}" title="待处理" subtitle="共 {{todoTotal}} 项" more-url="/packages/staff/stats/index">
+    <view wx:for="{{stats.todos}}" wx:key="key" class="list-item" bindtap="onNavigate" data-url="{{item.url}}">
+      <text>{{item.text}}</text>
+      <text class="{{item.count ? 'price' : 'muted'}}">{{item.count}} ›</text>
+    </view>
+    <view class="tiny muted mt">销售、访问、维修、库存等数据已移到「报表」页，按日/周/月查看。</view>
+  </section-card>
 
   <section-card title="快捷操作">
     <view class="grid-4 quick">
@@ -52,11 +26,6 @@
     </view>
   </section-card>
 
-  <section-card wx:if="{{stats}}" title="待办事项">
-    <view wx:for="{{stats.todos}}" wx:key="key" class="list-item" bindtap="onNavigate" data-url="{{item.url}}">
-      <text>{{item.text}}</text>
-      <text class="{{item.count ? 'price' : 'muted'}}">{{item.count}} ›</text>
-    </view>
-  </section-card>
 </view>
 <staff-tabbar active="dashboard" />
+</theme-shell>

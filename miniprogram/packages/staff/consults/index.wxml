@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
  <view class="chips mb"><view wx:for="{{kinds}}" wx:key="value" class="chip {{kind === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onKind">{{item.label}}</view></view>
  <picker range="{{statuses}}" range-key="label" value="{{statusIndex}}" bindchange="onStatus"><view class="picker mb">{{statuses[statusIndex].label}}</view></picker>
@@ -7,3 +8,4 @@
  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无对应记录" />
  <button wx:if="{{more}}" class="btn btn-line" bindtap="onReachBottom" loading="{{loading}}">加载更多</button><button wx:if="{{!internal}}" class="btn btn-primary mt" bindtap="onNew">新增咨询 / 预约</button>
 </view>
+</theme-shell>

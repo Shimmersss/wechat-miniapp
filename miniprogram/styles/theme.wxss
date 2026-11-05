@@ -1,80 +1,101 @@
-/* 夏目数码设计令牌 · 方案 G「雾白层叠」
+/* 夏目数码设计令牌 · 方案 G「雾白层叠」 · 双主题
  *
- * 分层模型（从下往上）：
- *   L0   页面底   --c-bg        冷浅灰，不是纯白
- *   L0.5 光晕     --c-aura-*    页面顶部的柔光，给毛玻璃提供可虚化的内容
- *   L1   白卡     --c-surface   纯白 + 浅投影（--e1）
- *   L2   毛玻璃   --c-glass     半透明白 + backdrop-filter + 最深投影（--e3）
- *   卡内 凹槽     --c-well      比白卡低一级的灰 + 内阴影
+ * ┌─ 为什么要迁到 .theme-root ────────────────────────────────┐
+ * │ 小程序的 <page> 是特殊根节点，无法动态加 class，          │
+ * │ 所以 page{} 上的 CSS 变量没法在运行时切换。               │
+ * │ 现在变量挂在 .theme-root / .theme-dark 两个类上，          │
+ * │ 由 theme-shell 组件包住每个页面的内容，切换主题 = 换类名。│
+ * └──────────────────────────────────────────────────────────┘
  *
- * 命名：--c-* 是页面里正在使用的稳定名字（保持兼容，不逐页改 WXML）；
- *       --frost-* 是演示分包沿用的旧名，这里作为别名指向同一组值，避免两套真值。
- *       --e1/--e2/--e3 是三级投影，分别对应 白卡 / 中间档 / 玻璃。
+ * 分层模型（两套主题一致，只是明暗反转）：
+ *   L0   页面底   --c-bg        浅：冷灰 / 深：近黑
+ *   L0.5 环境光   --c-aura-*    顶部柔光，给毛玻璃提供可虚化的素材
+ *   L1   白卡     --c-surface   浅：纯白 / 深：抬高的灰黑
+ *   L2   毛玻璃   --c-glass     半透明层 + backdrop-filter，每页唯一主块
+ *   卡内 凹槽     --c-well      比卡片低一级（浅）/ 高一级（深）
  */
-page {
-  /* ---------- 中性色（层次的主角） ---------- */
-  --c-bg: #F2F3F5;          /* L0 页面底 */
-  --c-surface: #FFFFFF;      /* L1 白卡 */
-  --c-surface-soft: #F3F4F6; /* 卡内凹槽底 */
+
+/* ============ 浅色主题（默认） ============ */
+.theme-root {
+  /* 中性色 */
+  --c-bg: #F2F3F5;
+  --c-surface: #FFFFFF;
+  --c-surface-soft: #F3F4F6;
   --c-well: #F3F4F6;
   --c-well-deep: #ECEDF0;
 
-  /* ---------- 文字四级灰 ---------- */
-  --c-ink: #111215;          /* 标题、数字、主操作 */
-  --c-ink-2: #4B4F57;        /* 正文 */
-  --c-muted: #9599A1;        /* 辅助说明 */
-  --c-ink-4: #BFC2C8;        /* 页脚、占位 */
-  --c-line: rgba(17, 18, 21, 0.07); /* 分隔线，比旧版更淡 */
+  /* 文字四级灰 */
+  --c-ink: #111215;
+  --c-ink-2: #4B4F57;
+  --c-muted: #9599A1;
+  --c-ink-4: #BFC2C8;
+  --c-line: rgba(17, 18, 21, 0.07);
 
-  /* ---------- 品牌与语义色（极简：只有这几种） ---------- */
-  --c-gold: #111215;         /* 历史名，现等同于墨色主操作 */
+  /* 「墨色底上的文字」：浅色主题墨底是深色 → 用白字；
+     深色主题墨底反过来是浅色 → 必须用深字，否则白底白字看不见。
+     所有 background: var(--c-ink) 的地方，文字一律用 --c-on-ink。 */
+  --c-on-ink: #FFFFFF;
+
+  /* 主操作按钮：浅色用墨色实心（最重的视觉锚点）；
+     深色不能沿用墨色，否则会变成一大块白，改成品牌蓝紫实心。 */
+  --c-action: #111215;
+  --c-action-ink: #FFFFFF;
+
+  /* 品牌与语义色（两套主题只有明度调整，色相不变） */
+  --c-gold: #111215;
   --c-gold-light: #C8CBD2;
   --c-gold-soft: #F3F4F6;
-  --c-navy: #111215;         /* 历史名，现为深色面 */
+  --c-navy: #111215;
   --c-navy-2: #2A2D33;
-  --c-price: #E5484D;        /* 金额 */
-  --c-red: #E5484D;          /* 预警、错误 */
+  --c-price: #E5484D;
+  --c-red: #E5484D;
   --c-red-soft: #FFF0EF;
-  --c-green: #1F9D55;        /* 毛利为正 */
+  --c-green: #1F9D55;
   --c-green-soft: #EDF9F1;
-  --c-orange: #B25000;       /* 仅用于少量提示，不参与分层 */
+  --c-orange: #B25000;
   --c-orange-soft: #FFF6EA;
   --c-blue: #2F6BEA;
   --c-blue-soft: #EEF3FF;
 
-  /* ---------- 光晕（只负责给毛玻璃提供虚化素材，本身不传达信息） ---------- */
+  /* 环境光 */
   --c-aura-1: #C9DBFF;
   --c-aura-2: #FFD6C2;
   --c-aura-3: #E3D6FF;
+  --c-aura-alpha: 1;
 
-  /* ---------- 圆角 ---------- */
+  /* 圆角 */
   --radius-sm: 20rpx;
   --radius: 28rpx;
-  --radius-lg: 44rpx;        /* 白卡 */
-  --radius-xl: 52rpx;        /* 毛玻璃主块 */
+  --radius-lg: 44rpx;
+  --radius-xl: 52rpx;
   --radius-pill: 999rpx;
 
-  /* ---------- 三级投影：深度即层级 ---------- */
+  /* 三级投影：浅色靠「阴影」，深色靠「更黑的阴影」 */
   --e1: 0 2rpx 4rpx rgba(17, 18, 21, 0.04), 0 12rpx 36rpx rgba(17, 18, 21, 0.05);
   --e2: 0 2rpx 4rpx rgba(17, 18, 21, 0.05), 0 24rpx 64rpx rgba(17, 18, 21, 0.08);
   --e3: 0 4rpx 12rpx rgba(17, 18, 21, 0.06), 0 44rpx 96rpx rgba(17, 18, 21, 0.14);
   --e-ink: 0 12rpx 28rpx rgba(17, 18, 21, 0.24);
-  --shadow: var(--e1);       /* 历史名，页面里还在用 */
+  --shadow: var(--e1);
 
-  /* ---------- 毛玻璃 ---------- */
+  /* 毛玻璃 */
   --c-glass: linear-gradient(160deg,
       rgba(255, 255, 255, 0.82) 0%,
       rgba(255, 255, 255, 0.50) 55%,
       rgba(255, 255, 255, 0.62) 100%);
-  --c-glass-flat: rgba(255, 255, 255, 0.66);  /* 不支持 backdrop-filter 时的降级色 */
-  --c-glass-edge: rgba(255, 255, 255, 0.85);  /* 1rpx 内高光边 */
+  --c-glass-flat: rgba(255, 255, 255, 0.66);
+  --c-glass-edge: rgba(255, 255, 255, 0.85);
   --c-hair: rgba(17, 18, 21, 0.07);
 
-  /* ---------- 间距 ---------- */
+  /* 底栏/浮层专用（深色下需要更高的不透明度才看得清） */
+  --c-bar-bg: rgba(255, 255, 255, 0.72);
+  --c-sheet-bg: #FFFFFF;
+  --c-mask: rgba(17, 18, 21, 0.42);
+
+  /* 间距 */
   --gap: 24rpx;
   --gutter: 28rpx;
 
-  /* ---------- 演示分包沿用的别名（值与上面完全一致，不要另设真值） ---------- */
+  /* 演示分包沿用的别名 */
   --frost-ink: var(--c-ink);
   --frost-ink-2: var(--c-ink-2);
   --frost-ink-3: var(--c-muted);
@@ -98,16 +119,102 @@ page {
   --frost-e2: var(--e2);
   --frost-e3: var(--e3);
   --frost-ink-shadow: var(--e-ink);
+
+  /* 主题容器自身 */
+  background: var(--c-bg);
+  color: var(--c-ink);
+  min-height: 100vh;
 }
 
-/* 老安卓 / 低版本微信不支持 backdrop-filter：退化成高不透明度白卡。
-   层次仍靠投影 + 内高光边成立，只是少了「虚化」这一档。 */
+/* ============ 深色主题 ============
+ * 关键：深色下「白卡」不能真的变白，否则刺眼。
+ * 用比页面底更亮的灰黑来表达「抬高」，凹槽反而比卡片更亮一点点，
+ * 靠投影 + 内高光边维持层次，和浅色版的物理直觉保持一致。 */
+.theme-dark {
+  --c-bg: #0B0C0F;
+  --c-surface: #17191E;
+  --c-surface-soft: #212429;
+  --c-well: #212429;
+  --c-well-deep: #282C33;
+
+  --c-ink: #F5F6F8;
+  --c-ink-2: #C2C6CE;
+  --c-muted: #828792;
+  --c-ink-4: #5B606A;
+  --c-line: rgba(255, 255, 255, 0.08);
+
+  --c-on-ink: #0B0C0F;
+
+  /* 深色下主按钮改用品牌蓝紫：墨色在深底上会变成刺眼的白块 */
+  --c-action: #6E7BFF;
+  --c-action-ink: #0B0C0F;
+
+  --c-gold: #F5F6F8;
+  --c-gold-light: #6B7079;
+  --c-gold-soft: #212429;
+  --c-navy: #F5F6F8;
+  --c-navy-2: #2E323A;
+  /* 深色下红色要提亮，否则在近黑底上发闷、对比不足 */
+  --c-price: #FF7A6E;
+  --c-red: #FF7A6E;
+  --c-red-soft: rgba(255, 122, 110, 0.14);
+  --c-green: #4ADE80;
+  --c-green-soft: rgba(74, 222, 128, 0.13);
+  --c-orange: #FFB07A;
+  --c-orange-soft: rgba(255, 176, 122, 0.14);
+  --c-blue: #6BA6FF;
+  --c-blue-soft: rgba(107, 166, 255, 0.14);
+
+  /* 环境光：深色底上要更饱和才看得出来 */
+  --c-aura-1: rgba(80, 130, 255, 0.42);
+  --c-aura-2: rgba(255, 120, 80, 0.32);
+  --c-aura-3: rgba(150, 110, 255, 0.36);
+
+  /* 深色下投影要更重，否则层次浮不起来 */
+  --e1: 0 2rpx 4rpx rgba(0, 0, 0, 0.34), 0 12rpx 36rpx rgba(0, 0, 0, 0.42);
+  --e2: 0 2rpx 4rpx rgba(0, 0, 0, 0.4), 0 24rpx 64rpx rgba(0, 0, 0, 0.5);
+  --e3: 0 4rpx 14rpx rgba(0, 0, 0, 0.5), 0 44rpx 96rpx rgba(0, 0, 0, 0.66);
+  --e-ink: 0 12rpx 28rpx rgba(0, 0, 0, 0.6);
+
+  /* 毛玻璃：用亮灰玻璃而不是白玻璃，并抬高内高光边 */
+  --c-glass: linear-gradient(160deg,
+      rgba(62, 68, 80, 0.78) 0%,
+      rgba(34, 37, 44, 0.72) 55%,
+      rgba(46, 50, 58, 0.75) 100%);
+  --c-glass-flat: rgba(30, 33, 39, 0.82);
+  --c-glass-edge: rgba(255, 255, 255, 0.14);
+  --c-hair: rgba(255, 255, 255, 0.07);
+
+  --c-bar-bg: rgba(20, 22, 27, 0.82);
+  --c-sheet-bg: #17191E;
+  --c-mask: rgba(0, 0, 0, 0.62);
+
+  background: var(--c-bg);
+  color: var(--c-ink);
+}
+
+/* 老安卓 / 低版本微信不支持 backdrop-filter：
+ * 浅色退化成高不透明白卡；深色同理退化成高不透明灰黑卡。
+ * 层次仍靠投影 + 内高光边成立，只是少了「虚化」这一档。 */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  page {
+  .theme-root {
     --c-glass: linear-gradient(160deg,
         rgba(255, 255, 255, 0.97) 0%,
         rgba(255, 255, 255, 0.93) 55%,
         rgba(255, 255, 255, 0.95) 100%);
     --c-glass-flat: rgba(255, 255, 255, 0.95);
   }
+  .theme-dark {
+    --c-glass: linear-gradient(160deg,
+        rgba(40, 44, 52, 0.98) 0%,
+        rgba(30, 33, 39, 0.97) 55%,
+        rgba(36, 39, 46, 0.98) 100%);
+    --c-glass-flat: rgba(30, 33, 39, 0.97);
+  }
+}
+
+/* page 元素兜底：page 的底色跟随主题，避免下拉回弹时露出白边。
+ * 这里不能引用变量（page 上没有），由 app.js 用 wx.setBackgroundColor 同步。 */
+page {
+  background: #F2F3F5;
 }

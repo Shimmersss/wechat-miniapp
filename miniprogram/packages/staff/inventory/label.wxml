@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="card label">
     <view class="h3">{{brand.name}}</view>
@@ -8,3 +9,4 @@
   <view class="footer-space"></view>
   <view class="footer-bar"><button class="btn btn-primary" bindtap="onPrint">打印标签</button></view>
 </view>
+</theme-shell>

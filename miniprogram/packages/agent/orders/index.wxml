@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view class="chips mb"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view>
   <view wx:if="{{error}}" class="notice">{{error}}</view>
@@ -12,3 +13,4 @@
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="还没有通过你的链接下的订单" />
 </view>
+</theme-shell>

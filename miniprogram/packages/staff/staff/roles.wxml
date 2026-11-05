@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="notice">{{canEdit ? '勾选该角色可用的功能和能看到的敏感字段；保存后对该角色所有员工立即生效。' : '只有老板可以修改角色权限，你可以查看当前配置。'}}</view>
   <scroll-view scroll-x class="mb"><view class="chips nowrap"><view wx:for="{{roles}}" wx:key="key" class="chip {{active === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="onRole">{{item.label}} {{item.staffCount}}</view></view></scroll-view>
@@ -18,3 +19,4 @@
   <button class="btn btn-soft" bindtap="onReset" disabled="{{saving}}">还原</button>
   <button class="btn btn-primary" bindtap="onSave" loading="{{saving}}" disabled="{{saving}}">保存</button>
 </view>
+</theme-shell>

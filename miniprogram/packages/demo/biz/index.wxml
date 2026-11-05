@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <frost-nav title="经营" />
 <view class="frost">
   <view class="aura"></view>
@@ -47,3 +48,4 @@
   </view>
   <frost-tabbar active="biz" />
 </view>
+</theme-shell>

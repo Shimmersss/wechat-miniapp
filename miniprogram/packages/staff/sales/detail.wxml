@@ -1,6 +1,7 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
- <view class="notice">退款为业务记录，先确认已实际办理。此页面不会调用支付平台原路退款。</view><view wx:if="{{error}}" class="notice">{{error}}</view>
+ <view wx:if="{{error}}" class="notice">{{error}}</view>
  <block wx:if="{{detail}}">
   <view class="card"><view class="h3">{{detail.no}}</view><status-pill text="{{f.label(statusMap,detail.status)}}" tone="{{f.tone(statusMap,detail.status)}}" /><view class="small muted mt-sm">{{detail.seller}} · {{detail.createdAt}} · {{detail.payMethod}}</view></view>
   <section-card title="成交快照"><view class="list-item"><text>原成交额</text><text>¥{{f.maskMoney(detail.amount,privacy)}}</text></view><view class="list-item"><text>累计退款</text><text>¥{{f.maskMoney(detail.refundAmount,privacy)}}</text></view><view class="list-item"><text>净实收</text><text>¥{{f.maskMoney(detail.netAmount,privacy)}}</text></view><view class="list-item"><text>净毛利</text><text>{{detail.profit !== undefined ? '¥'+f.maskMoney(detail.profit,privacy) : '无权限查看'}}</text></view><view class="small mt">顾客 {{detail.customer || '未填写'}} {{detail.phone}}</view><view class="small muted mt-sm">{{detail.remark}}</view></section-card>
@@ -16,3 +17,4 @@
   <view wx:if="{{pending}}" class="notice">提交结果未知，保持原内容重试可防止重复退款记录。<button class="btn btn-primary btn-block mt" bindtap="onRetry" loading="{{saving}}" disabled="{{saving}}">原样重试</button></view>
  </block>
 </view>
+</theme-shell>

@@ -1,3 +1,3 @@
 .invite-label { color: var(--c-muted); }
 .code { font-size: 64rpx; font-weight: 700; letter-spacing: 12rpx; margin-top: 8rpx; font-variant-numeric: tabular-nums; }
-button.invite-share { background: #fff; color: var(--c-ink); }
+button.invite-share { background: var(--c-surface); color: var(--c-ink); }
