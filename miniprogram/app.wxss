@@ -1,5 +1,14 @@
 @import "./styles/theme.wxss";
 
+/* ============================================================
+ * 全局样式 · 方案 G「雾白层叠」
+ *
+ * 三条铁律：
+ *   1. 分层靠物理感（虚化 / 投影 / 凹槽），不靠彩色块。
+ *   2. 颜色只有两种有含义：墨色（主操作、选中）、红色（金额、预警）。
+ *   3. 每页只有一个 .glass 主块，其余一律 .card 白卡。
+ * ============================================================ */
+
 page {
   background: var(--c-bg);
   color: var(--c-ink);
@@ -12,8 +21,50 @@ page {
 view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 
 /* ---------- 布局 ---------- */
-.container { padding: var(--gutter); padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom)); }
-.container.has-staff-tabbar { padding-bottom: calc(160rpx + env(safe-area-inset-bottom)); }
+/* .container 是全站页面根容器，顺便挂上顶部环境光：
+ * 毛玻璃需要「下面有东西可虚化」才看得出效果，纯白底上玻璃等于没做。
+ * 光晕用 ::before 绝对定位在容器最底层，不占布局高度。 */
+.container {
+  position: relative;
+  padding: var(--gutter); padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom));
+}
+.container::before {
+  content: "";
+  position: absolute; left: -80rpx; right: -80rpx; top: -80rpx; height: 900rpx;
+  z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(380rpx 320rpx at 14% 22%, var(--c-aura-1), transparent 70%),
+    radial-gradient(420rpx 340rpx at 90% 16%, var(--c-aura-2), transparent 70%),
+    radial-gradient(440rpx 380rpx at 52% 54%, var(--c-aura-3), transparent 74%);
+  filter: blur(34px);
+  -webkit-mask-image: linear-gradient(to bottom, var(--c-ink) 52%, transparent);
+  mask-image: linear-gradient(to bottom, var(--c-ink) 52%, transparent);
+}
+/* 内容必须压在光晕之上，否则会被那层半透明盖住而发虚。
+ * 注意：不能只写 `.container > view`，自定义组件（section-card / empty-state 等）
+ * 渲染出来的不是 view 标签，选择器命中不到，内容就会被光晕糊住；
+ * 也不能用通配符 `> *`（WXSS 编译不支持）。
+ * 这里直接按项目里实际出现的子元素类型逐个列出。 */
+.container > view,
+.container > scroll-view,
+.container > button,
+.container > swiper,
+.container > image,
+.container > section-card,
+.container > brand-header,
+.container > empty-state,
+.container > product-card,
+.container > todo-block,
+.container > staff-tabbar { position: relative; z-index: 1; }
+/* staff-tabbar 组件自带 .ph 占位（184rpx + 安全区），这里只补一点呼吸，不能叠加两份 */
+.container.has-staff-tabbar { padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom)); }
+
+/* 顾客端 tabBar 页：原生 tabBar 是 fixed 的（自定义组件高 104rpx + 安全区）。
+ * 容器默认底部内边距只有 --gutter(28rpx)，内容会紧贴甚至被压到 tabBar 下面，
+ * 所以带 tabBar 的页统一用这个类避让。 */
+.container.has-tabbar {
+  padding-bottom: calc(104rpx + var(--gutter) + env(safe-area-inset-bottom));
+}
 .row { display: flex; align-items: center; justify-content: space-between; }
 .row-start { display: flex; align-items: center; }
 .col { display: flex; flex-direction: column; }
@@ -26,29 +77,69 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 .divider { height: 1rpx; background: var(--c-line); margin: 24rpx 0; }
 
 /* ---------- 文本 ---------- */
-.h1 { font-size: 48rpx; font-weight: 700; letter-spacing: -1rpx; line-height: 1.25; }
-.h2 { font-size: 36rpx; font-weight: 700; letter-spacing: -0.5rpx; }
-.h3 { font-size: 30rpx; font-weight: 600; }
+.h1 { font-size: 48rpx; font-weight: 800; letter-spacing: -1rpx; line-height: 1.25; }
+.h2 { font-size: 36rpx; font-weight: 800; letter-spacing: -0.5rpx; }
+.h3 { font-size: 30rpx; font-weight: 700; }
 .muted { color: var(--c-muted); }
 .tiny { font-size: 24rpx; }
 .small { font-size: 26rpx; }
-.gold { color: var(--c-gold); }
-.price { color: var(--c-price); font-weight: 600; }
+.gold { color: var(--c-ink); font-weight: 700; }   /* 历史名：现为墨色强调 */
+.price { color: var(--c-price); font-weight: 700; }
 .num { font-variant-numeric: tabular-nums; }
 .ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-/* ---------- 卡片 ---------- */
-.card { background: var(--c-surface); border-radius: var(--radius-lg); padding: 32rpx; box-shadow: var(--shadow); margin-bottom: var(--gap); }
-.card-dark { background: var(--c-navy); color: #fff; }
-.notice { background: var(--c-surface-soft); color: var(--c-ink-2); border-radius: var(--radius); padding: 22rpx 28rpx; font-size: 26rpx; line-height: 1.6; margin-bottom: var(--gap); }
+/* ---------- L1 白卡 ---------- */
+.card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  box-shadow: var(--e1);
+  margin-bottom: var(--gap);
+}
+.card-dark { background: var(--c-navy-2); color: #fff; }
 
-/* ---------- 按钮（覆盖原生 button 默认样式；44pt 点击高度） ---------- */
-button.btn { margin: 0; padding: 0 36rpx; height: 88rpx; line-height: 88rpx; border-radius: var(--radius-pill); font-size: 30rpx; font-weight: 600; border: 0; width: auto; white-space: nowrap; }
+/* ---------- L2 毛玻璃：每页只能有一个主块用 ---------- */
+.glass {
+  background: var(--c-glass);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: var(--e3), inset 0 0 0 1rpx var(--c-glass-edge);
+  border-radius: var(--radius-xl);
+  padding: 32rpx;
+  margin-bottom: var(--gap);
+}
+
+/* ---------- 卡内凹槽：图标底、数据格、标签 ---------- */
+.well {
+  background: var(--c-well);
+  box-shadow: inset 0 2rpx 4rpx var(--c-hair);
+  border-radius: var(--radius);
+}
+
+/* ---------- 提示条：白卡 + 左侧红线，不整块变红 ---------- */
+.notice {
+  background: var(--c-surface);
+  color: var(--c-red);
+  border-radius: var(--radius);
+  padding: 24rpx 30rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  margin-bottom: var(--gap);
+  box-shadow: var(--e1), inset 6rpx 0 0 var(--c-red);
+}
+.notice.info { color: var(--c-ink-2); box-shadow: var(--e1), inset 6rpx 0 0 var(--c-muted); }
+
+/* ---------- 按钮 ---------- */
+button.btn {
+  margin: 0; padding: 0 36rpx; height: 88rpx; line-height: 88rpx;
+  border-radius: var(--radius-pill); font-size: 30rpx; font-weight: 700;
+  border: 0; width: auto; white-space: nowrap;
+}
 button.btn::after { border: 0; }
-button.btn-primary { background: var(--c-ink); color: #fff; }
-button.btn-dark { background: var(--c-navy); color: #fff; }
-button.btn-line { background: var(--c-surface); color: var(--c-ink); border: 1rpx solid #D2D2D7; }
-button.btn-soft { background: var(--c-surface-soft); color: var(--c-ink); }
+button.btn-primary { background: var(--c-ink); color: #fff; box-shadow: var(--e-ink); }
+button.btn-dark { background: var(--c-navy-2); color: #fff; }
+button.btn-line { background: var(--c-surface); color: var(--c-ink); box-shadow: var(--e1); }
+button.btn-soft { background: var(--c-well); color: var(--c-ink); }
 button.btn-danger { background: var(--c-red); color: #fff; }
 button.btn-block { display: block; width: 100%; }
 button.btn-sm { height: 64rpx; line-height: 64rpx; padding: 0 26rpx; font-size: 26rpx; }
@@ -56,23 +147,88 @@ button.btn[disabled] { opacity: .4; }
 
 /* ---------- 筛选 chip ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.chip { padding: 14rpx 30rpx; border-radius: var(--radius-pill); background: var(--c-surface); color: var(--c-ink-2); font-size: 28rpx; }
-.chip.active { background: var(--c-ink); color: #fff; }
+.chip {
+  padding: 14rpx 30rpx; border-radius: var(--radius-pill);
+  background: var(--c-surface); color: var(--c-ink-2);
+  font-size: 28rpx; font-weight: 600; box-shadow: var(--e1);
+}
+.chip.active { background: var(--c-ink); color: #fff; box-shadow: var(--e-ink); }
 
 /* ---------- 表单 ---------- */
 .field { margin-bottom: 28rpx; }
 .field-label { font-size: 26rpx; color: var(--c-muted); margin-bottom: 12rpx; }
 .field-label.required::after { content: " *"; color: var(--c-red); }
-.input, .picker, .textarea { background: var(--c-surface); border: 1rpx solid #DCDCE0; border-radius: var(--radius-sm); padding: 20rpx 24rpx; font-size: 30rpx; min-height: 88rpx; width: 100%; }
+.input, .picker, .textarea {
+  background: var(--c-well); border: 0; border-radius: var(--radius);
+  padding: 20rpx 24rpx; font-size: 30rpx; min-height: 88rpx; width: 100%;
+  box-shadow: inset 0 2rpx 4rpx var(--c-hair);
+}
 .textarea { height: 180rpx; }
-.search-bar { display: flex; align-items: center; height: 80rpx; padding: 0 28rpx; background: var(--c-surface); border-radius: var(--radius-pill); color: var(--c-muted); font-size: 28rpx; }
+.search-bar {
+  display: flex; align-items: center; height: 84rpx; padding: 0 28rpx;
+  background: var(--c-surface); border-radius: var(--radius-pill);
+  color: var(--c-muted); font-size: 28rpx; box-shadow: var(--e1);
+}
 .search-bar .search-icon { width: 36rpx; height: 36rpx; margin-right: 14rpx; flex-shrink: 0; }
 
 /* ---------- 列表 ---------- */
-.list-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 0; border-bottom: 1rpx solid var(--c-line); }
+.list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28rpx 0; border-bottom: 1rpx solid var(--c-line);
+}
 .list-item:last-child { border-bottom: 0; }
 
 /* ---------- 底部固定操作区 ---------- */
-.footer-bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 16rpx; padding: 20rpx var(--gutter); padding-bottom: calc(20rpx + env(safe-area-inset-bottom)); background: rgba(255,255,255,.88); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 1rpx solid var(--c-line); z-index: 10; }
+.footer-bar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 20rpx var(--gutter);
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: var(--c-glass-flat);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 -8rpx 32rpx rgba(17, 18, 21, 0.06);
+  z-index: 10;
+}
 .footer-bar button.btn { flex: 1; padding: 0 16rpx; }
-.footer-space { height: calc(150rpx + env(safe-area-inset-bottom)); }
+.footer-space { height: calc(160rpx + env(safe-area-inset-bottom)); }
+
+/* ---------- 环境光：页面顶部柔光，给毛玻璃提供虚化素材 ----------
+ * 挂在页面最外层容器上；不要放进 scroll-view，否则会跟着滚走。 */
+.aura-host { position: relative; }
+.aura-host::before {
+  content: "";
+  position: absolute; left: -80rpx; right: -80rpx; top: -120rpx; height: 1040rpx;
+  z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(420rpx 360rpx at 16% 26%, var(--c-aura-1), transparent 70%),
+    radial-gradient(460rpx 380rpx at 88% 20%, var(--c-aura-2), transparent 70%),
+    radial-gradient(500rpx 420rpx at 56% 60%, var(--c-aura-3), transparent 72%);
+  filter: blur(34px);
+  -webkit-mask-image: linear-gradient(to bottom, var(--c-ink) 55%, transparent);
+  mask-image: linear-gradient(to bottom, var(--c-ink) 55%, transparent);
+}
+
+/* ---------- 分组：白卡内的一组图标入口 ---------- */
+.group { padding: 4rpx 12rpx 8rpx; }
+.group-head { display: flex; align-items: center; padding: 30rpx 16rpx 8rpx; }
+.group-title { font-size: 30rpx; font-weight: 800; letter-spacing: -0.4rpx; }
+.group-meta {
+  margin-left: auto; font-size: 22rpx; color: var(--c-muted);
+  background: var(--c-well); padding: 4rpx 18rpx; border-radius: 999rpx; font-weight: 600;
+}
+.tiles { display: flex; flex-wrap: wrap; }
+.tile {
+  width: 25%; padding: 16rpx 4rpx 24rpx;
+  display: flex; flex-direction: column; align-items: center;
+}
+.tile .ico {
+  width: 100rpx; height: 100rpx; border-radius: 32rpx; background: var(--c-well);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 2rpx 4rpx var(--c-hair);
+}
+.tile .ico-img { width: 64rpx; height: 64rpx; }
+.tile .tile-label {
+  margin-top: 16rpx; font-size: 24rpx; color: var(--c-ink-2);
+  font-weight: 600; text-align: center;
+}

@@ -1,16 +1,44 @@
 :host { display: block; }
-.parameter { display: flex; align-items: flex-start; padding: 24rpx 0; border-bottom: 1rpx solid var(--c-line); gap: 20rpx; }
+
+.parameter {
+  display: flex; align-items: flex-start;
+  padding: 24rpx 0; border-bottom: 1rpx solid var(--c-line); gap: 20rpx;
+}
+.parameter:last-child { border-bottom: 0; }
 .label { flex: 0 0 154rpx; color: var(--c-muted); font-size: 26rpx; line-height: 60rpx; }
 .required::after { content: ' *'; color: var(--c-red); }
 .control { flex: 1; min-width: 0; }
+
 .options-scroll { width: 100%; white-space: nowrap; }
 .options { display: inline-flex; gap: 12rpx; white-space: nowrap; }
-.option { display: inline-block; width: auto; flex: 0 0 auto; margin: 0; padding: 0 20rpx; line-height: 60rpx; height: 60rpx; font-size: 26rpx; border-radius: var(--radius-sm); background: var(--c-surface-soft); color: var(--c-ink); }
+/* 选项：凹槽底，选中变墨色实心 */
+.option {
+  display: inline-block; width: auto; flex: 0 0 auto; margin: 0;
+  padding: 0 22rpx; line-height: 64rpx; height: 64rpx;
+  font-size: 26rpx; font-weight: 600;
+  border-radius: var(--radius-pill);
+  background: var(--c-well); color: var(--c-ink-2);
+  box-shadow: inset 0 1rpx 2rpx var(--c-hair);
+}
 .option::after, .photo button::after, .upload::after { border: none; }
-.option.selected { color: #fff; background: var(--c-ink); }
-.value-input { width: 100%; min-height: 60rpx; font-size: 28rpx; text-align: right; color: var(--c-ink); }
+.option.selected { color: #fff; background: var(--c-ink); box-shadow: var(--e-ink); }
+
+.value-input {
+  width: 100%; min-height: 60rpx; font-size: 28rpx;
+  text-align: right; color: var(--c-ink);
+}
+
 .photos { display: flex; gap: 12rpx; flex-wrap: wrap; }
 .photo { width: 120rpx; }
 .photo image { width: 120rpx; height: 120rpx; border-radius: var(--radius-sm); }
-.photo button { margin: 0; font-size: 22rpx; line-height: 44rpx; padding: 0; color: var(--c-muted); background: var(--c-surface-soft); }
-.upload { margin: 12rpx 0 0; font-size: 26rpx; line-height: 60rpx; padding: 0 24rpx; color: var(--c-ink); background: var(--c-surface-soft); border-radius: var(--radius-sm); }
+.photo button {
+  margin: 0; font-size: 22rpx; line-height: 44rpx; padding: 0;
+  color: var(--c-muted); background: transparent;
+}
+.upload {
+  margin: 12rpx 0 0; font-size: 26rpx; font-weight: 600;
+  line-height: 64rpx; padding: 0 26rpx;
+  color: var(--c-ink); background: var(--c-well);
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 1rpx 2rpx var(--c-hair);
+}

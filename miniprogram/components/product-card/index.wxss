@@ -1,7 +1,28 @@
-.card { background: var(--c-surface); border-radius: var(--radius-lg); overflow: hidden; }
-.cover { width: 100%; height: 320rpx; background: var(--c-surface-soft); display: block; }
+/* 商品卡：白卡 + 商品图放凹槽里，成色标签作凹槽。 */
+.card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--e1);
+}
+.cover {
+  width: 100%;
+  height: 320rpx;
+  background: var(--c-well);
+  display: block;
+}
 .body { padding: 22rpx 24rpx 26rpx; }
-.name { font-size: 30rpx; font-weight: 600; letter-spacing: -0.3rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.spec { font-size: 24rpx; color: var(--c-muted); margin-top: 6rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.name {
+  font-size: 30rpx; font-weight: 800; letter-spacing: -0.4rpx;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.spec {
+  font-size: 24rpx; color: var(--c-muted); margin-top: 8rpx;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
 .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 18rpx; }
-.grade { font-size: 22rpx; padding: 4rpx 14rpx; border-radius: 999rpx; background: var(--c-surface-soft); color: var(--c-ink-2); }
+.grade {
+  font-size: 22rpx; font-weight: 600; padding: 4rpx 14rpx;
+  border-radius: 999rpx; background: var(--c-well); color: var(--c-ink-2);
+  box-shadow: inset 0 1rpx 2rpx var(--c-hair);
+}

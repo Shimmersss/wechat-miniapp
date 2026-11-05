@@ -59,5 +59,11 @@ module.exports = {
   STAFF: '/packages/staff/staff/index',
   STAFF_ROLES: '/packages/staff/staff/roles',
   AUDIT: '/packages/staff/audit/index',
-  STAFF_PROFILE: '/packages/staff/profile/index'
+  STAFF_PROFILE: '/packages/staff/profile/index',
+
+  // 方案 G「雾白层叠」演示分包（视觉评审用，业务仍走现有接口与权限）
+  DEMO_HOME: '/packages/demo/home/index',
+  DEMO_STOCK: '/packages/demo/stock/index',
+  DEMO_BIZ: '/packages/demo/biz/index',
+  DEMO_MINE: '/packages/demo/mine/index'
 };

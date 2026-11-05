@@ -1,5 +1,19 @@
-.empty { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0; color: var(--c-muted); gap: 16rpx; }
-.icon { font-size: 72rpx; color: #D2D2D7; }
-.text { font-size: 28rpx; }
-.btn { margin: 0; height: 64rpx; line-height: 64rpx; padding: 0 28rpx; font-size: 26rpx; border-radius: 999rpx; background: var(--c-surface-soft); color: var(--c-ink); }
+/* 空状态：用凹槽圆盘托一个图形，而不是 Unicode 符号 */
+.empty {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 96rpx 0; color: var(--c-muted); gap: 20rpx;
+}
+.icon {
+  width: 128rpx; height: 128rpx; border-radius: 44rpx;
+  background: var(--c-well);
+  box-shadow: inset 0 2rpx 6rpx var(--c-hair);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56rpx; color: var(--c-ink-4);
+}
+.text { font-size: 28rpx; color: var(--c-muted); }
+.btn {
+  margin: 0; height: 64rpx; line-height: 64rpx; padding: 0 30rpx;
+  font-size: 26rpx; font-weight: 600; border-radius: 999rpx;
+  background: var(--c-surface); color: var(--c-ink); box-shadow: var(--e1);
+}
 .btn::after { border: 0; }

@@ -1,0 +1,4 @@
+<view class="ph" style="height:{{barHeight}}px"></view>
+<view class="bar" style="height:{{barHeight}}px">
+  <view class="title" style="top:{{titleTop}}px;height:{{titleHeight}}px;right:{{titleRight}}px">{{title}}</view>
+</view>

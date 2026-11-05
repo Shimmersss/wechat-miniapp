@@ -27,3 +27,7 @@ yarn-error.log*
 *.pid
 *.seed
 coverage/
+
+# 设计稿截图是构建产物，用 design-demos/shoot.sh 可随时重新生成
+design-demos/**/preview.png
+design-demos/compare.png

@@ -1,0 +1,34 @@
+@import "../styles/frost.wxss";
+
+.brandbar { display: flex; align-items: center; padding: 12rpx 8rpx 28rpx; }
+.logo { width: 80rpx; height: 80rpx; border-radius: 26rpx; background: var(--frost-ink); color: var(--frost-card);
+  display: flex; align-items: center; justify-content: center; font-size: 34rpx; font-weight: 800;
+  box-shadow: var(--frost-ink-shadow); margin-right: 22rpx; }
+.bname { font-size: 32rpx; font-weight: 800; letter-spacing: -0.6rpx; }
+.bslo { font-size: 22rpx; color: var(--frost-ink-3); margin-top: 6rpx; }
+.stock-pill { font-size: 22rpx; font-weight: 700; color: var(--frost-ink-2); padding: 8rpx 20rpx; border-radius: 999rpx;
+  background: var(--frost-glass-flat); box-shadow: inset 0 0 0 1rpx var(--frost-glass-edge); }
+
+.search { height: 92rpx; border-radius: 32rpx; display: flex; align-items: center; padding: 0 32rpx;
+  font-size: 26rpx; color: var(--frost-ink-3); box-shadow: var(--frost-e2), inset 0 0 0 1rpx var(--frost-glass-edge); }
+.search-icon { width: 32rpx; height: 32rpx; margin-right: 18rpx; }
+
+.chips { display: flex; flex-direction: row; align-items: center; white-space: nowrap; height: 68rpx; margin: 28rpx 0 32rpx; }
+.chip { flex-shrink: 0; height: 60rpx; line-height: 60rpx; padding: 0 32rpx; margin-right: 16rpx; border-radius: 999rpx; font-size: 25rpx; font-weight: 700;
+  color: var(--frost-ink-2); background: var(--frost-card); box-shadow: var(--frost-e1); }
+.chip.on { background: var(--frost-ink); color: var(--frost-card); box-shadow: var(--frost-ink-shadow); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24rpx; }
+.pcard { background: var(--frost-card); border-radius: 44rpx; overflow: hidden; box-shadow: var(--frost-e2); }
+.pimg { position: relative; height: 320rpx; margin: 12rpx 12rpx 0; border-radius: 34rpx; overflow: hidden; }
+.pimg-in { width: 100%; height: 100%; }
+.pbadge { position: absolute; top: 16rpx; left: 16rpx; font-size: 20rpx; font-weight: 800; padding: 6rpx 18rpx; border-radius: 999rpx;
+  color: var(--frost-ink); background: var(--frost-glass-flat);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.pbody { padding: 20rpx 24rpx 26rpx; }
+.pn { font-size: 27rpx; font-weight: 800; letter-spacing: -0.4rpx; }
+.ps { font-size: 22rpx; color: var(--frost-ink-3); margin-top: 8rpx; }
+.pf { display: flex; align-items: center; justify-content: space-between; margin-top: 20rpx; }
+.pp { font-size: 34rpx; font-weight: 800; color: var(--frost-red); letter-spacing: -1rpx; }
+.yen { font-size: 22rpx; }
+.pg { font-size: 20rpx; color: var(--frost-ink-2); background: var(--frost-well); border-radius: 12rpx; padding: 6rpx 14rpx; }

@@ -1,0 +1,60 @@
+/* 方案 G「雾白层叠」演示页公共样式。颜色全部取自 styles/theme.wxss 的 --frost-* 令牌。
+   层次：.aura 光晕（最底）→ .card 白卡 → .glass 毛玻璃（最高）；卡内用 .well 凹槽 */
+page { background: var(--frost-bg); color: var(--frost-ink); }
+/* 不能用 overflow:hidden：会裁掉超屏内容且让页面无法滚动。横向溢出单独收，纵向必须放开。
+   底栏占位由 .frost 的 padding-bottom 提供（.ph 在滚动容器外，靠它不生效）。 */
+.frost { position: relative; overflow-x: hidden; padding-bottom: calc(200rpx + env(safe-area-inset-bottom)); }
+.aura {
+  position: absolute; left: -80rpx; right: -80rpx; top: -120rpx; height: 1040rpx; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(420rpx 360rpx at 16% 26%, var(--frost-aura-1), transparent 70%),
+    radial-gradient(460rpx 380rpx at 88% 20%, var(--frost-aura-2), transparent 70%),
+    radial-gradient(500rpx 420rpx at 56% 60%, var(--frost-aura-3), transparent 72%);
+  filter: blur(34px);
+  -webkit-mask-image: linear-gradient(to bottom, var(--frost-ink) 55%, transparent);
+  mask-image: linear-gradient(to bottom, var(--frost-ink) 55%, transparent);
+}
+.body { position: relative; z-index: 1; padding: 12rpx 28rpx 0; }
+
+.glass {
+  background: var(--frost-glass);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: var(--frost-e3), inset 0 0 0 1rpx var(--frost-glass-edge);
+  border-radius: 52rpx;
+}
+.card { background: var(--frost-card); border-radius: 44rpx; box-shadow: var(--frost-e1); }
+.well { background: var(--frost-well); }
+.mt { margin-top: 24rpx; }
+.muted { color: var(--frost-ink-3); }
+.red { color: var(--frost-red); }
+.green { color: var(--frost-green); }
+.ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* 分组白卡 + 图标网格 */
+.group { padding: 4rpx 12rpx 8rpx; }
+.group-head { display: flex; align-items: center; padding: 30rpx 16rpx 8rpx; }
+.group-title { font-size: 30rpx; font-weight: 800; letter-spacing: -0.4rpx; }
+.group-meta { margin-left: auto; font-size: 22rpx; color: var(--frost-ink-3); background: var(--frost-well);
+  padding: 4rpx 18rpx; border-radius: 999rpx; font-weight: 600; }
+.tiles { display: flex; flex-wrap: wrap; }
+.tile { width: 25%; padding: 16rpx 4rpx 24rpx; display: flex; flex-direction: column; align-items: center; }
+.ico { width: 100rpx; height: 100rpx; border-radius: 32rpx; background: var(--frost-well);
+  display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2rpx 4rpx var(--frost-hair); }
+.ico-img { width: 64rpx; height: 64rpx; }
+.tile-label { margin-top: 16rpx; font-size: 24rpx; color: var(--frost-ink-2); font-weight: 600; text-align: center; }
+
+/* 提示条：白卡 + 左侧红线 */
+.alert { display: flex; align-items: center; padding: 26rpx 30rpx; border-radius: 36rpx;
+  background: var(--frost-card); box-shadow: var(--frost-e1), inset 6rpx 0 0 var(--frost-red); }
+.alert-ico { width: 64rpx; height: 64rpx; border-radius: 22rpx; background: var(--frost-red-soft);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.alert-img { width: 40rpx; height: 40rpx; }
+.alert-text { flex: 1; min-width: 0; margin-left: 22rpx; }
+.alert-title { font-size: 27rpx; font-weight: 800; }
+.alert-sub { font-size: 22rpx; color: var(--frost-ink-3); margin-top: 6rpx; }
+.chev { width: 30rpx; height: 30rpx; flex-shrink: 0; }
+
+.notice { padding: 24rpx 30rpx; font-size: 24rpx; color: var(--frost-red); }
+.endnote { text-align: center; font-size: 22rpx; color: var(--frost-ink-4); padding: 36rpx 0 8rpx; }

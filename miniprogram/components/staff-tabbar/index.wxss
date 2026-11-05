@@ -1,5 +1,26 @@
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; padding-bottom: env(safe-area-inset-bottom); background: rgba(255,255,255,.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 1rpx solid #E5E5EA; z-index: 50; }
-.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4rpx; height: 108rpx; color: #8E8E93; }
+/* 员工端底栏：悬浮毛玻璃胶囊（方案 G 的招牌元素之一）。
+ * 内容从下面滑过时被虚化，一眼看出它浮在页面之上。
+ * 自带等高的 .ph 占位，页面容器不要再额外加 padding-bottom。 */
+.ph { height: calc(184rpx + env(safe-area-inset-bottom)); }
+
+.tabbar {
+  position: fixed; left: 28rpx; right: 28rpx;
+  bottom: calc(24rpx + env(safe-area-inset-bottom));
+  display: flex; align-items: center;
+  height: 116rpx;
+  border-radius: 40rpx;
+  background: var(--c-glass);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: var(--e3), inset 0 0 0 1rpx var(--c-glass-edge);
+  z-index: 50;
+}
+.tab {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4rpx; height: 100%;
+  color: var(--c-muted);
+}
 .icon { width: 46rpx; height: 46rpx; }
-.text { font-size: 24rpx; line-height: 1.2; }
-.active { color: #1D1D1F; font-weight: 600; }
+.text { font-size: 22rpx; line-height: 1.2; font-weight: 600; }
+.active { color: var(--c-ink); }

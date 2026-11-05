@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>A / D / F 三版「我的」横向对比</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",sans-serif;
+  background:#F4F2EE; padding:42px 34px 50px;
+}
+h1 { font-size:22px; font-weight:800; color:#22262E; margin-bottom:8px; letter-spacing:-.4px; }
+.sub { font-size:12.5px; color:#7A7E88; margin-bottom:30px; }
+.row { display:flex; gap:26px; justify-content:center; align-items:flex-start; }
+.col { text-align:center; }
+.frame-outer {
+  width:242px; height:583px; border-radius:26px; overflow:hidden; background:#000;
+  position:relative; margin:0 auto; box-shadow:0 16px 40px rgba(40,30,20,.18), 0 0 0 1px #E2DFD8;
+}
+.frame-outer .scaler {
+  width:390px; height:940px; transform:scale(0.6205); transform-origin:top left;
+}
+.frame-outer iframe { width:390px; height:940px; border:0; display:block; overflow:hidden; }
+.col .name { font-size:13px; font-weight:800; color:#22262E; margin-top:16px; }
+.col .desc { font-size:10.5px; color:#8A8E98; margin-top:6px; line-height:1.6; }
+.col .badge { display:inline-block; font-size:9px; font-weight:700; padding:3px 8px;
+  border-radius:4px; margin-top:9px; font-family:"DejaVu Sans Mono",monospace; }
+.b1 { background:#FFF0E6; color:#E06A2B; border:1px solid #FFD5BC; }
+.b2 { background:#F0EDFF; color:#6E5BD8; border:1px solid #D8D0FF; }
+.b3 { background:#FFF7CC; color:#9A7B00; border:1px solid #F0E28A; }
+</style>
+</head>
+<body>
+<h1>A / D / F 三版「我的」页横向对比</h1>
+<div class="sub">同一批功能入口、同一套多彩手绘图标，三种容器与配色：白底方卡 / 果冻渐变 / 玻璃珐琅。宽度按 390pt 真机尺寸等比缩放。</div>
+
+<div class="row">
+  <div class="col">
+    <div class="frame-outer"><div class="scaler">
+      <iframe src="01-retail-tool/index.html?embed=1" scrolling="no"></iframe>
+    </div></div>
+    <div class="name">A · 零售工具台</div>
+    <div class="desc">白底方卡 + 状态副标题<br>最接近你的参考图</div>
+    <div class="badge b1">白底 · 深绿</div>
+  </div>
+
+  <div class="col">
+    <div class="frame-outer"><div class="scaler">
+      <iframe src="02-candy/index.html?embed=1" scrolling="no"></iframe>
+    </div></div>
+    <div class="name">D · 暖阳果冻</div>
+    <div class="desc">果冻渐变 + 暖阳底<br>热、亲切、有活力</div>
+    <div class="badge b2">橙粉 · 果冻</div>
+  </div>
+
+  <div class="col">
+    <div class="frame-outer"><div class="scaler">
+      <iframe src="03-enamel/index.html?embed=1" scrolling="no"></iframe>
+    </div></div>
+    <div class="name">F · 柔光珐琅</div>
+    <div class="desc">玻璃卡 + 莫兰迪柔光<br>静、克制、专业</div>
+    <div class="badge b3">淡紫 · 玻璃</div>
+  </div>
+</div>
+</body>
+</html>

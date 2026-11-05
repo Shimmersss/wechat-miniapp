@@ -1,9 +1,28 @@
-.section { background: var(--c-surface); border-radius: var(--radius-lg); padding: 32rpx; box-shadow: var(--shadow); margin-bottom: var(--gap); }
-.section.dark { background: var(--c-navy); color: #fff; }
+/* 分组卡，三档：
+ *   默认          L1 白卡
+ *   .section.dark L2 毛玻璃 —— 每页只给唯一的「主块」用（dark 是历史属性名，
+ *                 语义已从「深色」改为「主块」，页面里的 dark="{{true}}" 不用改）
+ *   .section.flat 纯凹槽，用于嵌在白卡里的次级分组
+ */
+.section {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+  box-shadow: var(--e1);
+  margin-bottom: var(--gap);
+}
+.section.dark {
+  background: var(--c-glass);
+  color: var(--c-ink);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: var(--e3), inset 0 0 0 1rpx var(--c-glass-edge);
+}
+.section.flat { background: var(--c-well); box-shadow: inset 0 2rpx 4rpx var(--c-hair); }
 .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
 .title-wrap { display: flex; align-items: baseline; gap: 16rpx; }
-.title { font-size: 34rpx; font-weight: 700; letter-spacing: -0.5rpx; }
+.title { font-size: 34rpx; font-weight: 800; letter-spacing: -0.6rpx; }
 .subtitle { font-size: 24rpx; color: var(--c-muted); }
-.dark .subtitle { color: rgba(255,255,255,.6); }
-.extra { display: flex; align-items: center; gap: 12rpx; }
-.arrow { font-size: 44rpx; color: #C7C7CC; line-height: 1; }
+.extra { display: flex; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-muted); }
+.arrow { font-size: 40rpx; color: var(--c-ink-4); line-height: 1; }

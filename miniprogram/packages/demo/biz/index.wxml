@@ -1,0 +1,49 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<frost-nav title="经营" />
+<view class="frost">
+  <view class="aura"></view>
+  <view class="body">
+    <view wx:if="{{error}}" class="notice card">{{error}}</view>
+
+    <view class="tops">
+      <view class="top glass" bindtap="onNavigate" data-url="{{routes.STATS}}">
+        <view class="tl">今日销售净额</view>
+        <view class="tv num red">{{stats ? '¥' + f.maskMoney(stats.sales.amount, privacy) : '--'}}</view>
+      </view>
+      <view class="top glass">
+        <view class="tl">今日毛利</view>
+        <view wx:if="{{stats && stats.sales.profit !== undefined}}" class="tv num green">¥{{f.maskMoney(stats.sales.profit, privacy)}}</view>
+        <view wx:else class="tv tv-none">{{stats ? '无权限查看' : '--'}}</view>
+      </view>
+      <view class="top glass" bindtap="onNavigate" data-url="{{routes.DEMO_STOCK}}">
+        <view class="tl">在库</view>
+        <view class="tv num">{{stats ? stats.inventory.inStock : '--'}}<text class="unit">台</text></view>
+      </view>
+    </view>
+
+    <view wx:for="{{groups}}" wx:for-item="g" wx:key="key" class="card group mt">
+      <view class="group-head">
+        <text class="group-title">{{g.title}}</text>
+        <text wx:if="{{g.key === 'repair' && stats.repair}}" class="group-meta">今日开单 {{stats.repair.created}} · 完工 {{stats.repair.completed}}</text>
+        <text wx:if="{{g.key === 'purchase' && stats}}" class="group-meta">待验收 {{stats.inventory.pendingAcceptance}} 台</text>
+        <text wx:if="{{g.key === 'customer' && stats}}" class="group-meta">今日访客 {{stats.visits.uv}}</text>
+      </view>
+      <view class="tiles">
+        <view wx:for="{{g.items}}" wx:key="text" class="tile" bindtap="onNavigate" data-url="{{item.url}}">
+          <view class="ico"><image class="ico-img" src="/packages/demo/icons/{{item.icon}}.svg" /></view>
+          <text class="tile-label">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{stats.todos.length}}" class="card todo mt">
+      <view class="group-head"><text class="group-title">待办</text></view>
+      <view wx:for="{{stats.todos}}" wx:key="key" class="todo-row" bindtap="onNavigate" data-url="{{item.url}}">
+        <text class="todo-text">{{item.text}}</text>
+        <text class="todo-count num {{item.count ? 'red' : 'muted'}}">{{item.count}}</text>
+        <image class="chev" src="/packages/demo/icons/chev-gray.svg" />
+      </view>
+    </view>
+  </view>
+  <frost-tabbar active="biz" />
+</view>
