@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方案 B · 精品器物局</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",-apple-system,sans-serif;
+  background:#15140F; color:#EDE8DC;
+  padding:56px 40px 100px; display:flex; flex-wrap:wrap; gap:48px;
+  justify-content:center; align-items:flex-start;
+}
+.head { width:100%; max-width:1700px; margin-bottom:6px; }
+.head h1 { font-size:29px; font-weight:600; letter-spacing:1px;
+  font-family:"Noto Serif CJK SC",Georgia,serif; color:#F0E9D8; }
+.head h1 span { color:#C9A227; }
+.head p { font-size:14px; color:#8D8778; margin-top:12px; line-height:1.75; max-width:1080px; }
+.tags { display:flex; gap:9px; margin-top:16px; flex-wrap:wrap; }
+.tag { font-size:11.5px; font-weight:600; padding:6px 14px; border-radius:2px;
+  border:1px solid rgba(201,162,39,.32); color:#C9A227; letter-spacing:.3px; }
+
+.wrap { position:relative; }
+.frame {
+  width:390px; height:940px; border-radius:40px; overflow:hidden; position:relative;
+  background:#0D0C09; box-shadow:0 30px 70px rgba(0,0,0,.6), 0 0 0 1px rgba(201,162,39,.16);
+  display:flex; flex-direction:column;
+}
+.flabel { position:absolute; top:-27px; left:2px; font-size:11.5px; font-weight:600;
+  color:#7A7466; letter-spacing:2px; }
+
+.soft { background:#14120D; }
+.paper { background:#F6F2E9; color:#1E1C16; }
+
+/* 状态栏 */
+.sbar { height:48px; flex-shrink:0; display:flex; align-items:center;
+  justify-content:space-between; padding:0 26px 0 30px; font-size:13px;
+  font-weight:600; letter-spacing:.4px; font-variant-numeric:tabular-nums; }
+.sbar.on-dark { color:#EDE8DC; }
+.sbar.on-paper { color:#1E1C16; }
+.sbar .r { display:flex; gap:6px; align-items:center; opacity:.85; }
+
+/* 顶部导航 */
+.nav { flex-shrink:0; padding:2px 24px 14px; display:flex; align-items:center;
+  justify-content:space-between; }
+.nav .t { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:19px; font-weight:600;
+  letter-spacing:1.5px; }
+.nav .cap { display:flex; border:1px solid rgba(201,162,39,.3); border-radius:999px;
+  padding:5px 12px; background:rgba(201,162,39,.06); }
+.nav .cap i { width:5px; height:5px; border-radius:50%; background:#C9A227; }
+.nav .cap .sp { width:1px; height:12px; background:rgba(201,162,39,.28); margin:0 10px; }
+.nav .cap .rg { width:10px; height:10px; border:1.4px solid #C9A227; border-radius:50%; }
+
+.scroll { flex:1; overflow-y:auto; min-height:0; scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* 细金线 */
+.rule { height:1px; background:linear-gradient(90deg,transparent,rgba(201,162,39,.4),transparent);
+  margin:0 24px; }
+.rule-dim { height:1px; background:rgba(201,162,39,.14); margin:0 24px; }
+
+/* 节标题 */
+.sect { padding:26px 24px 12px; display:flex; align-items:baseline; gap:10px; }
+.sect .zh { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:15px; font-weight:600;
+  letter-spacing:2px; color:#DCD3BE; }
+.sect .en { font-size:9px; letter-spacing:2.4px; color:#6B6455; text-transform:uppercase;
+  font-weight:600; }
+.sect .ln { flex:1; height:1px; background:rgba(201,162,39,.16); margin-bottom:5px; }
+
+/* 入口行（而非网格图标墙） */
+.rows { padding:0 24px; }
+.row { display:flex; align-items:center; gap:15px; padding:15px 0;
+  border-bottom:1px solid rgba(201,162,39,.09); }
+.row:last-child { border-bottom:0; }
+.row .rn { width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; border:1px solid rgba(201,162,39,.26);
+  background:rgba(201,162,39,.055); }
+.row .rn svg { width:16px; height:16px; stroke:#C9A227; fill:none; stroke-width:1.5;
+  stroke-linecap:round; stroke-linejoin:round; }
+.row .rt { font-size:13.5px; letter-spacing:.4px; color:#D8D1C0; font-weight:500; }
+.row .rs { font-size:10.5px; color:#6B6455; margin-top:3px; letter-spacing:.2px; }
+.row .ra { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.row .rb { font-size:10px; letter-spacing:1.2px; color:#C9A227; font-weight:600;
+  padding:3px 9px; border:1px solid rgba(201,162,39,.3); border-radius:2px; }
+.row .chev { width:12px; height:12px; stroke:#4E4839; fill:none; stroke-width:1.6; }
+
+/* 个人头部 */
+.me { padding:8px 24px 26px; }
+.me .line1 { display:flex; align-items:flex-start; gap:16px; }
+.me .ava { width:56px; height:56px; border-radius:50%; border:1px solid rgba(201,162,39,.4);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,rgba(201,162,39,.18),transparent 70%); }
+.me .ava svg { width:25px; height:25px; stroke:#C9A227; fill:none; stroke-width:1.4; }
+.me .nm { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:19px; font-weight:600;
+  letter-spacing:1px; color:#F0E9D8; }
+.me .ph { font-size:11.5px; color:#736C5D; margin-top:6px; letter-spacing:1.2px;
+  font-variant-numeric:tabular-nums; }
+.me .signout { margin-left:auto; }
+.me .signout svg { width:18px; height:18px; stroke:#6B6455; fill:none; stroke-width:1.5;
+  stroke-linecap:round; stroke-linejoin:round; }
+
+.member { margin-top:24px; display:flex; gap:0; border-top:1px solid rgba(201,162,39,.16);
+  border-bottom:1px solid rgba(201,162,39,.16); padding:16px 0; }
+.member .m { flex:1; text-align:center; border-right:1px solid rgba(201,162,39,.1); }
+.member .m:last-child { border-right:0; }
+.member .mv { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:14px; color:#E8DFC9;
+  letter-spacing:.6px; }
+.member .ml { font-size:9.5px; color:#6B6455; letter-spacing:1.4px; margin-top:6px; }
+
+/* 首页 商品 */
+.hero { padding:2px 24px 20px; }
+.hero .brand { display:flex; align-items:center; gap:12px; }
+.hero .bm { width:32px; height:32px; border:1px solid rgba(201,162,39,.4); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:"Noto Serif CJK SC",serif; font-size:14px; color:#C9A227; }
+.hero .bn { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:17px; letter-spacing:2px;
+  color:#F0E9D8; }
+.hero .bs { font-size:10px; color:#6B6455; letter-spacing:2px; margin-top:4px; }
+
+.filters { display:flex; gap:0; padding:16px 24px 20px; border-bottom:1px solid rgba(201,162,39,.1); }
+.filters .f { font-size:12px; letter-spacing:1.4px; color:#6B6455; padding:0 16px 0 0; }
+.filters .f.on { color:#C9A227; }
+.filters .f.on::after { content:""; display:block; height:1px; background:#C9A227; margin-top:7px; }
+
+.products { padding:0 24px; }
+.p { padding:22px 0; border-bottom:1px solid rgba(201,162,39,.09); display:flex; gap:18px; }
+.p:last-child { border-bottom:0; }
+.p .im { width:104px; height:126px; flex-shrink:0; border-radius:3px; overflow:hidden;
+  background:#1A1712; position:relative; }
+.p .im img { width:100%; height:100%; object-fit:cover; }
+.p .im .cond { position:absolute; top:7px; left:7px; font-size:8.5px; letter-spacing:1px;
+  padding:2.5px 6px; background:rgba(13,12,9,.8); color:#C9A227; border:1px solid rgba(201,162,39,.3); }
+.p .info { flex:1; display:flex; flex-direction:column; min-width:0; }
+.p .pn { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:15.5px; letter-spacing:1px;
+  color:#EDE8DC; font-weight:600; }
+.p .pd { font-size:10.5px; color:#6B6455; margin-top:7px; letter-spacing:.5px; line-height:1.7; }
+.p .bot { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; }
+.p .pr { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:19px; color:#C9A227;
+  letter-spacing:.5px; font-variant-numeric:tabular-nums; }
+.p .pr i { font-size:11px; font-style:normal; margin-right:2px; opacity:.75; }
+.p .guar { font-size:9px; color:#5E5849; letter-spacing:1.4px; }
+
+/* 库存数据 —— 用纸色反差 */
+.paper .sbar { color:#1E1C16; }
+.paper .nav .t { color:#1E1C16; }
+.paper .nav .cap { border-color:rgba(80,68,40,.26); background:rgba(80,68,40,.04); }
+.paper .nav .cap i { background:#4A3F28; }
+.paper .nav .cap .sp { background:rgba(80,68,40,.24); }
+.paper .nav .cap .rg { border-color:#4A3F28; }
+
+.lead { padding:6px 24px 24px; }
+.lead .lab { font-size:9.5px; letter-spacing:2.6px; color:#8A8067; }
+.lead .big { font-family:"Noto Serif CJK SC",Georgia,serif; font-size:52px; letter-spacing:-1px;
+  color:#1E1C16; margin-top:8px; line-height:1; font-variant-numeric:tabular-nums; }
+.lead .big small { font-size:15px; letter-spacing:2px; color:#8A8067; margin-left:10px; }
+.lead .sub { display:flex; gap:34px; margin-top:20px; padding-top:18px;
+  border-top:1px solid rgba(80,68,40,.14); }
+.lead .sub .x { }
+.lead .sub .xv { font-family:"Noto Serif CJK SC",serif; font-size:21px; color:#2A2619;
+  font-variant-numeric:tabular-nums; }
+.lead .sub .xl { font-size:9.5px; letter-spacing:1.6px; color:#8A8067; margin-top:6px; }
+
+.paper .sect .zh { color:#2A2619; }
+.paper .sect .en { color:#8A8067; }
+.paper .sect .ln { background:rgba(80,68,40,.16); }
+
+.pgrid { display:grid; grid-template-columns:1fr 1fr; padding:0 24px;
+  border-top:1px solid rgba(80,68,40,.14); }
+.pcell { padding:18px 0; border-bottom:1px solid rgba(80,68,40,.1); }
+.pcell:nth-child(odd) { border-right:1px solid rgba(80,68,40,.1); padding-right:16px; }
+.pcell:nth-child(even) { padding-left:16px; }
+.pcell .pv { font-family:"Noto Serif CJK SC",serif; font-size:24px; color:#1E1C16;
+  letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+.pcell .pl { font-size:9.5px; letter-spacing:1.6px; color:#8A8067; margin-top:7px; }
+
+.warn { margin:20px 24px 0; padding:15px 17px; background:rgba(140,58,42,.055);
+  border-left:2px solid #8C3A2A; display:flex; align-items:center; gap:12px; }
+.warn .wi svg { width:14px; height:14px; stroke:#8C3A2A; fill:none; stroke-width:1.7;
+  stroke-linecap:round; stroke-linejoin:round; }
+.warn .wt { font-size:12.5px; letter-spacing:.8px; color:#7A3226; font-weight:600; }
+.warn .ws { font-size:10px; color:#9A6A5E; margin-top:3px; letter-spacing:.4px; }
+.warn .wa { margin-left:auto; font-size:13px; color:#B08076; }
+
+.acts { padding:22px 24px 0; }
+.act { display:flex; align-items:center; justify-content:space-between; padding:15px 0;
+  border-bottom:1px solid rgba(80,68,40,.1); }
+.act .at { font-size:13px; letter-spacing:.6px; color:#2A2619; }
+.act .aa svg { width:12px; height:12px; stroke:#8A8067; fill:none; stroke-width:1.6; }
+
+.rate { padding:20px 24px 0; display:flex; align-items:baseline; gap:12px; }
+.rate .rv { font-family:"Noto Serif CJK SC",serif; font-size:30px; color:#1E1C16; }
+.rate .rl { font-size:10px; letter-spacing:1.4px; color:#8A8067; }
+.rate .rn { margin-left:auto; font-size:9.5px; letter-spacing:.8px; color:#A39878; }
+
+/* 底栏 —— 极简 */
+.tabs { flex-shrink:0; height:68px; display:flex; align-items:center;
+  border-top:1px solid rgba(201,162,39,.16); padding-bottom:8px; position:relative;
+  background:#0D0C09; }
+.tabs .tb { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px;
+  font-size:9.5px; letter-spacing:1.6px; color:#5E5849; font-weight:500; }
+.tabs .tb svg { width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.5;
+  stroke-linecap:round; stroke-linejoin:round; }
+.tabs .tb.on { color:#C9A227; }
+.tabs .center { flex:1; display:flex; justify-content:center; }
+.tabs .cbtn { width:42px; height:42px; border-radius:50%; border:1px solid rgba(201,162,39,.45);
+  background:rgba(201,162,39,.08); display:flex; align-items:center; justify-content:center;
+  margin-top:-14px; }
+.tabs .cbtn svg { width:17px; height:17px; stroke:#C9A227; fill:none; stroke-width:1.8;
+  stroke-linecap:round; }
+.hind { position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+  width:110px; height:4px; border-radius:3px; background:rgba(201,162,39,.5); }
+.paper-tabs { background:#F6F2E9; border-top-color:rgba(80,68,40,.16); }
+.paper-tabs .tb { color:#9A9080; }
+.paper-tabs .tb.on { color:#4A3F28; }
+.paper-tabs .cbtn { border-color:rgba(80,68,40,.4); background:rgba(80,68,40,.05); }
+.paper-tabs .cbtn svg { stroke:#4A3F28; }
+.paper-tabs .hind { background:rgba(74,63,40,.45); }
+
+/* embed 模式：被 compare.html 内嵌时只显示手机框 */
+body.embed { padding:0; gap:0; background:transparent; display:block; }
+body.embed .head { display:none; }
+body.embed .wrap { display:none; }
+body.embed .wrap.embed-target, body.embed .frame { display:block; }
+body.embed .frame { margin:0; box-shadow:none; }
+body.embed .flabel { display:none; }
+body.embed > .wrap:first-of-type { display:block; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="b-signal" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor" stroke="none"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor" stroke="none"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor" stroke="none"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="b-wifi" viewBox="0 0 16 12"><path d="M1 4.2a10.5 10.5 0 0 1 14 0M3.6 7a7 7 0 0 1 8.8 0M6.3 9.6a3.4 3.4 0 0 1 3.4 0"/><circle cx="8" cy="11" r=".9" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="b-batt" viewBox="0 0 26 12"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="15.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></symbol>
+
+    <symbol id="b-shop" viewBox="0 0 24 24"><path d="M4 9.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5"/><path d="M3 9.5 5 4h14l2 5.5a3 3 0 0 1-5.5 1.5A3 3 0 0 1 12 12.5 3 3 0 0 1 8.5 11A3 3 0 0 1 3 9.5Z"/></symbol>
+    <symbol id="b-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><circle cx="17.5" cy="9" r="2.4"/><path d="M16.4 14.6a5 5 0 0 1 4.8 4.6"/></symbol>
+    <symbol id="b-store" viewBox="0 0 24 24"><path d="M4 10v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9M3 10h18M5.5 3.5h13l2.5 6.5H3l2.5-6.5ZM9.5 20v-5h5v5"/></symbol>
+    <symbol id="b-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M10.5 5.5h3"/><circle cx="12" cy="18.2" r="1.1"/></symbol>
+    <symbol id="b-share" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.6 18-3.9-7.5L3 9.6 21 3Z"/></symbol>
+    <symbol id="b-wallet" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M2.5 10.5h19"/><circle cx="17" cy="15" r="1.3" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="b-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3.2-3.2M20 16H7l3.2 3.2"/></symbol>
+    <symbol id="b-ledger" viewBox="0 0 24 24"><rect x="4" y="2.8" width="16" height="18.4" rx="2.4"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+    <symbol id="b-cloud" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 18 10.4a4.2 4.2 0 0 1-.7 8.1"/></symbol>
+    <symbol id="b-printer" viewBox="0 0 24 24"><path d="M7 8.5V3.5h10v5M3.5 8.5h17v7.5h-17zM7 13.5h10v7H7z"/></symbol>
+    <symbol id="b-template" viewBox="0 0 24 24"><path d="M14 2.8H6.5a2 2 0 0 0-2 2v14.4a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8.3L14 2.8ZM13.8 2.9v5.4h5.4"/></symbol>
+    <symbol id="b-bulb" viewBox="0 0 24 24"><path d="M9.5 18h5M10 21h4M12 2.8a6.4 6.4 0 0 0-3.7 11.6c.6.5 1 1.2 1 2v.6h5.4v-.6c0-.8.4-1.5 1-2A6.4 6.4 0 0 0 12 2.8Z"/></symbol>
+    <symbol id="b-headset" viewBox="0 0 24 24"><path d="M4 13.5v-1.5a8 8 0 0 1 16 0v1.5"/><rect x="2.3" y="13" width="4.4" height="6.3" rx="2"/><rect x="17.3" y="13" width="4.4" height="6.3" rx="2"/></symbol>
+    <symbol id="b-diamond" viewBox="0 0 24 24"><path d="M6 3.5h12l4 6-10 11L2 9.5l4-6ZM2 9.5h20M9 3.5 7 9.5l5 11 5-11-2-6"/></symbol>
+    <symbol id="b-mail" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m3.4 6.6 8.6 6.2 8.6-6.2"/></symbol>
+    <symbol id="b-link" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.5" r="2.8"/><circle cx="18" cy="18.5" r="2.8"/><path d="m8.4 10.7 7.2-3.8M8.4 13.3l7.2 3.8"/></symbol>
+    <symbol id="b-tag" viewBox="0 0 24 24"><path d="M10.5 3.5H20a.5.5 0 0 1 .5.5v9.5L11 23 1.5 13.5 10.5 3.5Z"/><circle cx="16.5" cy="7.5" r="1.4"/></symbol>
+    <symbol id="b-box" viewBox="0 0 24 24"><path d="M3.5 8 12 3.5 20.5 8v8L12 20.5 3.5 16V8ZM3.5 8 12 12.5 20.5 8M12 12.5v8"/></symbol>
+    <symbol id="b-inbound" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10.5 12 15l4.5-4.5M3.5 16.5v2.5a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-2.5"/></symbol>
+    <symbol id="b-wrench" viewBox="0 0 24 24"><path d="M15.5 3.5a5 5 0 0 0-5.9 6.4L3.5 16a2.4 2.4 0 0 0 3.4 3.4l6.1-6.1a5 5 0 0 0 6.4-5.9l-2.6 2.6-2.9-.7-.7-2.9 2.3-2.9Z"/></symbol>
+    <symbol id="b-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.8"/><path d="m15.6 15.6 5.2 5.2"/></symbol>
+    <symbol id="b-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7M5.5 9.4V19a1.5 1.5 0 0 0 1.5 1.5h3.6V15h2.8v5.5H17a1.5 1.5 0 0 0 1.5-1.5V9.4"/></symbol>
+    <symbol id="b-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></symbol>
+    <symbol id="b-me" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+    <symbol id="b-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="b-logout" viewBox="0 0 24 24"><path d="M14.5 3.5H18a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-3.5M9.5 16.5 13.5 12.5l-4-4M13.5 12.5H3"/></symbol>
+    <symbol id="b-bell" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5ZM10.3 20a2 2 0 0 0 3.4 0"/></symbol>
+    <symbol id="b-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </defs>
+</svg>
+
+<div class="head">
+  <h1>方案 B · <span>精品器物局</span></h1>
+  <p>彻底反着来：不要图标墙，不要彩色。深墨底 + 香槟金细线 + 衬线中文字，把「我的」从功能大全改成一份店铺名录，把「库存数据」翻成纸色（浅米）形成整屏明暗呼吸。二手机本身就是器物生意，价格透明和成色考究才是卖点——这一版是把「夏目数码」当成一家有调性的独立精品店在卖，而不是一个 ERP 后台。</p>
+  <div class="tags">
+    <span class="tag">深墨 #0D0C09</span>
+    <span class="tag">香槟金 #C9A227</span>
+    <span class="tag">列表替代图标墙</span>
+    <span class="tag">纸色反白整屏</span>
+    <span class="tag">衬线中文标题</span>
+  </div>
+</div>
+
+<!-- ============ 我的 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar on-dark"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#b-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#b-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#b-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">我的</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="me">
+      <div class="line1">
+        <div class="ava"><svg><use href="#b-me"/></svg></div>
+        <div>
+          <div class="nm">夏目数码</div>
+          <div class="ph">176 6979 3761</div>
+        </div>
+        <div class="signout"><svg><use href="#b-logout"/></svg></div>
+      </div>
+      <div class="member">
+        <div class="m"><div class="mv">库存</div><div class="ml">INVENTORY</div></div>
+        <div class="m"><div class="mv">维修</div><div class="ml">REPAIR</div></div>
+        <div class="m"><div class="mv">配件</div><div class="ml">PARTS</div></div>
+        <div class="m"><div class="mv">代理</div><div class="ml">AGENT</div></div>
+      </div>
+    </div>
+
+    <div class="sect"><span class="zh">店铺</span><span class="en">Store</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-shop"/></svg></div>
+        <div><div class="rt">小店设置</div><div class="rs">名称 · 简介 · 门店形象</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-users"/></svg></div>
+        <div><div class="rt">员工与权限</div><div class="rs">4 名员工 · 7 个角色</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-store"/></svg></div>
+        <div><div class="rt">门店管理</div><div class="rs">1 家在营</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-share"/></svg></div>
+        <div><div class="rt">分享管理</div><div class="rs">链接 · 海报 · 渠道</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">资金</span><span class="en">Finance</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-wallet"/></svg></div>
+        <div><div class="rt">虚拟账户</div><div class="rs">余额 ¥28,400</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-swap"/></svg></div>
+        <div><div class="rt">代理结算</div><div class="rs">待转账 2 笔</div></div>
+        <div class="ra"><span class="rb">2</span><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-ledger"/></svg></div>
+        <div><div class="rt">对账统计</div><div class="rs">本月 · 上月 · 自定义</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">同售</span><span class="en">Consignment</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-tag"/></svg></div>
+        <div><div class="rt">闲鱼管理</div><div class="rs">在挂 12 台</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-swap"/></svg></div>
+        <div><div class="rt">转转管理</div><div class="rs">未绑定</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-cloud"/></svg></div>
+        <div><div class="rt">上下游货盘</div><div class="rs">3 家同行共享</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">渠道</span><span class="en">Channels</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-inbound"/></svg></div>
+        <div><div class="rt">进货渠道</div><div class="rs">深圳优选供应链 等 5 家</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-users"/></svg></div>
+        <div><div class="rt">销售渠道</div><div class="rs">门店 · 同行 · 代理</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">设备</span><span class="en">Hardware</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-printer"/></svg></div>
+        <div><div class="rt">标签打印机</div><div class="rs">未连接</div></div>
+        <div class="ra"><span class="rb">设置</span></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-template"/></svg></div>
+        <div><div class="rt">打印模板</div><div class="rs">价签 · 小票 · 维修单</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">关于</span><span class="en">About</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-bulb"/></svg></div>
+        <div><div class="rt">使用教程</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-headset"/></svg></div>
+        <div><div class="rt">联系客服</div><div class="rs">工作日 9:00–21:00</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-diamond"/></svg></div>
+        <div><div class="rt">成为代理</div><div class="rs">分享赚差价</div></div>
+        <div class="ra"><span class="rb">申请</span></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-mail"/></svg></div>
+        <div><div class="rt">需求反馈</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb"><svg><use href="#b-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#b-ledger"/></svg>经营</div>
+    <div class="center"><div class="cbtn"><svg><use href="#b-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#b-grid"/></svg>库存</div>
+    <div class="tb on"><svg><use href="#b-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 首页 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar on-dark"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#b-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#b-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#b-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">夏目数码</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="hero">
+      <div class="brand">
+        <div class="bm">夏</div>
+        <div>
+          <div class="bn">夏目数码</div>
+          <div class="bs">XIAMU DIGITAL · 杭州</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="f on">全部</div>
+      <div class="f">苹果</div>
+      <div class="f">华为</div>
+      <div class="f">三星</div>
+    </div>
+
+    <div class="products">
+      <div class="p">
+        <div class="im"><img src="../assets/phone-blue.png" alt=""><span class="cond">99 新</span></div>
+        <div class="info">
+          <div class="pn">iPhone 17 Pro</div>
+          <div class="pd">256G · 冰川蓝<br>电池 96% · 全原无拆修</div>
+          <div class="bot"><div class="pr"><i>¥</i>7,299</div><div class="guar">质保 90 DAYS</div></div>
+        </div>
+      </div>
+      <div class="p">
+        <div class="im"><img src="../assets/phone-white.png" alt=""><span class="cond">准新</span></div>
+        <div class="info">
+          <div class="pn">iPhone Air</div>
+          <div class="pd">128G · 云白色<br>电池 100% · 官方售后</div>
+          <div class="bot"><div class="pr"><i>¥</i>5,399</div><div class="guar">质保 90 DAYS</div></div>
+        </div>
+      </div>
+      <div class="p">
+        <div class="im"><img src="../assets/phone-blue.png" alt="" style="filter:hue-rotate(-30deg) saturate(.7) brightness(1.08)"><span class="cond">99 新</span></div>
+        <div class="info">
+          <div class="pn">iPhone 16 Pro</div>
+          <div class="pd">512G · 沙漠金<br>电池 92% · 已换原厂电池</div>
+          <div class="bot"><div class="pr"><i>¥</i>6,899</div><div class="guar">质保 90 DAYS</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:9.5px;letter-spacing:2.6px;color:#4E4839;padding:24px 0">
+      EVERY DEVICE INSPECTED
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb on"><svg><use href="#b-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#b-ledger"/></svg>经营</div>
+    <div class="center"><div class="cbtn"><svg><use href="#b-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#b-grid"/></svg>库存</div>
+    <div class="tb"><svg><use href="#b-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 库存数据（纸色） ============ -->
+<div class="wrap"><div class="frame paper">
+  <div class="sbar on-paper"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#b-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#b-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#b-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">库存</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="lead">
+      <div class="lab">IN STOCK · 在 库</div>
+      <div class="big">3<small>台</small></div>
+      <div class="sub">
+        <div class="x"><div class="xv">0</div><div class="xl">今日入库</div></div>
+        <div class="x"><div class="xv">¥16,650</div><div class="xl">在库成本</div></div>
+        <div class="x"><div class="xv">0</div><div class="xl">今日出库</div></div>
+      </div>
+    </div>
+
+    <div class="warn">
+      <div class="wi"><svg><use href="#b-bell"/></svg></div>
+      <div>
+        <div class="wt">2 台库龄超过 30 天</div>
+        <div class="ws">建议调价或转同行货盘 · 补货预警 0</div>
+      </div>
+      <div class="wa">›</div>
+    </div>
+
+    <div class="sect"><span class="zh">销售</span><span class="en">Today</span><span class="ln"></span></div>
+    <div class="pgrid">
+      <div class="pcell"><div class="pv">0</div><div class="pl">今日销售 / 台</div></div>
+      <div class="pcell"><div class="pv">0.00</div><div class="pl">销售额 / 元</div></div>
+      <div class="pcell"><div class="pv">0.00</div><div class="pl">利润额 / 元</div></div>
+      <div class="pcell"><div class="pv">0</div><div class="pl">均台毛利 / 元</div></div>
+      <div class="pcell"><div class="pv">0%</div><div class="pl">毛利率</div></div>
+      <div class="pcell"><div class="pv">0</div><div class="pl">客单价 / 元</div></div>
+    </div>
+
+    <div class="rate">
+      <div class="rv">0%</div>
+      <div class="rl">动销率</div>
+      <div class="rn">实时销量 / 当日 0 点在库</div>
+    </div>
+
+    <div class="sect"><span class="zh">出库</span><span class="en">Outbound</span><span class="ln"></span></div>
+    <div class="acts">
+      <div class="act"><div class="at">手动出库</div><div class="aa"><svg><use href="#b-chev"/></svg></div></div>
+      <div class="act"><div class="at">扫码出库</div><div class="aa"><svg><use href="#b-chev"/></svg></div></div>
+      <div class="act"><div class="at">批量出库</div><div class="aa"><svg><use href="#b-chev"/></svg></div></div>
+      <div class="act"><div class="at">处理挂单</div><div class="aa"><svg><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">对账</span><span class="en">Reconcile</span><span class="ln"></span></div>
+    <div class="acts" style="padding-top:0">
+      <div class="act"><div class="at">退货入库</div><div class="aa"><span style="font-size:12px;color:#8A8067">0 台</span></div></div>
+      <div class="act"><div class="at">欠款客户</div><div class="aa"><span style="font-size:12px;color:#8A8067">0 位</span></div></div>
+      <div class="act"><div class="at">我欠供应商</div><div class="aa"><span style="font-size:12px;color:#8A8067">¥0</span></div></div>
+    </div>
+    <div style="height:24px"></div>
+  </div>
+
+  <div class="tabs paper-tabs">
+    <div class="tb"><svg><use href="#b-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#b-ledger"/></svg>经营</div>
+    <div class="center"><div class="cbtn"><svg><use href="#b-plus"/></svg></div></div>
+    <div class="tb on"><svg><use href="#b-grid"/></svg>库存</div>
+    <div class="tb"><svg><use href="#b-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 经营 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar on-dark"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#b-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#b-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#b-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">经营</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="lead">
+      <div class="lab">TODAY · 今日净额</div>
+      <div class="big" style="color:#F0E9D8">¥0<small style="color:#6B6455">元</small></div>
+      <div class="sub" style="border-top-color:rgba(201,162,39,.16)">
+        <div class="x"><div class="xv" style="color:#C9A227">¥0</div><div class="xl" style="color:#6B6455">毛利</div></div>
+        <div class="x"><div class="xv" style="color:#E8DFC9">0</div><div class="xl" style="color:#6B6455">成交 / 台</div></div>
+        <div class="x"><div class="xv" style="color:#E8DFC9">0</div><div class="xl" style="color:#6B6455">维修 / 单</div></div>
+      </div>
+    </div>
+
+    <div class="sect"><span class="zh">维修</span><span class="en">Repair</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-wrench"/></svg></div>
+        <div><div class="rt">维修开单</div><div class="rs">进行中 3 单</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-ledger"/></svg></div>
+        <div><div class="rt">维修记录</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-cloud"/></svg></div>
+        <div><div class="rt">维修统计</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">配件</span><span class="en">Parts</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-box"/></svg></div>
+        <div><div class="rt">配件分类</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-wrench"/></svg></div>
+        <div><div class="rt">配件管理</div><div class="rs">128 件在库</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-inbound"/></svg></div>
+        <div><div class="rt">配件入库</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-inbound"/></svg></div>
+        <div><div class="rt">配件出库</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="zh">收付</span><span class="en">Cash</span><span class="ln"></span></div>
+    <div class="rows">
+      <div class="row"><div class="rn"><svg><use href="#b-wallet"/></svg></div>
+        <div><div class="rt">日常记账</div><div class="rs">本月结余 ¥28,400</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+      <div class="row"><div class="rn"><svg><use href="#b-ledger"/></svg></div>
+        <div><div class="rt">记账明细</div></div>
+        <div class="ra"><svg class="chev"><use href="#b-chev"/></svg></div></div>
+    </div>
+    <div style="height:22px"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb"><svg><use href="#b-home"/></svg>首页</div>
+    <div class="tb on"><svg><use href="#b-ledger"/></svg>经营</div>
+    <div class="center"><div class="cbtn"><svg><use href="#b-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#b-grid"/></svg>库存</div>
+    <div class="tb"><svg><use href="#b-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+
+<script>
+if (location.search.indexOf('embed=1') >= 0) {
+  document.body.classList.add('embed');
+  const wraps = document.querySelectorAll('.wrap');
+  if (wraps.length) { wraps[0].style.display = 'block'; }
+  document.querySelectorAll('.wrap').forEach((w, i) => { if (i > 0) w.remove(); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+@import "../styles/frost.wxss";
+
+.tops { display: flex; }
+.top { flex: 1; min-width: 0; border-radius: 40rpx; padding: 28rpx 24rpx; }
+.top + .top { margin-left: 16rpx; }
+.tl { font-size: 21rpx; color: var(--frost-ink-3); font-weight: 600; }
+.tv { font-size: 42rpx; font-weight: 800; letter-spacing: -1.4rpx; margin-top: 12rpx; }
+.tv-none { font-size: 24rpx; letter-spacing: 0; color: var(--frost-ink-3); line-height: 58rpx; }
+.unit { font-size: 24rpx; margin-left: 4rpx; color: var(--frost-ink-2); }
+
+.todo { padding: 4rpx 28rpx 12rpx; }
+.todo .group-head { padding-left: 4rpx; padding-right: 4rpx; }
+.todo-row { display: flex; align-items: center; padding: 24rpx 4rpx; }
+.todo-row + .todo-row { border-top: 1rpx solid var(--frost-hair); }
+.todo-text { flex: 1; font-size: 26rpx; color: var(--frost-ink-2); }
+.todo-count { font-size: 28rpx; font-weight: 800; margin-right: 12rpx; }

@@ -74,6 +74,16 @@
         "consults/detail",
         "repair/parts"
       ]
+    },
+    {
+      "root": "packages/demo",
+      "name": "demo",
+      "pages": [
+        "home/index",
+        "stock/index",
+        "biz/index",
+        "mine/index"
+      ]
     }
   ],
   "preloadRule": {

@@ -1,9 +1,30 @@
-.layout { display: flex; height: 100vh; }
+/* 分类页是左右分栏 + 内部滚动（不是页面级滚动），
+ * 所以不能用 .container.has-tabbar 那套 padding 方案，
+ * 改为把整个 layout 的高度减去 tabBar 的高度，避免底部被遮挡。 */
+.layout {
+  display: flex;
+  height: calc(100vh - 104rpx - env(safe-area-inset-bottom));
+}
 .side { width: 180rpx; background: var(--c-bg); }
 .side-item { padding: 34rpx 0; text-align: center; font-size: 28rpx; color: var(--c-muted); }
 .side-item.active { background: var(--c-surface); color: var(--c-ink); font-weight: 600; }
-.main { flex: 1; padding: 24rpx; box-sizing: border-box; background: var(--c-surface); }
-.brand-title { font-size: 34rpx; font-weight: 700; letter-spacing: -0.5rpx; margin: 24rpx 0 12rpx; }
+.main {
+  flex: 1;
+  padding: 24rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: var(--c-surface);
+}
+.brand-title { font-size: 34rpx; font-weight: 800; letter-spacing: -0.6rpx; margin: 24rpx 0 12rpx; }
 .series-title { font-size: 26rpx; color: var(--c-muted); margin: 16rpx 0 12rpx; }
 .model-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16rpx; }
-.model { background: var(--c-surface-soft); border-radius: var(--radius-sm); padding: 24rpx 12rpx; text-align: center; font-size: 26rpx; }
+/* 型号格子用凹槽底 */
+.model {
+  background: var(--c-well);
+  border-radius: var(--radius-sm);
+  padding: 24rpx 12rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--c-ink-2);
+  box-shadow: inset 0 1rpx 2rpx var(--c-hair);
+}

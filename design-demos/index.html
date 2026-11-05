@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>夏目数码 · UI 方案索引</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",-apple-system,sans-serif;
+  background:#F4F2EE; color:#22262E; padding:44px 30px 70px;
+}
+.wrap { max-width:1560px; margin:0 auto; }
+h1 { font-size:28px; font-weight:900; letter-spacing:-.8px; }
+.lead { font-size:13.5px; color:#7A7E88; margin-top:12px; line-height:1.85; max-width:1020px; }
+.lead b { color:#22262E; }
+.lead code { font-family:"DejaVu Sans Mono",monospace; font-size:12px; color:#E05A2B;
+  background:#FFF2EC; padding:1px 6px; border-radius:3px; }
+
+.sec { margin-top:40px; }
+.sec-head { font-size:12px; font-weight:900; letter-spacing:2.2px; color:#A9ACB6;
+  text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:12px; }
+.sec-head::after { content:""; flex:1; height:1px; background:#E0DDD6; }
+.sec-head.on { color:#E05A2B; }
+
+.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+@media (max-width:1180px) { .cards { grid-template-columns:repeat(2,1fr); } }
+
+.card { background:#fff; border-radius:18px; overflow:hidden;
+  box-shadow:0 4px 20px rgba(40,30,20,.07); transition:.2s; cursor:pointer;
+  border:2px solid transparent; display:flex; flex-direction:column; }
+.card:hover { transform:translateY(-3px); box-shadow:0 12px 34px rgba(40,30,20,.14); }
+.card.pick { border-color:#E05A2B; }
+.card .thumb { height:250px; overflow:hidden; background:#eee; position:relative; }
+.card .thumb img { width:100%; height:100%; object-fit:cover; object-position:top left;
+  transition:.35s; }
+.card:hover .thumb img { transform:scale(1.035); }
+.card .body { padding:15px 17px 17px; flex:1; display:flex; flex-direction:column; }
+.card .nm { font-size:15px; font-weight:900; letter-spacing:-.3px; }
+.card .nm em { font-style:normal; font-family:"DejaVu Sans Mono",monospace; font-size:11px;
+  color:#A9ACB6; margin-left:7px; font-weight:700; }
+.card .ds { font-size:12px; color:#7A7E88; margin-top:7px; line-height:1.65; flex:1; }
+.card .sws { display:flex; gap:5px; margin-top:13px; }
+.card .sws i { width:24px; height:24px; border-radius:7px; border:1px solid rgba(0,0,0,.07); }
+.card .foot { display:flex; align-items:center; justify-content:space-between;
+  margin-top:14px; padding-top:13px; border-top:1px solid #F0EEE9; }
+.card .tag2 { font-size:10px; font-weight:900; padding:3.5px 9px; border-radius:5px;
+  background:#F4F2EE; color:#7A7E88; }
+.card .open2 { font-size:11.5px; font-weight:900; color:#E05A2B; }
+
+.tree { margin-top:36px; padding:22px 26px; background:#1E2126; border-radius:16px;
+  font-family:"DejaVu Sans Mono",monospace; font-size:12.5px; line-height:2; color:#B8BFC9;
+  overflow-x:auto; }
+.tree .c { color:#5F6773; }
+.tree .k { color:#FFB86B; }
+.tree .f { color:#8FD88F; }
+
+.legend { margin-top:36px; padding:24px 28px; background:#fff; border-radius:18px;
+  box-shadow:0 4px 20px rgba(40,30,20,.06); }
+.legend h2 { font-size:15px; font-weight:900; margin-bottom:15px; }
+.legend table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.legend th { text-align:left; padding:10px 12px; color:#A9ACB6; font-weight:800;
+  border-bottom:1.5px solid #EFEDE8; font-size:10.5px; letter-spacing:.8px; }
+.legend td { padding:12px 12px; border-bottom:1px solid #F4F2EE; vertical-align:top;
+  color:#5C6068; line-height:1.65; }
+.legend td:first-child { color:#22262E; font-weight:900; white-space:nowrap; }
+.legend tr:last-child td { border-bottom:0; }
+.legend .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+
+.tip { margin-top:22px; padding:18px 22px; background:#FFF7F2; border-left:4px solid #E05A2B;
+  border-radius:0 12px 12px 0; font-size:13px; line-height:1.85; color:#6B5548; }
+.tip b { color:#C4441C; }
+.tip code { font-family:"DejaVu Sans Mono",monospace; font-size:11.5px; color:#E05A2B;
+  background:#FFE9DC; padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>夏目数码 · UI 方案索引</h1>
+  <p class="lead">
+    这是纯设计稿，<b>不参与小程序构建</b>，也不被 <code>miniprogram/</code> 引用。
+    七个方案都是独立的静态 HTML（手写 CSS，无框架），假数据，直接双击打开即可看。
+    它们共用同一套 <b>66 个手绘 SVG 图标</b>（<code>icons-v2.js</code>）和两张 AI 生成的产品图（<code>assets/</code>）。
+    主推 <b>01 / 02 / 03 / 07</b>，其余三个留作备选和风格参考。
+  </p>
+
+  <div class="sec">
+    <div class="sec-head on">主推方案 · 同一套图标，四种容器</div>
+    <div class="cards">
+
+      <div class="card pick" onclick="window.open('01-retail-tool/index.html','_blank')">
+        <div class="thumb"><img src="01-retail-tool/preview.png" alt="01 零售工具台"></div>
+        <div class="body">
+          <div class="nm">A · 零售工具台<em>01-retail-tool</em></div>
+          <div class="ds">白底 + 分组标题 + 白底圆角方卡托图标，顶部深绿品牌区。结构最接近原始参考图，落地成本最低。</div>
+          <div class="sws"><i style="background:#1C2B20"></i><i style="background:#FFFFFF"></i><i style="background:#F5F5F7"></i><i style="background:#FFC94A"></i></div>
+          <div class="foot"><span class="tag2">白底 · 方卡 · 高密度</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+      <div class="card" onclick="window.open('02-candy/index.html','_blank')">
+        <div class="thumb"><img src="02-candy/preview.png" alt="02 暖阳果冻"></div>
+        <div class="body">
+          <div class="nm">D · 暖阳果冻<em>02-candy</em></div>
+          <div class="ds">橙→粉→紫暖阳渐变底，圆角 26px，图标衬白底装在果冻质感方块里。热、亲切、有活力。</div>
+          <div class="sws"><i style="background:#FF6B35"></i><i style="background:#F7548E"></i><i style="background:#7C4DFF"></i><i style="background:#FFC94A"></i></div>
+          <div class="foot"><span class="tag2">渐变 · 果冻 · 暖</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+      <div class="card" onclick="window.open('03-enamel/index.html','_blank')">
+        <div class="thumb"><img src="03-enamel/preview.png" alt="03 柔光珐琅"></div>
+        <div class="body">
+          <div class="nm">F · 柔光珐琅<em>03-enamel</em></div>
+          <div class="ds">莫兰迪柔光底（淡紫→雾蓝→浅粉），半透明玻璃卡片，图标像珐琅胸针。凉、静、克制。</div>
+          <div class="sws"><i style="background:#6E5BD8"></i><i style="background:#D85F9B"></i><i style="background:#2B7FD4"></i><i style="background:#1F9E90"></i></div>
+          <div class="foot"><span class="tag2">玻璃 · 莫兰迪 · 凉</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+      <div class="card" onclick="window.open('07-frost/index.html','_blank')">
+        <div class="thumb"><img src="07-frost/preview.png" alt="07 雾白层叠"></div>
+        <div class="body">
+          <div class="nm">G · 雾白层叠<em>07-frost</em></div>
+          <div class="ds">全白色系。不靠颜色靠虚化分层：淡彩光晕 → 白卡 → 毛玻璃主卡 / 悬浮玻璃底栏，卡内做成灰色凹槽。最干净，但依赖 backdrop-filter。</div>
+          <div class="sws"><i style="background:#111215"></i><i style="background:#FFFFFF"></i><i style="background:#F2F3F5"></i><i style="background:#E5484D"></i></div>
+          <div class="foot"><span class="tag2">白 · 毛玻璃 · 克制</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">备选与风格参考</div>
+    <div class="cards">
+
+      <div class="card" onclick="window.open('04-editorial/index.html','_blank')">
+        <div class="thumb"><img src="04-editorial/preview.png" alt="04 杂志拼贴"></div>
+        <div class="body">
+          <div class="nm">E · 杂志拼贴<em>04-editorial</em></div>
+          <div class="ds">零圆角无阴影，粗黑分隔线 + 衬线大标题 + 荧光黄/电光蓝/朱红纯色块。排版感最强，但直角偏硬。</div>
+          <div class="sws"><i style="background:#1A1A1A"></i><i style="background:#FFE24B"></i><i style="background:#2D5BFF"></i><i style="background:#FF5C39"></i></div>
+          <div class="foot"><span class="tag2">编辑风</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="opacity:.62" onclick="window.open('05-boutique/index.html','_blank')">
+        <div class="thumb"><img src="05-boutique/preview.png" alt="05 精品器物局"></div>
+        <div class="body">
+          <div class="nm">B · 精品器物局<em>05-boutique</em></div>
+          <div class="ds">深墨底 + 香槟金细线 + 衬线中文。第一轮方案，因是黑底已弃用，留作「精品店」方向的参考。</div>
+          <div class="sws"><i style="background:#0D0C09"></i><i style="background:#C9A227"></i><i style="background:#F6F2E9"></i></div>
+          <div class="foot"><span class="tag2">已弃用</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="opacity:.62" onclick="window.open('06-data-terminal/index.html','_blank')">
+        <div class="thumb"><img src="06-data-terminal/preview.png" alt="06 数据终端"></div>
+        <div class="body">
+          <div class="nm">C · 数据终端<em>06-data-terminal</em></div>
+          <div class="ds">纯黑 + 荧光绿 + 全站等宽数字 + 网格底纹。第一轮方案，黑底且过于冷硬，留作数据看板参考。</div>
+          <div class="sws"><i style="background:#0B0B0D"></i><i style="background:#C8F751"></i><i style="background:#101012"></i></div>
+          <div class="foot"><span class="tag2">已弃用</span><span class="open2">打开 ↗</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2>目录里都有什么</h2>
+    <table>
+      <tr><th>路径</th><th>内容</th></tr>
+      <tr><td><code>index.html</code></td><td>就是这个页面，七个方案的索引</td></tr>
+      <tr><td><code>README.md</code></td><td>交接文档：设计思路、每个方案的取舍、如何翻成小程序</td></tr>
+      <tr><td><code>compare.html</code> / <code>compare.png</code></td><td>A / D / F 三版「我的」页并排对比</td></tr>
+      <tr><td><code>icons-v2.js</code></td><td>66 个手绘 SVG 图标库，通过 <code>&lt;script&gt;</code> 注入为 symbol，各方案用 <code>&lt;use href="#i-xxx"&gt;</code> 引用</td></tr>
+      <tr><td><code>assets/</code></td><td>两张 AI 生成的产品图（蓝/白），各方案用 CSS <code>hue-rotate</code> 派生其他配色</td></tr>
+      <tr><td><code>shoot.sh</code></td><td>无头 Chrome 截图脚本：<code>./shoot.sh 01-retail-tool</code> 重新生成 preview.png</td></tr>
+      <tr><td><code>01</code>–<code>07</code></td><td>每个方案一个目录，内含 <code>index.html</code>（可直接打开）和 <code>preview.png</code></td></tr>
+    </table>
+  </div>
+
+  <div class="tip">
+    <b>怎么用这些稿子。</b>
+    这些 HTML 是给设计讨论和实际开发参考用的<b>视觉基准</b>，不是可以直接上线的代码。
+    真要落地时，从 <code>01-retail-tool</code> 或 <code>02-candy</code> 里把 CSS 变量（颜色、圆角、阴影）和
+    <code>icons-v2.js</code> 的 path 数据搬到 <code>miniprogram/styles/theme.wxss</code> 和
+    <code>miniprogram/assets/icons/</code> 即可。具体拆法见 <code>README.md</code> 的「如何翻成小程序」一节。
+  </div>
+</div>
+</body>
+</html>

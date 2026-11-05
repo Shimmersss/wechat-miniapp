@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方案 D · 暖阳果冻</title>
+<script src="../icons-v2.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",-apple-system,sans-serif;
+  background:linear-gradient(160deg,#FFF4E8 0%,#FFEDE4 40%,#F3F0FF 100%);
+  color:#2A2118; padding:52px 40px 90px;
+  display:flex; flex-wrap:wrap; gap:46px; justify-content:center; align-items:flex-start;
+}
+.head { width:100%; max-width:1720px; margin-bottom:2px; }
+.head h1 { font-size:29px; font-weight:900; letter-spacing:-.8px;
+  background:linear-gradient(92deg,#FF6B35,#F7558E 55%,#8B5CF6);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.head p { font-size:14px; color:#8A7A6E; margin-top:10px; line-height:1.75; max-width:1120px; }
+.tags { display:flex; gap:8px; margin-top:15px; flex-wrap:wrap; }
+.tag { font-size:11.5px; font-weight:800; padding:6px 14px; border-radius:999px;
+  background:#fff; color:#C4622E; box-shadow:0 2px 10px rgba(255,107,53,.14); }
+.tag.p { color:#8B5CF6; box-shadow:0 2px 10px rgba(139,92,246,.14); }
+
+.wrap { position:relative; }
+.frame {
+  width:390px; height:940px; border-radius:44px; overflow:hidden; position:relative;
+  background:#FFFDFB; display:flex; flex-direction:column;
+  box-shadow:0 26px 66px rgba(196,98,46,.16), 0 0 0 1px rgba(255,107,53,.1);
+}
+.flabel { position:absolute; top:-26px; left:4px; font-size:11.5px; font-weight:800; color:#B99A86;
+  letter-spacing:1px; }
+
+.sbar { height:46px; flex-shrink:0; display:flex; align-items:center;
+  justify-content:space-between; padding:0 26px 0 30px; font-size:13.5px; font-weight:800;
+  font-variant-numeric:tabular-nums; color:#2A2118; }
+.sbar .r { display:flex; gap:6px; align-items:center; }
+.nav { flex-shrink:0; padding:2px 20px 12px; display:flex; align-items:center;
+  justify-content:space-between; }
+.nav .t { font-size:19px; font-weight:900; letter-spacing:-.4px; }
+.nav .cap { display:flex; align-items:center; border:1px solid #F0E2D8; border-radius:999px;
+  padding:5px 13px; background:#fff; }
+.nav .cap i { width:5.5px; height:5.5px; border-radius:50%; background:#C4A896; }
+.nav .cap .sp { width:1px; height:13px; background:#EFE2D9; margin:0 11px; }
+.nav .cap .rg { width:10px; height:10px; border:1.6px solid #C4A896; border-radius:50%; }
+
+.scroll { flex:1; overflow-y:auto; min-height:0; scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* 圆角大卡 */
+.blob-hero {
+  margin:2px 16px 0; border-radius:30px; padding:20px 20px 18px; position:relative;
+  background:linear-gradient(135deg,#FF8A3D 0%,#FF6B35 48%,#F7548E 100%);
+  color:#fff; overflow:hidden; box-shadow:0 12px 30px rgba(255,107,53,.3);
+}
+.blob-hero::before {
+  content:""; position:absolute; width:180px; height:180px; border-radius:50%;
+  background:rgba(255,255,255,.13); top:-78px; right:-52px;
+}
+.blob-hero::after {
+  content:""; position:absolute; width:110px; height:110px; border-radius:50%;
+  background:rgba(255,255,255,.09); bottom:-56px; left:-24px;
+}
+.blob-hero .hb { position:relative; z-index:1; display:flex; align-items:center; gap:13px; }
+.blob-hero .ava { width:54px; height:54px; border-radius:19px; background:rgba(255,255,255,.24);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  border:2px solid rgba(255,255,255,.34); }
+.blob-hero .ava svg { width:28px; height:28px; stroke:#fff; fill:none; stroke-width:2.2; }
+.blob-hero .nm { font-size:18px; font-weight:900; letter-spacing:-.3px; }
+.blob-hero .ph { font-size:12px; color:rgba(255,255,255,.78); margin-top:4px;
+  font-variant-numeric:tabular-nums; letter-spacing:.3px; }
+.blob-hero .out { margin-left:auto; width:34px; height:34px; border-radius:12px;
+  background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; }
+.blob-hero .out svg { width:17px; height:17px; stroke:#fff; fill:none; stroke-width:2.1;
+  stroke-linecap:round; stroke-linejoin:round; }
+.hero-stats { position:relative; z-index:1; display:flex; margin-top:20px; gap:8px; }
+.hero-stats .hs { flex:1; background:rgba(255,255,255,.18); border-radius:16px;
+  padding:11px 8px; text-align:center; }
+.hero-stats .hv { font-size:19px; font-weight:900; letter-spacing:-.6px;
+  font-variant-numeric:tabular-nums; }
+.hero-stats .hl { font-size:10px; color:rgba(255,255,255,.82); margin-top:4px; font-weight:700; }
+
+/* 分组标题 */
+.sect { padding:24px 20px 13px; display:flex; align-items:center; gap:9px; }
+.sect .em { width:6px; height:17px; border-radius:3px; }
+.sect .zh { font-size:16px; font-weight:900; letter-spacing:-.3px; }
+.sect .cnt { font-size:11px; font-weight:800; color:#B9A392; background:#F7EFE9;
+  padding:2.5px 9px; border-radius:999px; margin-left:auto; }
+.c1 { background:linear-gradient(180deg,#FF9A4D,#FF6B35); }
+.c2 { background:linear-gradient(180deg,#F76FA5,#E8467E); }
+.c3 { background:linear-gradient(180deg,#A78BFA,#7C4DFF); }
+.c4 { background:linear-gradient(180deg,#4FD1C5,#12A594); }
+
+/* 果冻图标网格 */
+.jgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:0 12px; }
+.jcell { display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:8px 2px 16px; }
+.jbox { width:54px; height:54px; border-radius:18px; display:flex; align-items:center;
+  justify-content:center; position:relative; background:#fff;
+  box-shadow:0 4px 13px var(--sh), inset 0 0 0 1px rgba(255,255,255,.9); }
+.jbox::after { content:""; position:absolute; inset:0; border-radius:18px;
+  background:linear-gradient(165deg,rgba(255,255,255,.5),transparent 52%); pointer-events:none; }
+.jbox svg { width:36px; height:36px; position:relative; z-index:1; }
+.jlab { font-size:11.5px; font-weight:700; color:#57483D; letter-spacing:-.1px; }
+.jsub { font-size:9px; color:#B9A392; font-weight:600; margin-top:-4px; }
+
+.o1 { --sh:rgba(240,106,24,.2); }
+.o2 { --sh:rgba(224,74,114,.2); }
+.o3 { --sh:rgba(43,127,212,.2); }
+.o4 { --sh:rgba(39,156,98,.2); }
+.o5 { --sh:rgba(110,82,216,.2); }
+.o6 { --sh:rgba(212,138,24,.2); }
+.o7 { --sh:rgba(31,154,164,.2); }
+
+/* 白色内容卡 */
+.wcard { margin:0 16px 14px; background:#fff; border-radius:26px; padding:18px 18px 16px;
+  box-shadow:0 4px 20px rgba(196,98,46,.075); }
+.wc-head { display:flex; align-items:center; gap:9px; margin-bottom:16px; }
+.wc-head .wt { font-size:15px; font-weight:900; letter-spacing:-.2px; }
+.wc-head .wb { font-size:10px; font-weight:800; padding:3px 9px; border-radius:999px;
+  background:#FFF0E5; color:#E06A2B; }
+.wc-head .wr { margin-left:auto; font-size:11.5px; font-weight:800; color:#FF6B35;
+  display:flex; align-items:center; gap:2px; }
+.wc-head .wr svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:3; }
+
+.bigrow { display:flex; align-items:flex-end; gap:10px; }
+.bignum { font-size:44px; font-weight:900; letter-spacing:-2.5px; line-height:1;
+  font-variant-numeric:tabular-nums; background:linear-gradient(135deg,#FF6B35,#F7548E);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.bigunit { font-size:14px; font-weight:800; color:#B9A392; padding-bottom:6px; }
+.biglabel { font-size:11.5px; color:#B9A392; font-weight:700; margin-top:8px; }
+
+.duo { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:16px; }
+.duo .d { background:#FFF8F3; border-radius:16px; padding:12px 13px; }
+.duo .dv { font-size:19px; font-weight:900; color:#3A2E24; letter-spacing:-.6px;
+  font-variant-numeric:tabular-nums; }
+.duo .dl { font-size:10.5px; color:#B9A392; font-weight:700; margin-top:5px; }
+
+.btnrow { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px; }
+.jbtn { height:44px; border-radius:15px; display:flex; align-items:center; justify-content:center;
+  gap:6px; font-size:12.5px; font-weight:800; background:#FFF4EC; color:#E06A2B; }
+.jbtn svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2.6;
+  stroke-linecap:round; stroke-linejoin:round; }
+.jbtn.solid { background:linear-gradient(135deg,#FF8A3D,#FF6B35); color:#fff;
+  box-shadow:0 6px 16px rgba(255,107,53,.32); }
+
+.alert { margin:0 16px 14px; border-radius:22px; padding:14px 16px; display:flex;
+  align-items:center; gap:12px; background:linear-gradient(120deg,#FFEDE4,#FFE0EE); }
+.alert .ai { width:38px; height:38px; border-radius:13px; background:#fff; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(240,112,143,.2); }
+.alert .ai svg { width:19px; height:19px; }
+.alert .at { font-size:13px; font-weight:900; color:#C4407A; }
+.alert .as { font-size:10.5px; color:#C97E9E; margin-top:3px; font-weight:600; }
+.alert .wa { margin-left:auto; }
+.alert .wa svg { width:13px; height:13px; stroke:#D89AB4; fill:none; stroke-width:3; }
+
+/* 统计六宫格 */
+.six { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 6px; text-align:center; }
+.six .sv { font-size:22px; font-weight:900; letter-spacing:-.9px;
+  font-variant-numeric:tabular-nums; }
+.six .sv.o { background:linear-gradient(135deg,#FF8A3D,#FF6B35);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.six .sl { font-size:10px; color:#B9A392; font-weight:700; margin-top:5px; }
+
+.progress { margin-top:18px; }
+.progress .pl { display:flex; align-items:baseline; justify-content:space-between; }
+.progress .pl b { font-size:13px; font-weight:900; color:#3A2E24; }
+.progress .pl span { font-size:10.5px; color:#B9A392; font-weight:700; }
+.pbar { height:9px; border-radius:999px; background:#FFF0E6; margin-top:9px; overflow:hidden; }
+.pbar i { display:block; height:100%; width:4%; border-radius:999px;
+  background:linear-gradient(90deg,#FFC94A,#FF6B35); }
+
+/* 底栏 */
+.tabs { flex-shrink:0; height:74px; display:flex; align-items:flex-start; padding-top:9px;
+  background:#FFFDFB; border-top:1px solid #FAEDE4; position:relative; }
+.tabs .tb { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-size:10px; font-weight:800; color:#C4B0A2; }
+.tabs .tb svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2.4;
+  stroke-linecap:round; stroke-linejoin:round; }
+.tabs .tb.on { color:#FF6B35; }
+.tabs .tb.on .dot { position:absolute; width:4px; height:4px; border-radius:50%;
+  background:#FF6B35; margin-top:26px; }
+.tabs .mid { flex:1; display:flex; justify-content:center; position:relative; }
+.fab { width:56px; height:56px; border-radius:20px; margin-top:-24px;
+  background:linear-gradient(135deg,#FF9A4D,#FF6B35 55%,#F7548E);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 9px 22px rgba(255,107,53,.42); }
+.fab svg { width:24px; height:24px; stroke:#fff; fill:none; stroke-width:3.2; stroke-linecap:round; }
+
+/* 首页 */
+.brandline { padding:0 20px 16px; display:flex; align-items:center; gap:12px; }
+.brandline .bl { width:44px; height:44px; border-radius:16px;
+  background:linear-gradient(135deg,#FF9A4D,#F7548E); display:flex; align-items:center;
+  justify-content:center; font-size:20px; font-weight:900; color:#fff;
+  box-shadow:0 5px 14px rgba(255,107,53,.3); }
+.brandline .bn { font-size:16px; font-weight:900; letter-spacing:-.3px; }
+.brandline .bs { font-size:10.5px; color:#B9A392; margin-top:3px; font-weight:600; }
+
+.searchbox { margin:0 16px 14px; height:48px; border-radius:17px; background:#fff;
+  display:flex; align-items:center; padding:0 16px; gap:10px; font-size:13.5px; color:#C4B0A2;
+  box-shadow:0 3px 14px rgba(196,98,46,.07); }
+.searchbox svg { width:17px; height:17px; stroke:#D4BFB0; fill:none; stroke-width:2.6;
+  stroke-linecap:round; }
+
+.chips { display:flex; gap:8px; padding:0 16px 16px; overflow:hidden; }
+.chip { padding:8px 17px; border-radius:999px; background:#fff; font-size:12.5px;
+  font-weight:800; color:#9A8577; box-shadow:0 2px 9px rgba(196,98,46,.06); flex-shrink:0; }
+.chip.on { background:linear-gradient(135deg,#FF8A3D,#FF6B35); color:#fff;
+  box-shadow:0 5px 14px rgba(255,107,53,.3); }
+
+.pgrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px; }
+.pc { background:#fff; border-radius:24px; overflow:hidden;
+  box-shadow:0 4px 18px rgba(196,98,46,.08); }
+.pc .pimg { height:150px; position:relative;
+  background:linear-gradient(160deg,#FFF4EC,#FFE8D9); overflow:hidden; }
+.pc .pimg img { width:100%; height:100%; object-fit:cover; }
+.pc .pbadge { position:absolute; top:9px; left:9px; font-size:9.5px; font-weight:900;
+  padding:3.5px 9px; border-radius:999px; background:rgba(255,255,255,.94);
+  color:#E06A2B; z-index:2; box-shadow:0 2px 8px rgba(255,107,53,.16); }
+.pc .pbody { padding:12px 13px 14px; }
+.pc .pn { font-size:13.5px; font-weight:900; letter-spacing:-.2px; }
+.pc .ps { font-size:10.5px; color:#B9A392; margin-top:5px; font-weight:600; line-height:1.5; }
+.pc .pf { display:flex; align-items:center; justify-content:space-between; margin-top:11px; }
+.pc .pp { font-size:18px; font-weight:900; letter-spacing:-.8px;
+  background:linear-gradient(135deg,#FF6B35,#F7548E);
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.pc .pp i { font-size:11px; font-style:normal; }
+.pc .ptag { font-size:9px; font-weight:800; color:#12A594; background:#E4F8F5;
+  padding:2.5px 7px; border-radius:6px; }
+.endnote { text-align:center; font-size:10px; color:#CBB8A9; font-weight:700; padding:20px 0 12px; }
+
+/* 经营 */
+.ecard { margin:0 16px 13px; border-radius:26px; padding:17px 17px 15px; color:#fff;
+  position:relative; overflow:hidden; }
+.ecard.g1 { background:linear-gradient(135deg,#FF8A3D,#FF6B35); box-shadow:0 9px 24px rgba(255,107,53,.28); }
+.ecard.g2 { background:linear-gradient(135deg,#F775A8,#E8467E); box-shadow:0 9px 24px rgba(232,70,126,.26); }
+.ecard.g3 { background:linear-gradient(135deg,#A78BFA,#7C4DFF); box-shadow:0 9px 24px rgba(124,77,255,.24); }
+.ecard::after { content:""; position:absolute; width:130px; height:130px; border-radius:50%;
+  background:rgba(255,255,255,.11); top:-56px; right:-32px; }
+.ecard .et { position:relative; z-index:1; font-size:12.5px; font-weight:800;
+  color:rgba(255,255,255,.9); display:flex; align-items:center; gap:7px; }
+.ecard .et svg { width:15px; height:15px; }
+.ecard .ev { position:relative; z-index:1; font-size:30px; font-weight:900;
+  letter-spacing:-1.6px; margin-top:11px; font-variant-numeric:tabular-nums; }
+.ecard .ev small { font-size:13px; font-weight:800; opacity:.8; margin-left:4px; letter-spacing:0; }
+.ecard .es { position:relative; z-index:1; display:flex; gap:18px; margin-top:14px;
+  padding-top:13px; border-top:1px solid rgba(255,255,255,.22); }
+.ecard .es .x .xv { font-size:15px; font-weight:900; letter-spacing:-.4px; }
+.ecard .es .x .xl { font-size:10px; color:rgba(255,255,255,.78); margin-top:3px; font-weight:700; }
+
+/* 经营入口 */
+.elist { margin:0 16px 13px; background:#fff; border-radius:26px; padding:6px 16px;
+  box-shadow:0 4px 18px rgba(196,98,46,.07); }
+.erow { display:flex; align-items:center; gap:13px; padding:13px 0; }
+.erow + .erow { border-top:1px solid #FDF3EC; }
+.erow .eic { width:48px; height:48px; border-radius:16px; display:flex; align-items:center;
+  justify-content:center; position:relative; flex-shrink:0; background:#fff;
+  box-shadow:0 4px 12px var(--sh); }
+.erow .eic::after { content:""; position:absolute; inset:0; border-radius:16px;
+  background:linear-gradient(160deg,rgba(255,255,255,.55),transparent 58%); pointer-events:none; }
+.erow .eic svg { width:32px; height:32px; position:relative; z-index:1; }
+.erow .en { font-size:13.5px; font-weight:800; color:#3A2E24; }
+.erow .ed { font-size:10.5px; color:#B9A392; margin-top:3px; font-weight:600; }
+.erow .ea { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.erow .eb { font-size:9.5px; font-weight:900; padding:3px 9px; border-radius:999px;
+  background:#FFF0E5; color:#E06A2B; }
+.erow .ec { width:11px; height:11px; stroke:#D4BFB0; fill:none; stroke-width:3; }
+
+
+/* ================= 层次重构 =================
+   L0 氛围底：顶部橙→粉暖阳，往下渐隐成暖灰 #F4ECE6（不再是近白，白卡才浮得起来）
+   L1 白卡：分组全部收进白卡，投影加深一档
+   L2 卡内：果冻图标、浅橙底按钮
+   每页只保留一个"满色块"，其他业务卡降成白卡 + 彩色数字 */
+.frame { --bg:#F4ECE6; background:var(--bg); }
+.frame.atm {
+  background:
+    radial-gradient(70% 240px at 92% 0, rgba(247,84,142,.55), transparent 70%),
+    linear-gradient(180deg,#FF7A35 0,#FF6E45 var(--a,150px),#FBA584 calc(var(--a,150px) + 130px),#F6DCCF var(--b,480px),var(--bg) calc(var(--b,480px) + 130px));
+}
+.frame.atm .sbar, .frame.atm .nav .t { color:#fff; }
+.frame.atm .nav .cap { background:rgba(255,255,255,.2); border-color:rgba(255,255,255,.35); }
+.frame.atm .nav .cap i { background:#fff; }
+.frame.atm .nav .cap .sp { background:rgba(255,255,255,.4); }
+.frame.atm .nav .cap .rg { border-color:#fff; }
+.tabs { background:#fff; border-top:0; box-shadow:0 -6px 22px rgba(160,80,40,.07); }
+
+.grp { margin:0 14px 12px; background:#fff; border-radius:24px; padding:2px 0 4px;
+  box-shadow:0 6px 22px rgba(160,80,40,.08); }
+.grp .sect { padding:17px 18px 8px; }
+.grp .jgrid { padding:0 6px; }
+.grp .jlab { font-size:12px; color:#3E3128; }
+
+/* 我的：个人信息直接坐在暖阳底上，不再是一张独立橙卡 */
+.frame.mine { --a:190px; --b:440px; }
+.frame.mine .blob-hero { background:transparent; box-shadow:none; padding:6px 6px 22px; margin:0 14px; }
+.frame.mine .blob-hero::before, .frame.mine .blob-hero::after { display:none; }
+.frame.mine .hero-stats .hs { background:rgba(255,255,255,.2);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.26); }
+
+/* 首页 */
+.frame.home { --a:110px; --b:300px; }
+.frame.home .brandline .bn { color:#fff; }
+.frame.home .brandline .bs { color:rgba(255,255,255,.75); }
+.frame.home .brandline .bl { background:#fff; color:#FF6B35; box-shadow:0 5px 14px rgba(150,40,20,.2); }
+.frame.home .searchbox { box-shadow:0 8px 22px rgba(170,60,20,.18); }
+.frame.home .chip:not(.on) { background:rgba(255,255,255,.82); }
+.pc { box-shadow:0 8px 22px rgba(160,80,40,.1); }
+
+/* 库存：深一档的暖色数据卡是唯一的重块 */
+.frame.stock { --a:50px; --b:250px; }
+.frame.stock .blob-hero { background:linear-gradient(150deg,#F2582E 0,#E43F6A 60%,#B83F9E 100%) !important;
+  box-shadow:0 16px 34px rgba(180,40,60,.34), inset 0 0 0 1px rgba(255,255,255,.14) !important; }
+.wcard { box-shadow:0 6px 22px rgba(160,80,40,.08); }
+.wc-head .wt { font-size:16px; }
+.alert { background:#FFF6F2; border-left:4px solid #F0567E; border-radius:16px;
+  box-shadow:0 4px 14px rgba(240,86,126,.1); }
+.duo .d { background:#FBF5F1; }
+
+/* 经营：今日数字浮在暖阳上，业务卡降为白卡 + 彩色重点 */
+.frame.biz { --a:170px; --b:520px; }
+.frame.biz .ecard.g1 { background:rgba(255,255,255,.14); box-shadow:inset 0 0 0 1px rgba(255,255,255,.24); }
+.frame.biz .ecard.g1::after { display:none; }
+.frame.biz .ecard.g2, .frame.biz .ecard.g3 { background:#fff; color:#2A2118;
+  box-shadow:0 8px 24px rgba(160,80,40,.1); }
+.frame.biz .ecard.g2::after { background:rgba(232,70,126,.07); }
+.frame.biz .ecard.g3::after { background:rgba(124,77,255,.07); }
+.frame.biz .ecard.g2 .et { color:#E8467E; }
+.frame.biz .ecard.g3 .et { color:#7C4DFF; }
+.frame.biz .ecard.g2 .ev { color:#E8467E; }
+.frame.biz .ecard.g3 .ev { color:#7C4DFF; }
+.frame.biz .ecard.g2 .ev small, .frame.biz .ecard.g3 .ev small { color:#9A8577; opacity:1; }
+.frame.biz .ecard.g2 .es, .frame.biz .ecard.g3 .es { border-top-color:#F5ECE6; }
+.frame.biz .ecard.g2 .xv, .frame.biz .ecard.g3 .xv { color:#2A2118; }
+.frame.biz .ecard.g2 .xl, .frame.biz .ecard.g3 .xl { color:#B9A392; }
+.elist { box-shadow:0 6px 22px rgba(160,80,40,.08); }
+
+/* embed 模式：被 compare.html 内嵌时只显示手机框 */
+body.embed { padding:0 !important; gap:0; background:transparent !important; display:block; }
+body.embed .head { display:none !important; }
+body.embed .wrap { display:block !important; width:390px; }
+body.embed .flabel { display:none !important; }
+body.embed .frame { margin:0 !important; box-shadow:none !important; border-radius:0 !important; }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>方案 D · 暖阳果冻</h1>
+  <p>第一个方向：把「二手机」从冷冰冰的数码货，做成有温度的小店。整屏用暖阳渐变（橙→粉→紫）打底，所有图标都是手绘多色 SVG，装在半透明果冻质感的圆角方块里——每个图标有独立配色，但共用一套「高光 + 渐变 + 柔和投影」的渲染规则，所以二十多个入口放在一起不会乱。<b>信息密度和方案 A 一样高，但情绪完全不同：A 是柜台，D 是店。</b></p>
+  <div class="tags">
+    <span class="tag">三层层次：深色氛围底 → 浮起白卡 → 卡内元素</span>
+    <span class="tag">暖阳渐变底</span>
+    <span class="tag">果冻质感图标</span>
+    <span class="tag">橙粉主色 #FF6B35</span>
+    <span class="tag p">紫 #7C4DFF 做辅助</span>
+    <span class="tag">大圆角 26px</span>
+  </div>
+</div>
+
+<!-- ============ 我的 ============ -->
+<div class="wrap"><div class="flabel">我的</div><div class="frame atm mine">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">我的</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="blob-hero">
+      <div class="hb">
+        <div class="ava"><svg stroke="#fff" fill="none" stroke-width="2.2" stroke-linecap="round"><use href="#i-tab-my"/></svg></div>
+        <div>
+          <div class="nm">夏目数码</div>
+          <div class="ph">176 6979 3761</div>
+        </div>
+        <div class="out"><svg><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="hero-stats">
+        <div class="hs"><div class="hv">3</div><div class="hl">在库</div></div>
+        <div class="hs"><div class="hv">4</div><div class="hl">员工</div></div>
+        <div class="hs"><div class="hv">12</div><div class="hl">代理</div></div>
+      </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="em c1"></span><span class="zh">店铺管理</span><span class="cnt">5 项</span></div>
+    <div class="jgrid" style="grid-template-columns:repeat(5,1fr)">
+      <div class="jcell"><div class="jbox o5"><svg><use href="#i-shop"/></svg></div><div class="jlab">小店设置</div></div>
+      <div class="jcell"><div class="jbox o1"><svg><use href="#i-users"/></svg></div><div class="jlab">员工管理</div><div class="jsub">4 人</div></div>
+      <div class="jcell"><div class="jbox o6"><svg><use href="#i-store"/></svg></div><div class="jlab">门店管理</div><div class="jsub">1 家</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-phoneswap"/></svg></div><div class="jlab">更换手机</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-share"/></svg></div><div class="jlab">分享管理</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="em c2"></span><span class="zh">财务管理</span><span class="cnt">3 项</span></div>
+    <div class="jgrid">
+      <div class="jcell"><div class="jbox o2"><svg><use href="#i-wallet"/></svg></div><div class="jlab">虚拟账户</div></div>
+      <div class="jcell"><div class="jbox o7"><svg><use href="#i-settle"/></svg></div><div class="jlab">代理结算</div><div class="jsub">2 笔</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-ledger"/></svg></div><div class="jlab">对账统计</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="em c3"></span><span class="zh">同售管理</span><span class="cnt">3 项</span></div>
+    <div class="jgrid">
+      <div class="jcell"><div class="jbox o6"><svg><use href="#i-fish"/></svg></div><div class="jlab">闲鱼管理</div><div class="jsub">12 挂</div></div>
+      <div class="jcell"><div class="jbox o1"><svg><use href="#i-recycle"/></svg></div><div class="jlab">转转管理</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-cloudbox"/></svg></div><div class="jlab">上下游货盘</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="em c4"></span><span class="zh">渠道与设备</span><span class="cnt">4 项</span></div>
+    <div class="jgrid">
+      <div class="jcell"><div class="jbox o4"><svg><use href="#i-inbox"/></svg></div><div class="jlab">进货渠道</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-sale"/></svg></div><div class="jlab">销售渠道</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-printer"/></svg></div><div class="jlab">打印机</div><div class="jsub">未连</div></div>
+      <div class="jcell"><div class="jbox o6"><svg><use href="#i-template"/></svg></div><div class="jlab">打印模板</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="em c1"></span><span class="zh">其他功能</span><span class="cnt">7 项</span></div>
+    <div class="jgrid">
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-settings"/></svg></div><div class="jlab">偏好设置</div></div>
+      <div class="jcell"><div class="jbox o4"><svg><use href="#i-bulb"/></svg></div><div class="jlab">使用教程</div></div>
+      <div class="jcell"><div class="jbox o3"><svg><use href="#i-headset"/></svg></div><div class="jlab">联系客服</div></div>
+      <div class="jcell"><div class="jbox o6"><svg><use href="#i-diamond"/></svg></div><div class="jlab">成为代理</div></div>
+      <div class="jcell"><div class="jbox o7"><svg><use href="#i-mail"/></svg></div><div class="jlab">需求反馈</div></div>
+      <div class="jcell"><div class="jbox o5"><svg><use href="#i-invite"/></svg></div><div class="jlab">邀请好友</div></div>
+      <div class="jcell"><div class="jbox o2"><svg><use href="#i-trash"/></svg></div><div class="jlab">抹除数据</div></div>
+    </div>
+    </div>
+    <div style="height:22px"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="fab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb on"><span class="dot"></span><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+<!-- ============ 首页 ============ -->
+<div class="wrap"><div class="flabel">首页</div><div class="frame atm home">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">夏目数码</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="brandline">
+      <div class="bl">夏</div>
+      <div>
+        <div class="bn">夏目数码</div>
+        <div class="bs">让价格透明 · 让产品放心</div>
+      </div>
+    </div>
+
+    <div class="searchbox"><svg><use href="#i-search"/></svg>搜索品牌 / 型号 / 内存</div>
+
+    <div class="chips">
+      <div class="chip on">全部</div>
+      <div class="chip">苹果</div>
+      <div class="chip">华为</div>
+      <div class="chip">三星</div>
+    </div>
+
+    <div class="pgrid">
+      <div class="pc">
+        <div class="pimg"><span class="pbadge">99 新</span><img src="../assets/phone-blue.png" alt=""></div>
+        <div class="pbody">
+          <div class="pn">iPhone 17 Pro</div>
+          <div class="ps">256G · 冰川蓝 · 电池 96%</div>
+          <div class="pf"><div class="pp"><i>¥</i>7,299</div><div class="ptag">质保 90 天</div></div>
+        </div>
+      </div>
+      <div class="pc">
+        <div class="pimg"><span class="pbadge">准新</span><img src="../assets/phone-white.png" alt=""></div>
+        <div class="pbody">
+          <div class="pn">iPhone Air</div>
+          <div class="ps">128G · 云白色 · 电池 100%</div>
+          <div class="pf"><div class="pp"><i>¥</i>5,399</div><div class="ptag">质保 90 天</div></div>
+        </div>
+      </div>
+      <div class="pc">
+        <div class="pimg"><span class="pbadge">99 新</span><img src="../assets/phone-blue.png" alt="" style="filter:hue-rotate(-32deg) saturate(.8) brightness(1.06)"></div>
+        <div class="pbody">
+          <div class="pn">iPhone 16 Pro</div>
+          <div class="ps">512G · 沙漠金 · 电池 92%</div>
+          <div class="pf"><div class="pp"><i>¥</i>6,899</div><div class="ptag">质保 90 天</div></div>
+        </div>
+      </div>
+      <div class="pc">
+        <div class="pimg"><img src="../assets/phone-white.png" alt="" style="filter:hue-rotate(150deg) saturate(.72)"></div>
+        <div class="pbody">
+          <div class="pn">华为 Mate 60 Pro</div>
+          <div class="ps">256G · 雅川青 · 电池 95%</div>
+          <div class="pf"><div class="pp"><i>¥</i>4,599</div><div class="ptag">质保 90 天</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="endnote">— 每台设备独立检测 · 公开机况 —</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb on"><span class="dot"></span><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="fab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb"><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+<!-- ============ 库存 ============ -->
+<div class="wrap"><div class="flabel">库存数据</div><div class="frame atm stock">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">库存数据</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="blob-hero" style="background:linear-gradient(135deg,#A78BFA,#7C4DFF 55%,#5B6CF9);box-shadow:0 12px 30px rgba(124,77,255,.3)">
+      <div style="position:relative;z-index:1">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.88);display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" stroke="#fff" fill="none" stroke-width="2.2"><use href="#i-eye"/></svg>数据隐藏
+          </div>
+          <div style="font-size:11.5px;font-weight:800;color:rgba(255,255,255,.8)">详情 ›</div>
+        </div>
+        <div style="font-size:52px;font-weight:900;letter-spacing:-3px;line-height:1;margin-top:14px;font-variant-numeric:tabular-nums">3<span style="font-size:15px;font-weight:800;margin-left:7px;opacity:.85;letter-spacing:0">台</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:7px;font-weight:700">在库总数</div>
+        <div class="hero-stats" style="margin-top:17px">
+          <div class="hs"><div class="hv">0</div><div class="hl">今日入库</div></div>
+          <div class="hs"><div class="hv">16,650</div><div class="hl">在库成本</div></div>
+          <div class="hs"><div class="hv">0</div><div class="hl">今日出库</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert" style="margin-top:14px">
+      <div class="ai"><svg><use href="#i-bell"/></svg></div>
+      <div>
+        <div class="at">2 台库龄超 30 天</div>
+        <div class="as">建议调价或转同行货盘 · 补货预警 0</div>
+      </div>
+      <div class="wa"><svg><use href="#i-chev"/></svg></div>
+    </div>
+
+    <div class="wcard" style="margin-top:14px">
+      <div class="wc-head">
+        <span class="wt">今日销售</span>
+        <span class="wb">数据隐藏</span>
+        <span class="wr">详情 <svg><use href="#i-chev"/></svg></span>
+      </div>
+      <div class="bigrow">
+        <div class="bignum">0.00</div>
+        <div class="bigunit">元</div>
+      </div>
+      <div class="biglabel">今日销售额</div>
+      <div class="duo">
+        <div class="d"><div class="dv">0</div><div class="dl">销售台数</div></div>
+        <div class="d"><div class="dv">0.00</div><div class="dl">利润额（元）</div></div>
+        <div class="d"><div class="dv">0</div><div class="dl">均台毛利（元）</div></div>
+        <div class="d"><div class="dv">0</div><div class="dl">客单价（元）</div></div>
+      </div>
+      <div class="progress">
+        <div class="pl"><b>动销率 0%</b><span>实时销量 / 当日 0 点在库</span></div>
+        <div class="pbar"><i></i></div>
+      </div>
+      <div class="btnrow">
+        <div class="jbtn"><svg><use href="#i-scan"/></svg>扫码出库</div>
+        <div class="jbtn"><svg><use href="#i-tab-box"/></svg>批量出库</div>
+        <div class="jbtn solid"><svg><use href="#i-plus"/></svg>手动</div>
+      </div>
+    </div>
+
+    <div class="wcard">
+      <div class="wc-head">
+        <span class="wt">财务对账</span>
+        <span class="wr">更多 <svg><use href="#i-chev"/></svg></span>
+      </div>
+      <div class="six">
+        <div><div class="sv o">0</div><div class="sl">退货入库</div></div>
+        <div><div class="sv o">0</div><div class="sl">欠款客户</div></div>
+        <div><div class="sv o">0</div><div class="sl">我欠供应商</div></div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="fab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb on"><span class="dot"></span><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb"><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+<!-- ============ 经营 ============ -->
+<div class="wrap"><div class="flabel">经营</div><div class="frame atm biz">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">经营</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="ecard g1">
+      <div class="et"><svg stroke="#fff" fill="none" stroke-width="2.2"><use href="#i-trend"/></svg>今日销售净额</div>
+      <div class="ev">¥0<small>元</small></div>
+      <div class="es">
+        <div class="x"><div class="xv">¥0</div><div class="xl">今日毛利</div></div>
+        <div class="x"><div class="xv">0 台</div><div class="xl">成交</div></div>
+        <div class="x"><div class="xv">0 单</div><div class="xl">维修</div></div>
+      </div>
+    </div>
+
+    <div class="ecard g2">
+      <div class="et"><svg stroke="#fff" fill="none" stroke-width="2.2" stroke-linecap="round"><use href="#i-wrench"/></svg>维修业务</div>
+      <div class="ev">3<small>单进行中</small></div>
+      <div class="es">
+        <div class="x"><div class="xv">维修开单</div><div class="xl">新建工单</div></div>
+        <div class="x"><div class="xv">维修记录</div><div class="xl">历史查询</div></div>
+        <div class="x"><div class="xv">维修统计</div><div class="xl">本月数据</div></div>
+      </div>
+    </div>
+
+    <div class="ecard g3">
+      <div class="et"><svg stroke="#fff" fill="none" stroke-width="2.2"><use href="#i-parts"/></svg>配件业务</div>
+      <div class="ev">128<small>件在库</small></div>
+      <div class="es">
+        <div class="x"><div class="xv">配件入库</div><div class="xl">扫码登记</div></div>
+        <div class="x"><div class="xv">配件出库</div><div class="xl">领用记录</div></div>
+        <div class="x"><div class="xv">配件管理</div><div class="xl">分类维护</div></div>
+      </div>
+    </div>
+
+    <div class="elist">
+      <div class="erow">
+        <div class="eic o1"><svg><use href="#i-cash"/></svg></div>
+        <div><div class="en">日常记账</div><div class="ed">本月结余 ¥28,400</div></div>
+        <div class="ea"><span class="eb">记账</span><svg class="ec"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="erow">
+        <div class="eic o3"><svg><use href="#i-doc"/></svg></div>
+        <div><div class="en">记账明细</div><div class="ed">按日 / 按类型查看</div></div>
+        <div class="ea"><svg class="ec"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="erow">
+        <div class="eic o4"><svg><use href="#i-gift"/></svg></div>
+        <div><div class="en">搜机客商城</div><div class="ed">配件比价采购</div></div>
+        <div class="ea"><span class="eb">进入</span><svg class="ec"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="erow">
+        <div class="eic o3"><svg><use href="#i-star"/></svg></div>
+        <div><div class="en">保修查询</div><div class="ed">按 IMEI 查保修</div></div>
+        <div class="ea"><svg class="ec"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="erow">
+        <div class="eic o7"><svg><use href="#i-truck"/></svg></div>
+        <div><div class="en">我的订单</div><div class="ed">4 笔待收货</div></div>
+        <div class="ea"><span class="eb">4</span><svg class="ec"><use href="#i-chev"/></svg></div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tb"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb on"><span class="dot"></span><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="fab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb"><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+
+<script>
+if (location.search.indexOf('embed=1') >= 0) {
+  document.body.classList.add('embed');
+  const wraps = [...document.querySelectorAll('.wrap')];
+  wraps.forEach((w, i) => { if (i > 0) w.remove(); });
+  document.querySelectorAll('.head').forEach(h => h.remove());
+}
+</script>
+</body>
+</html>

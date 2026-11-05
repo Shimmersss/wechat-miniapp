@@ -1,33 +1,113 @@
-/* 夏目数码设计令牌：苹果式简约（浅灰底 + 白卡片 + 近黑主色，少用彩色）。
-   令牌名沿用旧版以兼容各页面：gold 系列现为主色/中性填充，navy 系列现为深色面。 */
+/* 夏目数码设计令牌 · 方案 G「雾白层叠」
+ *
+ * 分层模型（从下往上）：
+ *   L0   页面底   --c-bg        冷浅灰，不是纯白
+ *   L0.5 光晕     --c-aura-*    页面顶部的柔光，给毛玻璃提供可虚化的内容
+ *   L1   白卡     --c-surface   纯白 + 浅投影（--e1）
+ *   L2   毛玻璃   --c-glass     半透明白 + backdrop-filter + 最深投影（--e3）
+ *   卡内 凹槽     --c-well      比白卡低一级的灰 + 内阴影
+ *
+ * 命名：--c-* 是页面里正在使用的稳定名字（保持兼容，不逐页改 WXML）；
+ *       --frost-* 是演示分包沿用的旧名，这里作为别名指向同一组值，避免两套真值。
+ *       --e1/--e2/--e3 是三级投影，分别对应 白卡 / 中间档 / 玻璃。
+ */
 page {
-  --c-bg: #F5F5F7;
-  --c-surface: #FFFFFF;
-  --c-surface-soft: #F2F2F4;
-  --c-ink: #1D1D1F;
-  --c-ink-2: #424245;
-  --c-muted: #86868B;
-  --c-line: #E5E5EA;
-  --c-gold: #1D1D1F;
-  --c-gold-light: #D2D2D7;
-  --c-gold-soft: #F2F2F4;
-  --c-navy: #1D1D1F;
-  --c-navy-2: #2C2C2E;
-  --c-price: #D70015;
-  --c-green: #1B7F3B;
-  --c-green-soft: #E9F6EC;
-  --c-orange: #B25000;
-  --c-orange-soft: #FFF3E3;
-  --c-red: #D70015;
-  --c-red-soft: #FFECEC;
-  --c-blue: #0066CC;
-  --c-blue-soft: #E8F1FB;
+  /* ---------- 中性色（层次的主角） ---------- */
+  --c-bg: #F2F3F5;          /* L0 页面底 */
+  --c-surface: #FFFFFF;      /* L1 白卡 */
+  --c-surface-soft: #F3F4F6; /* 卡内凹槽底 */
+  --c-well: #F3F4F6;
+  --c-well-deep: #ECEDF0;
 
-  --radius-sm: 16rpx;
-  --radius: 24rpx;
-  --radius-lg: 36rpx;
+  /* ---------- 文字四级灰 ---------- */
+  --c-ink: #111215;          /* 标题、数字、主操作 */
+  --c-ink-2: #4B4F57;        /* 正文 */
+  --c-muted: #9599A1;        /* 辅助说明 */
+  --c-ink-4: #BFC2C8;        /* 页脚、占位 */
+  --c-line: rgba(17, 18, 21, 0.07); /* 分隔线，比旧版更淡 */
+
+  /* ---------- 品牌与语义色（极简：只有这几种） ---------- */
+  --c-gold: #111215;         /* 历史名，现等同于墨色主操作 */
+  --c-gold-light: #C8CBD2;
+  --c-gold-soft: #F3F4F6;
+  --c-navy: #111215;         /* 历史名，现为深色面 */
+  --c-navy-2: #2A2D33;
+  --c-price: #E5484D;        /* 金额 */
+  --c-red: #E5484D;          /* 预警、错误 */
+  --c-red-soft: #FFF0EF;
+  --c-green: #1F9D55;        /* 毛利为正 */
+  --c-green-soft: #EDF9F1;
+  --c-orange: #B25000;       /* 仅用于少量提示，不参与分层 */
+  --c-orange-soft: #FFF6EA;
+  --c-blue: #2F6BEA;
+  --c-blue-soft: #EEF3FF;
+
+  /* ---------- 光晕（只负责给毛玻璃提供虚化素材，本身不传达信息） ---------- */
+  --c-aura-1: #C9DBFF;
+  --c-aura-2: #FFD6C2;
+  --c-aura-3: #E3D6FF;
+
+  /* ---------- 圆角 ---------- */
+  --radius-sm: 20rpx;
+  --radius: 28rpx;
+  --radius-lg: 44rpx;        /* 白卡 */
+  --radius-xl: 52rpx;        /* 毛玻璃主块 */
   --radius-pill: 999rpx;
-  --shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+
+  /* ---------- 三级投影：深度即层级 ---------- */
+  --e1: 0 2rpx 4rpx rgba(17, 18, 21, 0.04), 0 12rpx 36rpx rgba(17, 18, 21, 0.05);
+  --e2: 0 2rpx 4rpx rgba(17, 18, 21, 0.05), 0 24rpx 64rpx rgba(17, 18, 21, 0.08);
+  --e3: 0 4rpx 12rpx rgba(17, 18, 21, 0.06), 0 44rpx 96rpx rgba(17, 18, 21, 0.14);
+  --e-ink: 0 12rpx 28rpx rgba(17, 18, 21, 0.24);
+  --shadow: var(--e1);       /* 历史名，页面里还在用 */
+
+  /* ---------- 毛玻璃 ---------- */
+  --c-glass: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(255, 255, 255, 0.50) 55%,
+      rgba(255, 255, 255, 0.62) 100%);
+  --c-glass-flat: rgba(255, 255, 255, 0.66);  /* 不支持 backdrop-filter 时的降级色 */
+  --c-glass-edge: rgba(255, 255, 255, 0.85);  /* 1rpx 内高光边 */
+  --c-hair: rgba(17, 18, 21, 0.07);
+
+  /* ---------- 间距 ---------- */
   --gap: 24rpx;
-  --gutter: 32rpx;
+  --gutter: 28rpx;
+
+  /* ---------- 演示分包沿用的别名（值与上面完全一致，不要另设真值） ---------- */
+  --frost-ink: var(--c-ink);
+  --frost-ink-2: var(--c-ink-2);
+  --frost-ink-3: var(--c-muted);
+  --frost-ink-4: var(--c-ink-4);
+  --frost-bg: var(--c-bg);
+  --frost-card: var(--c-surface);
+  --frost-well: var(--c-well);
+  --frost-red: var(--c-red);
+  --frost-red-soft: var(--c-red-soft);
+  --frost-green: var(--c-green);
+  --frost-aura-1: var(--c-aura-1);
+  --frost-aura-2: var(--c-aura-2);
+  --frost-aura-3: var(--c-aura-3);
+  --frost-skin-1: #F8DCC6;
+  --frost-skin-2: #E8BE9E;
+  --frost-glass: var(--c-glass);
+  --frost-glass-flat: var(--c-glass-flat);
+  --frost-glass-edge: var(--c-glass-edge);
+  --frost-hair: var(--c-hair);
+  --frost-e1: var(--e1);
+  --frost-e2: var(--e2);
+  --frost-e3: var(--e3);
+  --frost-ink-shadow: var(--e-ink);
+}
+
+/* 老安卓 / 低版本微信不支持 backdrop-filter：退化成高不透明度白卡。
+   层次仍靠投影 + 内高光边成立，只是少了「虚化」这一档。 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  page {
+    --c-glass: linear-gradient(160deg,
+        rgba(255, 255, 255, 0.97) 0%,
+        rgba(255, 255, 255, 0.93) 55%,
+        rgba(255, 255, 255, 0.95) 100%);
+    --c-glass-flat: rgba(255, 255, 255, 0.95);
+  }
 }

@@ -1,0 +1,34 @@
+<frost-nav title="我的" />
+<view class="frost">
+  <view class="aura"></view>
+  <view class="body">
+    <view class="profile glass">
+      <view class="row">
+        <view class="avatar"><image class="avatar-img" src="/packages/demo/icons/user.svg" /></view>
+        <view class="who">
+          <view class="pname ellipsis">{{user.nickname || brand.name}}</view>
+          <view class="prole">{{brand.name}} · {{roleLabel}}</view>
+        </view>
+        <view class="go" bindtap="onNavigate" data-url="{{routes.STAFF_PROFILE}}"><image class="go-img" src="/packages/demo/icons/chev-soft.svg" /></view>
+      </view>
+      <view wx:if="{{summary}}" class="quota">
+        <view class="q" bindtap="onNavigate" data-url="{{routes.DEMO_STOCK}}"><view class="qv num">{{summary.inStock}}</view><view class="ql">在库</view></view>
+        <view class="q"><view class="qv num">{{summary.sold}}</view><view class="ql">今日成交</view></view>
+        <view class="q" bindtap="onNavigate" data-url="{{routes.DEMO_BIZ}}"><view class="qv num {{summary.todos ? 'red' : ''}}">{{summary.todos}}</view><view class="ql">待办</view></view>
+        <view class="q"><view class="qv num">{{summary.visitors}}</view><view class="ql">今日访客</view></view>
+      </view>
+    </view>
+
+    <view wx:for="{{groups}}" wx:for-item="g" wx:key="key" class="card group mt">
+      <view class="group-head"><text class="group-title">{{g.title}}</text></view>
+      <view class="tiles">
+        <view wx:for="{{g.items}}" wx:key="text" class="tile" bindtap="onNavigate" data-url="{{item.url}}">
+          <view class="ico"><image class="ico-img" src="/packages/demo/icons/{{item.icon}}.svg" /></view>
+          <text class="tile-label">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="endnote">{{brand.name}} · {{brand.slogan}}</view>
+  </view>
+  <frost-tabbar active="mine" />
+</view>

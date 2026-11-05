@@ -1,10 +1,21 @@
+/* 指标格：数字是主角。字重拉满、字距收紧。
+ * 「无权限查看」必须明显小于真数字，否则会抢注意力（演示稿踩过）。
+ * .dark 是历史属性名，现在表示「在主块（毛玻璃）里」，不再是深色底。 */
 .metric { display: flex; flex-direction: column; gap: 6rpx; min-width: 0; }
 .metric.center { align-items: center; text-align: center; }
 .label { font-size: 24rpx; color: var(--c-muted); }
-.value { font-size: 40rpx; font-weight: 600; letter-spacing: -0.5rpx; color: var(--c-ink); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.value {
+  font-size: 44rpx; font-weight: 800; letter-spacing: -1.4rpx;
+  color: var(--c-ink); font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .value.hl { color: var(--c-ink); }
 .hint { font-size: 22rpx; color: var(--c-muted); }
-.dark .label, .dark .hint { color: rgba(255,255,255,.6); }
-.dark .value, .dark .value.hl { color: #fff; }
-.value.na { font-size: 26rpx; font-weight: 400; letter-spacing: 0; line-height: 56rpx; color: var(--c-muted); }
-.dark .value.na { color: rgba(255,255,255,.5); }
+.dark .label, .dark .hint { color: var(--c-muted); }
+.dark .value, .dark .value.hl { color: var(--c-ink); }
+/* 无权限 / 隐藏：小一号、常规字重、灰色 */
+.value.na {
+  font-size: 24rpx; font-weight: 500; letter-spacing: 0;
+  line-height: 56rpx; color: var(--c-muted);
+}
+.dark .value.na { color: var(--c-muted); }

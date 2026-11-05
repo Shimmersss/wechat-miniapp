@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方案 F · 柔光珐琅</title>
+<script src="../icons-v2.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",sans-serif;
+  background:#E8E9F0; color:#2E3242; padding:52px 40px 90px;
+  display:flex; flex-wrap:wrap; gap:46px; justify-content:center; align-items:flex-start;
+  background-image:radial-gradient(circle at 18% 8%,#F3E6FF 0%,transparent 42%),
+    radial-gradient(circle at 88% 22%,#DCEBFF 0%,transparent 40%),
+    radial-gradient(circle at 50% 96%,#FFE9F0 0%,transparent 46%);
+}
+.head { width:100%; max-width:1720px; }
+.head h1 { font-size:29px; font-weight:900; letter-spacing:-.8px; color:#2E3242; }
+.head h1 span { color:#6E5BD8; }
+.head p { font-size:14px; color:#7B7F94; margin-top:11px; line-height:1.78; max-width:1120px; }
+.tags { display:flex; gap:8px; margin-top:15px; flex-wrap:wrap; }
+.tag { font-size:11.5px; font-weight:800; padding:6px 14px; border-radius:999px;
+  background:rgba(255,255,255,.78); color:#5B4BC4;
+  box-shadow:0 3px 12px rgba(110,91,216,.13); }
+
+.wrap { position:relative; }
+.frame {
+  width:390px; height:940px; border-radius:46px; overflow:hidden; position:relative;
+  background:linear-gradient(168deg,#F7F5FF 0%,#EEF1FA 46%,#FDF2F6 100%);
+  display:flex; flex-direction:column;
+  box-shadow:0 28px 70px rgba(70,64,120,.2), 0 0 0 1px rgba(255,255,255,.7) inset;
+}
+.flabel { position:absolute; top:-26px; left:5px; font-size:11.5px; font-weight:800;
+  color:#9A94BC; letter-spacing:1px; }
+
+.sbar { height:46px; flex-shrink:0; display:flex; align-items:center;
+  justify-content:space-between; padding:0 26px 0 30px; font-size:13.5px; font-weight:800;
+  font-variant-numeric:tabular-nums; color:#2E3242; }
+.sbar .r { display:flex; gap:6px; align-items:center; }
+.nav { flex-shrink:0; padding:2px 20px 12px; display:flex; align-items:center;
+  justify-content:space-between; }
+.nav .t { font-size:19px; font-weight:900; letter-spacing:-.4px; }
+.nav .cap { display:flex; align-items:center; border-radius:999px; padding:5px 13px;
+  background:rgba(255,255,255,.72); box-shadow:0 2px 10px rgba(110,91,216,.1); }
+.nav .cap i { width:5.5px; height:5.5px; border-radius:50%; background:#A9A3C6; }
+.nav .cap .sp { width:1px; height:13px; background:#DEDAF0; margin:0 11px; }
+.nav .cap .rg { width:10px; height:10px; border:1.6px solid #A9A3C6; border-radius:50%; }
+
+.scroll { flex:1; overflow-y:auto; min-height:0; scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* 玻璃卡 */
+.gl {
+  margin:0 16px 13px; border-radius:26px; padding:18px;
+  background:rgba(255,255,255,.66);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:0 8px 26px rgba(96,88,160,.1), inset 0 1px 0 rgba(255,255,255,.9);
+  border:1px solid rgba(255,255,255,.72);
+}
+
+/* 用户头卡 */
+.uhead { display:flex; align-items:center; gap:14px; }
+.uhead .ava { width:58px; height:58px; border-radius:20px; flex-shrink:0;
+  background:linear-gradient(140deg,#B9A7FF,#8B7BE8 55%,#7BA8F0);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 7px 18px rgba(139,123,232,.36); }
+.uhead .ava svg { width:29px; height:29px; stroke:#fff; fill:none; stroke-width:2.1; }
+.uhead .nm { font-size:17.5px; font-weight:900; letter-spacing:-.3px; }
+.uhead .ph { font-size:12px; color:#8B8FA6; margin-top:5px; font-weight:700;
+  font-variant-numeric:tabular-nums; letter-spacing:.3px; }
+.uhead .out { margin-left:auto; width:36px; height:36px; border-radius:13px;
+  background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center;
+  box-shadow:0 3px 11px rgba(96,88,160,.11); }
+.uhead .out svg { width:17px; height:17px; stroke:#8B7BE8; fill:none; stroke-width:2.3;
+  stroke-linecap:round; stroke-linejoin:round; }
+
+.ustats { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:17px; }
+.ustats .u { border-radius:17px; padding:12px 10px; text-align:center;
+  background:rgba(255,255,255,.8); box-shadow:0 3px 12px rgba(96,88,160,.07); }
+.ustats .uv { font-size:21px; font-weight:900; letter-spacing:-.9px;
+  font-variant-numeric:tabular-nums; }
+.ustats .ul { font-size:10px; color:#8B8FA6; margin-top:4px; font-weight:800; }
+.ustats .u:nth-child(1) .uv { color:#6E5BD8; }
+.ustats .u:nth-child(2) .uv { color:#3E8FD8; }
+.ustats .u:nth-child(3) .uv { color:#D85F9B; }
+
+/* 分组 */
+.sect { padding:22px 20px 13px; display:flex; align-items:center; gap:9px; }
+.sect .dot2 { width:7px; height:7px; border-radius:50%; }
+.sect .zh { font-size:15.5px; font-weight:900; letter-spacing:-.3px; }
+.sect .badge2 { margin-left:auto; font-size:10px; font-weight:900; color:#8B7BE8;
+  background:rgba(139,123,232,.11); padding:3px 10px; border-radius:999px; }
+.d1 { background:#8B7BE8; } .d2 { background:#D85F9B; } .d3 { background:#3E8FD8; } .d4 { background:#38B2A3; }
+
+/* 珐琅图标 */
+.ggrid { display:grid; grid-template-columns:repeat(4,1fr); gap:30px 6px; padding:0 12px 30px; }
+.gcell { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.gbox { width:54px; height:54px; border-radius:18px; display:flex; align-items:center;
+  justify-content:center; position:relative; background:#fff;
+  box-shadow:0 5px 16px var(--sh, rgba(110,91,216,.17)), inset 0 0 0 1px rgba(255,255,255,.95); }
+.gbox::before { content:""; position:absolute; inset:0; border-radius:18px;
+  background:linear-gradient(158deg,rgba(255,255,255,.85),rgba(245,243,255,.4) 58%,transparent); }
+.gbox svg { width:36px; height:36px; position:relative; z-index:1; }
+.glab { font-size:11.5px; font-weight:800; color:#4E5265; letter-spacing:-.1px; text-align:center; }
+
+.e1 { --sh:rgba(110,82,216,.19); }
+.e2 { --sh:rgba(216,64,122,.19); }
+.e3 { --sh:rgba(43,127,212,.19); }
+.e4 { --sh:rgba(31,158,144,.19); }
+.e5 { --sh:rgba(201,138,24,.19); }
+
+/* 数据卡 */
+.dhead { display:flex; align-items:center; gap:9px; margin-bottom:15px; }
+.dhead .dt { font-size:15px; font-weight:900; letter-spacing:-.2px; }
+.dhead .db { font-size:10px; font-weight:900; padding:3px 10px; border-radius:999px;
+  background:rgba(110,91,216,.1); color:#6E5BD8; }
+.dhead .dr { margin-left:auto; font-size:11.5px; font-weight:900; color:#8B7BE8;
+  display:flex; align-items:center; gap:2px; }
+.dhead .dr svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:3; }
+
+.hugenum { font-size:46px; font-weight:900; letter-spacing:-2.8px; line-height:1;
+  font-variant-numeric:tabular-nums; color:#3A3F52; }
+.hugenum small { font-size:15px; font-weight:800; color:#9A9EB4; margin-left:7px;
+  letter-spacing:0; }
+
+.tri { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:17px; }
+.tri .t { border-radius:17px; padding:12px 9px; text-align:center;
+  background:rgba(255,255,255,.82); box-shadow:0 3px 11px rgba(96,88,160,.06); }
+.tri .tv { font-size:17px; font-weight:900; letter-spacing:-.6px;
+  font-variant-numeric:tabular-nums; color:#3A3F52; }
+.tri .tl { font-size:9.5px; color:#9A9EB4; margin-top:4px; font-weight:800; }
+
+/* 渐变主按钮 */
+.gbtnrow { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px; }
+.gbtn { height:46px; border-radius:16px; display:flex; align-items:center;
+  justify-content:center; gap:6px; font-size:12.5px; font-weight:900;
+  background:rgba(255,255,255,.9); color:#5B4BC4;
+  box-shadow:0 4px 13px rgba(96,88,160,.1); }
+.gbtn svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2.6;
+  stroke-linecap:round; stroke-linejoin:round; }
+.gbtn.primary { background:linear-gradient(135deg,#8B7BE8,#6E5BD8); color:#fff;
+  box-shadow:0 8px 20px rgba(110,91,216,.36); }
+.gbtn.primary svg { stroke:#fff; }
+
+/* 预警 */
+.galert { margin:0 16px 13px; border-radius:22px; padding:14px 16px; display:flex;
+  align-items:center; gap:12px; background:rgba(255,255,255,.72);
+  box-shadow:0 6px 20px rgba(216,95,155,.13); border:1px solid rgba(255,209,228,.9); }
+.galert .ai { width:40px; height:40px; border-radius:15px; flex-shrink:0;
+  background:linear-gradient(140deg,#FFD9E8,#FFC0D8); display:flex; align-items:center;
+  justify-content:center; }
+.galert .ai svg { width:20px; height:20px; }
+.galert .at { font-size:13px; font-weight:900; color:#C2407E; }
+.galert .as { font-size:10.5px; color:#B78BA6; margin-top:3px; font-weight:700; }
+.galert .wa { margin-left:auto; }
+.galert .wa svg { width:13px; height:13px; stroke:#CF9EBA; fill:none; stroke-width:3; }
+
+/* 进度环 */
+.ringrow { display:flex; align-items:center; gap:16px; margin-top:16px; }
+.ring { width:64px; height:64px; flex-shrink:0; position:relative; }
+.ring svg { transform:rotate(-90deg); }
+.ring .rv2 { position:absolute; inset:0; display:flex; align-items:center;
+  justify-content:center; font-size:15px; font-weight:900; color:#6E5BD8;
+  font-variant-numeric:tabular-nums; }
+.ringtxt .rt { font-size:13px; font-weight:900; color:#3A3F52; }
+.ringtxt .rs { font-size:10.5px; color:#9A9EB4; margin-top:4px; font-weight:700; line-height:1.5; }
+
+/* 底栏 */
+.gtabs { flex-shrink:0; height:76px; display:flex; align-items:flex-start; padding-top:10px;
+  background:rgba(255,255,255,.78);
+  backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-top:1px solid rgba(255,255,255,.9); position:relative;
+  box-shadow:0 -5px 22px rgba(96,88,160,.07); }
+.gtabs .tb { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  font-size:9.5px; font-weight:800; color:#A9A9C2; }
+.gtabs .tb svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2.3;
+  stroke-linecap:round; stroke-linejoin:round; }
+.gtabs .tb.on { color:#6E5BD8; }
+.gtabs .tb.on .pill2 { width:18px; height:3px; border-radius:2px;
+  background:linear-gradient(90deg,#8B7BE8,#D85F9B); margin-top:1px; }
+.gtabs .mid { flex:1; display:flex; justify-content:center; }
+.gfab { width:56px; height:56px; border-radius:20px; margin-top:-25px;
+  background:linear-gradient(140deg,#9B8BF0,#6E5BD8 55%,#8B6BD8);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 10px 24px rgba(110,91,216,.4), inset 0 1px 0 rgba(255,255,255,.4); }
+.gfab svg { width:24px; height:24px; stroke:#fff; fill:none; stroke-width:3.2; stroke-linecap:round; }
+
+/* 首页 */
+.bhead { padding:0 20px 16px; display:flex; align-items:center; gap:12px; }
+.bhead .bh { width:46px; height:46px; border-radius:16px;
+  background:linear-gradient(140deg,#B9A7FF,#8B7BE8); display:flex; align-items:center;
+  justify-content:center; font-size:20px; font-weight:900; color:#fff;
+  box-shadow:0 7px 18px rgba(139,123,232,.34); }
+.bhead .bn { font-size:16px; font-weight:900; letter-spacing:-.3px; }
+.bhead .bs { font-size:10.5px; color:#9A9EB4; margin-top:3px; font-weight:700; }
+
+.gsearch { margin:0 16px 14px; height:49px; border-radius:18px; display:flex;
+  align-items:center; padding:0 16px; gap:10px; font-size:13.5px; color:#A9A9C2;
+  background:rgba(255,255,255,.8); box-shadow:0 4px 15px rgba(96,88,160,.08); }
+.gsearch svg { width:17px; height:17px; stroke:#B5B5CC; fill:none; stroke-width:2.6;
+  stroke-linecap:round; }
+
+.gchips { display:flex; gap:8px; padding:0 16px 16px; overflow:hidden; }
+.gchip { padding:8px 18px; border-radius:999px; font-size:12.5px; font-weight:900;
+  color:#8B8FA6; background:rgba(255,255,255,.78); flex-shrink:0;
+  box-shadow:0 3px 11px rgba(96,88,160,.07); }
+.gchip.on { background:linear-gradient(135deg,#8B7BE8,#6E5BD8); color:#fff;
+  box-shadow:0 6px 17px rgba(110,91,216,.33); }
+
+.gpgrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px; }
+.gpc { border-radius:24px; overflow:hidden; background:rgba(255,255,255,.82);
+  box-shadow:0 6px 22px rgba(96,88,160,.1); border:1px solid rgba(255,255,255,.8); }
+.gpc .gim { height:152px; position:relative;
+  background:linear-gradient(160deg,#F3EFFF,#E8E2FF); overflow:hidden; }
+.gpc .gim img { width:100%; height:100%; object-fit:cover; }
+.gpc .gb2 { position:absolute; top:9px; left:9px; font-size:9.5px; font-weight:900;
+  padding:3.5px 9px; border-radius:999px; background:rgba(255,255,255,.94);
+  color:#6E5BD8; z-index:2; box-shadow:0 3px 10px rgba(110,91,216,.16); }
+.gpc .gbody { padding:12px 13px 14px; }
+.gpc .gn { font-size:13.5px; font-weight:900; letter-spacing:-.2px; }
+.gpc .gs { font-size:10.5px; color:#9A9EB4; margin-top:5px; font-weight:700; line-height:1.5; }
+.gpc .gf { display:flex; align-items:center; justify-content:space-between; margin-top:11px; }
+.gpc .gp { font-size:18px; font-weight:900; letter-spacing:-.8px; color:#6E5BD8; }
+.gpc .gp i { font-size:11px; font-style:normal; }
+.gpc .gt2 { font-size:9px; font-weight:900; color:#38B2A3; background:#E4F8F5;
+  padding:2.5px 7px; border-radius:7px; }
+.gend { text-align:center; font-size:10px; color:#B5B5CC; font-weight:800; padding:20px 0 12px; }
+
+/* 经营 */
+.tick { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:900;
+  color:#8B7BE8; margin-bottom:11px; }
+.tick svg { width:15px; height:15px; }
+.tick::after { content:""; flex:1; height:1px; background:rgba(139,123,232,.22); }
+
+/* 营收大卡 */
+.bigcard { margin:0 16px 13px; border-radius:28px; padding:20px; position:relative;
+  overflow:hidden; color:#fff;
+  background:linear-gradient(140deg,#9B8BF0 0%,#7B6BE0 48%,#B87BC8 100%);
+  box-shadow:0 14px 34px rgba(123,107,224,.36); }
+.bigcard::before { content:""; position:absolute; width:190px; height:190px;
+  border-radius:50%; background:rgba(255,255,255,.12); top:-90px; right:-60px; }
+.bigcard::after { content:""; position:absolute; width:120px; height:120px;
+  border-radius:50%; background:rgba(255,255,255,.08); bottom:-64px; left:-30px; }
+.bigcard .bt2 { position:relative; z-index:1; font-size:12.5px; font-weight:800;
+  color:rgba(255,255,255,.88); display:flex; align-items:center; gap:7px; }
+.bigcard .bt2 svg { width:15px; height:15px; }
+.bigcard .bv2 { position:relative; z-index:1; font-size:42px; font-weight:900;
+  letter-spacing:-2.4px; margin-top:10px; font-variant-numeric:tabular-nums; }
+.bigcard .bv2 small { font-size:14px; font-weight:800; opacity:.8; margin-left:5px;
+  letter-spacing:0; }
+.bigcard .bs2 { position:relative; z-index:1; display:flex; gap:0; margin-top:17px;
+  padding-top:14px; border-top:1px solid rgba(255,255,255,.24); }
+.bigcard .bs2 .x { flex:1; border-right:1px solid rgba(255,255,255,.2); padding-left:13px; }
+.bigcard .bs2 .x:first-child { padding-left:0; }
+.bigcard .bs2 .x:last-child { border-right:0; }
+.bigcard .bs2 .xv { font-size:16px; font-weight:900; letter-spacing:-.5px; }
+.bigcard .bs2 .xl { font-size:9.5px; color:rgba(255,255,255,.76); margin-top:3px; font-weight:700; }
+
+/* 入口列表 */
+.glist { margin:0 16px 13px; border-radius:26px; padding:5px 16px;
+  background:rgba(255,255,255,.66); backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 8px 26px rgba(96,88,160,.09), inset 0 1px 0 rgba(255,255,255,.9);
+  border:1px solid rgba(255,255,255,.7); }
+.grow { display:flex; align-items:center; gap:13px; padding:13px 0; }
+.grow + .grow { border-top:1px solid rgba(220,216,240,.6); }
+.grow .gic { width:48px; height:48px; border-radius:16px; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; position:relative;
+  box-shadow:0 5px 14px var(--sh, rgba(110,91,216,.17)); }
+.grow .gic { background:#fff; }
+.grow .gic::before { content:""; position:absolute; inset:0; border-radius:16px;
+  background:linear-gradient(158deg,rgba(255,255,255,.8),transparent 62%); }
+.grow .gic svg { width:32px; height:32px; position:relative; z-index:1; }
+.grow .gn2 { font-size:13.5px; font-weight:900; color:#3A3F52; }
+.grow .gd2 { font-size:10.5px; color:#9A9EB4; margin-top:3px; font-weight:700; }
+.grow .ga { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.grow .gb3 { font-size:9.5px; font-weight:900; padding:3px 10px; border-radius:999px;
+  background:rgba(110,91,216,.11); color:#6E5BD8; }
+.grow .gc { width:11px; height:11px; stroke:#C0C0D6; fill:none; stroke-width:3; }
+
+
+/* ================= 层次重构 =================
+   L0 氛围底：顶部暮紫，往下渐隐成冷灰 #E9EAF2（原先整屏都是同亮度的淡彩，玻璃卡贴在上面没有边界）
+   L1 白卡：玻璃卡提高不透明度 + 加深投影，分组收进卡里
+   L2 卡内：珐琅图标、浅紫按钮
+   每页只保留一个紫色重块 */
+.frame { --bg:#E9EAF2; background:var(--bg); }
+.frame.atm {
+  background:
+    radial-gradient(70% 240px at 90% 0, rgba(216,95,155,.42), transparent 70%),
+    radial-gradient(60% 200px at 0 30px, rgba(91,140,230,.35), transparent 70%),
+    linear-gradient(180deg,#4A3BAE 0,#6250CF var(--a,150px),#A49AE6 calc(var(--a,150px) + 130px),#D9D8EE var(--b,480px),var(--bg) calc(var(--b,480px) + 130px));
+}
+.frame.atm .sbar, .frame.atm .nav .t { color:#fff; }
+.frame.atm .nav .cap { background:rgba(255,255,255,.16) !important; border:1px solid rgba(255,255,255,.3) !important; box-shadow:none !important; }
+.frame.atm .nav .cap i { background:#fff; }
+.frame.atm .nav .cap .sp { background:rgba(255,255,255,.4); }
+.frame.atm .nav .cap .rg { border-color:#fff; }
+
+.gl, .glist, .gpc { background:rgba(255,255,255,.94); border-color:rgba(255,255,255,.95);
+  box-shadow:0 8px 26px rgba(60,52,130,.1), inset 0 1px 0 #fff; }
+.galert { background:#FFF7FA; border:0; border-left:4px solid #D85F9B; border-radius:16px; }
+
+.grp { margin:0 14px 12px; border-radius:24px; padding:2px 0 2px;
+  background:rgba(255,255,255,.94); box-shadow:0 8px 26px rgba(60,52,130,.1);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px); }
+.grp .sect { padding:17px 18px 12px; }
+.grp .ggrid { gap:18px 6px; padding:2px 6px 18px; }
+.grp .glab { color:#3A3E50; font-size:12px; }
+
+/* 我的：个人信息直接坐在暮紫上 */
+.frame.mine { --a:200px; --b:440px; }
+.frame.mine .gl:first-child { background:transparent; border-color:transparent; box-shadow:none;
+  backdrop-filter:none; -webkit-backdrop-filter:none; padding:6px 6px 22px; margin:0 14px; }
+.frame.mine .uhead .nm { color:#fff; }
+.frame.mine .uhead .ph { color:rgba(255,255,255,.66); }
+.frame.mine .uhead .ava { background:rgba(255,255,255,.2); box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4); }
+.frame.mine .uhead .out { background:rgba(255,255,255,.16); box-shadow:none; }
+.frame.mine .uhead .out svg { stroke:#fff; }
+.frame.mine .ustats .u { background:rgba(255,255,255,.14); box-shadow:inset 0 0 0 1px rgba(255,255,255,.2); }
+.frame.mine .ustats .uv { color:#fff !important; }
+.frame.mine .ustats .ul { color:rgba(255,255,255,.7); }
+
+/* 首页 */
+.frame.home { --a:110px; --b:300px; }
+.frame.home .bhead .bn { color:#fff; }
+.frame.home .bhead .bs { color:rgba(255,255,255,.7); }
+.frame.home .bhead .bh { background:#fff; color:#6E5BD8; box-shadow:0 6px 16px rgba(30,20,90,.25); }
+.frame.home .gsearch { background:#fff; box-shadow:0 8px 22px rgba(40,30,110,.2); }
+.frame.home .gchip:not(.on) { background:rgba(255,255,255,.85); }
+
+/* 库存：深紫数据卡是唯一重块 */
+.frame.stock { --a:50px; --b:250px; }
+.frame.stock .bigcard { background:linear-gradient(145deg,#5643C6 0%,#6E5BD8 50%,#9C5FB8 100%);
+  box-shadow:0 16px 34px rgba(60,40,150,.36), inset 0 0 0 1px rgba(255,255,255,.14); }
+.dhead .dt { font-size:16px; }
+
+/* 经营：今日数字浮在暮紫上（半透明），业务分组标题收进白卡 */
+.frame.biz { --a:170px; --b:500px; }
+.frame.biz .bigcard { background:rgba(255,255,255,.13); box-shadow:inset 0 0 0 1px rgba(255,255,255,.22); }
+.frame.biz .bigcard::before, .frame.biz .bigcard::after { display:none; }
+.glist .sect { padding:14px 0 6px; }
+
+/* embed 模式：被 compare.html 内嵌时只显示手机框 */
+body.embed { padding:0 !important; gap:0; background:transparent !important; display:block; }
+body.embed .head { display:none !important; }
+body.embed .wrap { display:block !important; width:390px; }
+body.embed .flabel { display:none !important; }
+body.embed .frame { margin:0 !important; box-shadow:none !important; border-radius:0 !important; }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>方案 F · <span>柔光珐琅</span></h1>
+  <p>第三个方向：走"安静的高级感"。背景是莫兰迪系的柔光渐变（淡紫 → 雾蓝 → 浅粉），所有卡片都是半透明玻璃，图标做成珐琅胸针——白底、柔彩渐变、细高光边，每个都是独立的小物件。<b>这版和 D 的区别在于"亮度"：D 是热的、张扬的，F 是凉的、克制的；两者的信息结构几乎一样，情绪完全不同。</b>适合想显得专业但不冰冷的店。</p>
+  <div class="tags">
+    <span class="tag">三层层次：深色氛围底 → 浮起白卡 → 卡内元素</span>
+    <span class="tag">莫兰迪柔光底</span>
+    <span class="tag">玻璃拟态卡片</span>
+    <span class="tag">珐琅胸针图标</span>
+    <span class="tag">紫 #6E5BD8</span>
+    <span class="tag">粉 #D85F9B</span>
+  </div>
+</div>
+
+<!-- ============ 我的 ============ -->
+<div class="wrap"><div class="flabel">我的</div><div class="frame atm mine">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">我的</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="gl" style="margin-top:2px">
+      <div class="uhead">
+        <div class="ava"><svg stroke="#fff" fill="none" stroke-width="2.2" stroke-linecap="round"><use href="#i-tab-my"/></svg></div>
+        <div>
+          <div class="nm">夏目数码</div>
+          <div class="ph">176 6979 3761</div>
+        </div>
+        <div class="out"><svg><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="ustats">
+        <div class="u"><div class="uv">3</div><div class="ul">在库</div></div>
+        <div class="u"><div class="uv">4</div><div class="ul">员工</div></div>
+        <div class="u"><div class="uv">12</div><div class="ul">代理</div></div>
+      </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="dot2 d1"></span><span class="zh">店铺管理</span><span class="badge2">5 项</span></div>
+    <div class="ggrid" style="grid-template-columns:repeat(5,1fr)">
+      <div class="gcell"><div class="gbox e1"><svg><use href="#i-shop"/></svg></div><div class="glab">小店设置</div></div>
+      <div class="gcell"><div class="gbox e5"><svg><use href="#i-users"/></svg></div><div class="glab">员工管理</div></div>
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-store"/></svg></div><div class="glab">门店管理</div></div>
+      <div class="gcell"><div class="gbox e4"><svg><use href="#i-phoneswap"/></svg></div><div class="glab">更换手机</div></div>
+      <div class="gcell"><div class="gbox e2"><svg><use href="#i-share"/></svg></div><div class="glab">分享管理</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="dot2 d2"></span><span class="zh">财务管理</span><span class="badge2">3 项</span></div>
+    <div class="ggrid">
+      <div class="gcell"><div class="gbox e2"><svg><use href="#i-wallet"/></svg></div><div class="glab">虚拟账户</div></div>
+      <div class="gcell"><div class="gbox e4"><svg><use href="#i-settle"/></svg></div><div class="glab">代理结算</div></div>
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-ledger"/></svg></div><div class="glab">对账统计</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="dot2 d3"></span><span class="zh">同售管理</span><span class="badge2">3 项</span></div>
+    <div class="ggrid">
+      <div class="gcell"><div class="gbox e5"><svg><use href="#i-fish"/></svg></div><div class="glab">闲鱼管理</div></div>
+      <div class="gcell"><div class="gbox e1"><svg><use href="#i-recycle"/></svg></div><div class="glab">转转管理</div></div>
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-cloudbox"/></svg></div><div class="glab">上下游货盘</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="dot2 d4"></span><span class="zh">渠道与设备</span><span class="badge2">4 项</span></div>
+    <div class="ggrid">
+      <div class="gcell"><div class="gbox e4"><svg><use href="#i-inbox"/></svg></div><div class="glab">进货渠道</div></div>
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-sale"/></svg></div><div class="glab">销售渠道</div></div>
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-printer"/></svg></div><div class="glab">打印机</div></div>
+      <div class="gcell"><div class="gbox e5"><svg><use href="#i-template"/></svg></div><div class="glab">打印模板</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sect"><span class="dot2 d1"></span><span class="zh">其他功能</span><span class="badge2">7 项</span></div>
+    <div class="ggrid">
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-settings"/></svg></div><div class="glab">偏好设置</div></div>
+      <div class="gcell"><div class="gbox e5"><svg><use href="#i-bulb"/></svg></div><div class="glab">使用教程</div></div>
+      <div class="gcell"><div class="gbox e4"><svg><use href="#i-headset"/></svg></div><div class="glab">联系客服</div></div>
+      <div class="gcell"><div class="gbox e5"><svg><use href="#i-diamond"/></svg></div><div class="glab">成为代理</div></div>
+      <div class="gcell"><div class="gbox e3"><svg><use href="#i-mail"/></svg></div><div class="glab">需求反馈</div></div>
+      <div class="gcell"><div class="gbox e1"><svg><use href="#i-invite"/></svg></div><div class="glab">邀请好友</div></div>
+      <div class="gcell"><div class="gbox e2"><svg><use href="#i-trash"/></svg></div><div class="glab">抹除数据</div></div>
+    </div>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+
+  <div class="gtabs">
+    <div class="tb"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="gfab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb on"><svg><use href="#i-tab-my"/></svg>我的<span class="pill2"></span></div>
+  </div>
+</div></div>
+
+<!-- ============ 首页 ============ -->
+<div class="wrap"><div class="flabel">首页</div><div class="frame atm home">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">夏目数码</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="bhead">
+      <div class="bh">夏</div>
+      <div>
+        <div class="bn">夏目数码</div>
+        <div class="bs">让价格透明 · 让产品放心</div>
+      </div>
+    </div>
+
+    <div class="gsearch"><svg><use href="#i-search"/></svg>搜索品牌 / 型号 / 内存</div>
+
+    <div class="gchips">
+      <div class="gchip on">全部</div>
+      <div class="gchip">苹果</div>
+      <div class="gchip">华为</div>
+      <div class="gchip">三星</div>
+    </div>
+
+    <div class="gpgrid">
+      <div class="gpc">
+        <div class="gim"><span class="gb2">99 新</span><img src="../assets/phone-blue.png" alt=""></div>
+        <div class="gbody">
+          <div class="gn">iPhone 17 Pro</div>
+          <div class="gs">256G · 冰川蓝 · 电池 96%</div>
+          <div class="gf"><div class="gp"><i>¥</i>7,299</div><div class="gt2">90 天</div></div>
+        </div>
+      </div>
+      <div class="gpc">
+        <div class="gim"><span class="gb2">准新</span><img src="../assets/phone-white.png" alt=""></div>
+        <div class="gbody">
+          <div class="gn">iPhone Air</div>
+          <div class="gs">128G · 云白色 · 电池 100%</div>
+          <div class="gf"><div class="gp"><i>¥</i>5,399</div><div class="gt2">90 天</div></div>
+        </div>
+      </div>
+      <div class="gpc">
+        <div class="gim"><span class="gb2">99 新</span><img src="../assets/phone-blue.png" alt="" style="filter:hue-rotate(-32deg) saturate(.8) brightness(1.06)"></div>
+        <div class="gbody">
+          <div class="gn">iPhone 16 Pro</div>
+          <div class="gs">512G · 沙漠金 · 电池 92%</div>
+          <div class="gf"><div class="gp"><i>¥</i>6,899</div><div class="gt2">90 天</div></div>
+        </div>
+      </div>
+      <div class="gpc">
+        <div class="gim"><img src="../assets/phone-white.png" alt="" style="filter:hue-rotate(150deg) saturate(.72)"></div>
+        <div class="gbody">
+          <div class="gn">华为 Mate 60 Pro</div>
+          <div class="gs">256G · 雅川青 · 电池 95%</div>
+          <div class="gf"><div class="gp"><i>¥</i>4,599</div><div class="gt2">90 天</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="gend">— 每台设备独立检测 · 公开机况 —</div>
+  </div>
+
+  <div class="gtabs">
+    <div class="tb on"><svg><use href="#i-tab-home"/></svg>首页<span class="pill2"></span></div>
+    <div class="tb"><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="gfab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb"><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+<!-- ============ 库存 ============ -->
+<div class="wrap"><div class="flabel">库存数据</div><div class="frame atm stock">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">库存数据</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="bigcard" style="margin-top:2px">
+      <div class="bt2"><svg stroke="#fff" fill="none" stroke-width="2.2"><use href="#i-eye"/></svg>数据隐藏</div>
+      <div class="bv2">3<small>台在库</small></div>
+      <div class="bs2">
+        <div class="x"><div class="xv">0</div><div class="xl">今日入库</div></div>
+        <div class="x"><div class="xv">16,650</div><div class="xl">在库成本</div></div>
+        <div class="x"><div class="xv">0</div><div class="xl">今日出库</div></div>
+      </div>
+    </div>
+
+    <div class="galert">
+      <div class="ai"><svg><use href="#i-bell"/></svg></div>
+      <div>
+        <div class="at">2 台库龄超 30 天</div>
+        <div class="as">建议调价或转同行货盘</div>
+      </div>
+      <div class="wa"><svg><use href="#i-chev"/></svg></div>
+    </div>
+
+    <div class="gl">
+      <div class="dhead">
+        <span class="dt">今日销售</span>
+        <span class="db">数据隐藏</span>
+        <span class="dr">详情 <svg><use href="#i-chev"/></svg></span>
+      </div>
+      <div class="hugenum">0.00<small>元</small></div>
+      <div class="tri">
+        <div class="t"><div class="tv">0</div><div class="tl">销售台数</div></div>
+        <div class="t"><div class="tv">0.00</div><div class="tl">利润额</div></div>
+        <div class="t"><div class="tv">0</div><div class="tl">均台毛利</div></div>
+      </div>
+      <div class="ringrow">
+        <div class="ring">
+          <svg width="64" height="64">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="rgba(139,123,232,.15)" stroke-width="7"/>
+            <circle cx="32" cy="32" r="27" fill="none" stroke="url(#gring)" stroke-width="7"
+              stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="164"/>
+            <defs><linearGradient id="gring" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#9B8BF0"/><stop offset="1" stop-color="#D85F9B"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="rv2">0%</div>
+        </div>
+        <div class="ringtxt">
+          <div class="rt">动销率</div>
+          <div class="rs">实时销量 / 当日 0 点在库数量</div>
+        </div>
+      </div>
+      <div class="gbtnrow">
+        <div class="gbtn"><svg><use href="#i-scan"/></svg>扫码</div>
+        <div class="gbtn"><svg><use href="#i-tab-box"/></svg>批量</div>
+        <div class="gbtn primary"><svg><use href="#i-plus"/></svg>手动</div>
+      </div>
+    </div>
+
+    <div class="gl">
+      <div class="dhead">
+        <span class="dt">财务对账</span>
+        <span class="dr">更多 <svg><use href="#i-chev"/></svg></span>
+      </div>
+      <div class="tri" style="margin-top:0">
+        <div class="t"><div class="tv">0</div><div class="tl">退货入库</div></div>
+        <div class="t"><div class="tv">0</div><div class="tl">欠款客户</div></div>
+        <div class="t"><div class="tv">¥0</div><div class="tl">我欠供应商</div></div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+  </div>
+
+  <div class="gtabs">
+    <div class="tb"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#i-tab-chart"/></svg>经营</div>
+    <div class="mid"><div class="gfab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb on"><svg><use href="#i-tab-box"/></svg>库存<span class="pill2"></span></div>
+    <div class="tb"><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+<!-- ============ 经营 ============ -->
+<div class="wrap"><div class="flabel">经营</div><div class="frame atm biz">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="25" height="11" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="16.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">经营</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="bigcard" style="margin-top:2px">
+      <div class="bt2"><svg stroke="#fff" fill="none" stroke-width="2.2"><use href="#i-trend"/></svg>今日销售净额</div>
+      <div class="bv2">¥0<small>元</small></div>
+      <div class="bs2">
+        <div class="x"><div class="xv">¥0</div><div class="xl">今日毛利</div></div>
+        <div class="x"><div class="xv">0 台</div><div class="xl">成交</div></div>
+        <div class="x"><div class="xv">0 单</div><div class="xl">维修</div></div>
+      </div>
+    </div>
+
+    <div class="glist">
+      <div class="sect"><span class="dot2 d2"></span><span class="zh">维修业务</span><span class="badge2">3 单进行中</span></div>
+      <div class="grow">
+        <div class="gic e5"><svg><use href="#i-wrench"/></svg></div>
+        <div><div class="gn2">维修开单</div><div class="gd2">新建工单 · 拍照登记</div></div>
+        <div class="ga"><span class="gb3">常用</span><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e2"><svg><use href="#i-doc"/></svg></div>
+        <div><div class="gn2">维修记录</div><div class="gd2">历史查询 · 质保追溯</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e3"><svg><use href="#i-trend"/></svg></div>
+        <div><div class="gn2">维修统计</div><div class="gd2">本月营收 · 工程师绩效</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+    </div>
+
+    <div class="glist">
+      <div class="sect"><span class="dot2 d3"></span><span class="zh">配件业务</span><span class="badge2">128 件在库</span></div>
+      <div class="grow">
+        <div class="gic e1"><svg><use href="#i-parts"/></svg></div>
+        <div><div class="gn2">配件管理</div><div class="gd2">分类 · 库存 · 成本</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e4"><svg><use href="#i-inbox"/></svg></div>
+        <div><div class="gn2">配件入库</div><div class="gd2">扫码登记 · 供应商</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e3"><svg><use href="#i-truck"/></svg></div>
+        <div><div class="gn2">配件出库</div><div class="gd2">维修领用 · 外售</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+    </div>
+
+    <div class="glist">
+      <div class="sect"><span class="dot2 d4"></span><span class="zh">日常收付款</span><span class="badge2">本月 ¥28,400</span></div>
+      <div class="grow">
+        <div class="gic e5"><svg><use href="#i-cash"/></svg></div>
+        <div><div class="gn2">日常记账</div><div class="gd2">收款 · 付款 · 赊账</div></div>
+        <div class="ga"><span class="gb3">记账</span><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e3"><svg><use href="#i-ledger"/></svg></div>
+        <div><div class="gn2">记账明细</div><div class="gd2">按日 / 按类型查看</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e1"><svg><use href="#i-gift"/></svg></div>
+        <div><div class="gn2">搜机客商城</div><div class="gd2">配件比价采购</div></div>
+        <div class="ga"><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+      <div class="grow">
+        <div class="gic e4"><svg><use href="#i-star"/></svg></div>
+        <div><div class="gn2">保修查询 / 我的订单</div><div class="gd2">IMEI 查保修 · 4 笔待收货</div></div>
+        <div class="ga"><span class="gb3">4</span><svg class="gc"><use href="#i-chev"/></svg></div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+  </div>
+
+  <div class="gtabs">
+    <div class="tb"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="tb on"><svg><use href="#i-tab-chart"/></svg>经营<span class="pill2"></span></div>
+    <div class="mid"><div class="gfab"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#i-tab-box"/></svg>库存</div>
+    <div class="tb"><svg><use href="#i-tab-my"/></svg>我的</div>
+  </div>
+</div></div>
+
+
+<script>
+if (location.search.indexOf('embed=1') >= 0) {
+  document.body.classList.add('embed');
+  const wraps = [...document.querySelectorAll('.wrap')];
+  wraps.forEach((w, i) => { if (i > 0) w.remove(); });
+  document.querySelectorAll('.head').forEach(h => h.remove());
+}
+</script>
+</body>
+</html>

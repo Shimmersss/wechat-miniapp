@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方案 C · 数据终端</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",-apple-system,sans-serif;
+  background:#000; color:#E6E6E6;
+  padding:56px 40px 100px; display:flex; flex-wrap:wrap; gap:48px;
+  justify-content:center; align-items:flex-start;
+  background-image:radial-gradient(circle at 50% 0%,#141416 0%,#000 60%);
+}
+.head { width:100%; max-width:1700px; margin-bottom:6px; }
+.head h1 { font-size:27px; font-weight:800; letter-spacing:-.5px; color:#F2F2F2; }
+.head h1 em { font-style:normal; color:#C8F751; }
+.head p { font-size:14px; color:#85858C; margin-top:12px; line-height:1.75; max-width:1080px; }
+.tags { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+.tag { font-size:11px; font-weight:700; padding:5px 12px; border-radius:4px;
+  background:#131315; color:#A0A0A8; border:1px solid #242428;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:.3px; }
+.tag.hi { color:#C8F751; border-color:#37421a; background:#131a08; }
+
+.wrap { position:relative; }
+.frame {
+  width:390px; height:940px; border-radius:36px; overflow:hidden; position:relative;
+  background:#0B0B0D; box-shadow:0 30px 70px rgba(0,0,0,.85), 0 0 0 1px #222226,
+    0 0 0 9px #0e0e10, 0 0 0 10px #26262a;
+  display:flex; flex-direction:column;
+}
+.flabel { position:absolute; top:-25px; left:4px; font-size:10.5px; font-weight:700;
+  color:#5A5A62; letter-spacing:2px; font-family:"DejaVu Sans Mono",monospace; }
+
+.sbar { height:48px; flex-shrink:0; display:flex; align-items:center;
+  justify-content:space-between; padding:0 24px 0 28px; font-size:13px; font-weight:700;
+  font-variant-numeric:tabular-nums; color:#E6E6E6;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:.2px; }
+.sbar .r { display:flex; gap:6px; align-items:center; opacity:.75; }
+
+.nav { flex-shrink:0; padding:0 20px 12px; display:flex; align-items:center;
+  justify-content:space-between; }
+.nav .t { font-size:16px; font-weight:800; letter-spacing:.5px; color:#F2F2F2;
+  display:flex; align-items:center; gap:9px; }
+.nav .t::before { content:""; width:3px; height:15px; background:#C8F751; border-radius:1px; }
+.nav .cap { display:flex; align-items:center; border:1px solid #2E2E33; border-radius:999px;
+  padding:4px 12px; background:#131316; }
+.nav .cap i { width:5px; height:5px; border-radius:50%; background:#8A8A92; }
+.nav .cap .sp { width:1px; height:11px; background:#2E2E33; margin:0 10px; }
+.nav .cap .rg { width:9px; height:9px; border:1.3px solid #8A8A92; border-radius:50%; }
+
+.scroll { flex:1; overflow-y:auto; min-height:0; scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* 网格底纹 */
+.grid-bg { position:relative; }
+.grid-bg::before {
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:22px 22px; z-index:0;
+}
+
+/* 面板 */
+.panel { margin:0 16px 12px; background:#101012; border:1px solid #1E1E22;
+  border-radius:12px; position:relative; overflow:hidden; }
+.panel-h { display:flex; align-items:center; justify-content:space-between;
+  padding:11px 14px 9px; border-bottom:1px solid #1A1A1E; }
+.panel-h .ph { font-size:11px; font-weight:700; letter-spacing:1.4px; color:#6E6E76;
+  font-family:"DejaVu Sans Mono",monospace; text-transform:uppercase; }
+.panel-h .pa { font-size:10.5px; font-weight:700; color:#C8F751; letter-spacing:.5px;
+  font-family:"DejaVu Sans Mono",monospace; }
+.panel-b { padding:14px; }
+
+/* 大数值 */
+.bignum { font-family:"DejaVu Sans Mono",monospace; font-size:40px; font-weight:700;
+  color:#F2F2F2; letter-spacing:-2px; line-height:1; font-variant-numeric:tabular-nums; }
+.bignum .u { font-size:13px; letter-spacing:0; color:#6E6E76; margin-left:6px; font-weight:700; }
+.bignum.acc { color:#C8F751; }
+
+/* 指标行 */
+.mrow { display:flex; }
+.mrow .mc { flex:1; border-right:1px solid #1A1A1E; padding:0 12px; }
+.mrow .mc:first-child { padding-left:0; }
+.mrow .mc:last-child { border-right:0; padding-right:0; }
+.mrow .ml { font-size:9.5px; font-weight:700; letter-spacing:1.2px; color:#5E5E66;
+  font-family:"DejaVu Sans Mono",monospace; text-transform:uppercase; }
+.mrow .mv { font-family:"DejaVu Sans Mono",monospace; font-size:19px; font-weight:700;
+  color:#E6E6E6; margin-top:7px; letter-spacing:-.8px; font-variant-numeric:tabular-nums; }
+.mrow .mv small { font-size:10px; color:#6E6E76; margin-left:2px; }
+
+/* 操作按钮条 */
+.acts { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.act { display:flex; align-items:center; gap:8px; padding:10px 11px; border-radius:8px;
+  background:#16161A; border:1px solid #222227; font-size:12px; font-weight:600;
+  color:#C4C4CC; }
+.act svg { width:14px; height:14px; stroke:#C8F751; fill:none; stroke-width:1.9;
+  stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.act.wide { grid-column:span 2; }
+
+/* 预警 */
+.warn { margin:0 16px 12px; border-radius:10px; padding:12px 14px;
+  background:linear-gradient(90deg,rgba(200,247,81,.07),rgba(200,247,81,.015));
+  border:1px solid rgba(200,247,81,.2); border-left:2px solid #C8F751;
+  display:flex; align-items:center; gap:11px; }
+.warn .wi svg { width:14px; height:14px; stroke:#C8F751; fill:none; stroke-width:2;
+  stroke-linecap:round; stroke-linejoin:round; }
+.warn .wt { font-size:12px; font-weight:700; color:#DCF2A0; }
+.warn .ws { font-size:10px; color:#7C8A5A; margin-top:3px;
+  font-family:"DejaVu Sans Mono",monospace; }
+.warn .wa { margin-left:auto; font-family:"DejaVu Sans Mono",monospace; font-size:11px;
+  color:#8A9A5E; }
+
+/* 我的：终端菜单 */
+.term-head { padding:6px 20px 20px; }
+.term-head .id { font-family:"DejaVu Sans Mono",monospace; font-size:10px; font-weight:700;
+  letter-spacing:1.6px; color:#5E5E66; }
+.term-head .nm { font-size:24px; font-weight:800; color:#F2F2F2; margin-top:9px;
+  letter-spacing:-.5px; }
+.term-head .ph { font-family:"DejaVu Sans Mono",monospace; font-size:12px; color:#6E6E76;
+  margin-top:7px; letter-spacing:.6px; }
+.term-head .badges { display:flex; gap:6px; margin-top:14px; flex-wrap:wrap; }
+.badge { font-size:9.5px; font-weight:700; padding:3.5px 9px; border-radius:4px;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:.4px;
+  background:#16161A; border:1px solid #26262B; color:#8A8A92; }
+.badge.on { color:#C8F751; border-color:#3A4619; background:#131a08; }
+
+.sect { padding:16px 20px 9px; display:flex; align-items:center; gap:9px; }
+.sect .n { font-family:"DejaVu Sans Mono",monospace; font-size:9.5px; font-weight:700;
+  color:#454549; letter-spacing:1px; }
+.sect .z { font-size:11.5px; font-weight:800; color:#9A9AA2; letter-spacing:1.2px; }
+.sect .ln { flex:1; height:1px; background:#1A1A1E; }
+
+.menu { margin:0 16px; border:1px solid #1C1C20; border-radius:11px; overflow:hidden;
+  background:#0E0E10; }
+.mi { display:flex; align-items:center; gap:12px; padding:13px 14px;
+  border-bottom:1px solid #17171A; }
+.mi:last-child { border-bottom:0; }
+.mi .mi-ico { width:28px; height:28px; border-radius:7px; background:#17171B;
+  border:1px solid #232328; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; }
+.mi .mi-ico svg { width:14px; height:14px; stroke:#B6B6BE; fill:none; stroke-width:1.7;
+  stroke-linecap:round; stroke-linejoin:round; }
+.mi .mi-t { font-size:13px; font-weight:600; color:#D2D2DA; letter-spacing:.2px; }
+.mi .mi-s { font-size:10px; color:#5A5A62; margin-top:3px;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:.2px; }
+.mi .mi-r { margin-left:auto; display:flex; align-items:center; gap:9px; }
+.mi .mi-n { font-family:"DejaVu Sans Mono",monospace; font-size:10.5px; font-weight:700;
+  color:#C8F751; background:#131a08; border:1px solid #37421a; border-radius:4px;
+  padding:2px 7px; }
+.mi .mi-v { font-family:"DejaVu Sans Mono",monospace; font-size:10.5px; color:#5E5E66; }
+.mi .chev { width:11px; height:11px; stroke:#3A3A40; fill:none; stroke-width:2; }
+
+/* 首页商品 */
+.hdr { padding:4px 20px 16px; display:flex; align-items:center; justify-content:space-between; }
+.hdr .brand { display:flex; align-items:center; gap:11px; }
+.hdr .logo { width:34px; height:34px; border-radius:9px; background:#C8F751; color:#0B0B0D;
+  display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; }
+.hdr .bn { font-size:15px; font-weight:800; color:#F2F2F2; letter-spacing:-.2px; }
+.hdr .bs { font-size:9.5px; color:#5E5E66; margin-top:3px;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:1px; }
+.hdr .live { display:flex; align-items:center; gap:5px; font-family:"DejaVu Sans Mono",monospace;
+  font-size:9.5px; font-weight:700; color:#C8F751; letter-spacing:.6px; }
+.hdr .live i { width:5px; height:5px; border-radius:50%; background:#C8F751;
+  box-shadow:0 0 7px #C8F751; }
+
+.tabs-f { display:flex; gap:6px; padding:0 20px 14px; }
+.tab { font-size:11.5px; font-weight:700; padding:6px 13px; border-radius:6px;
+  background:#131316; color:#6E6E76; border:1px solid #1E1E22;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:.3px; }
+.tab.on { background:#C8F751; color:#0B0B0D; border-color:#C8F751; }
+
+.pcards { padding:0 16px; display:flex; flex-direction:column; gap:10px; }
+.pc { display:flex; gap:13px; background:#101012; border:1px solid #1E1E22;
+  border-radius:12px; padding:11px; position:relative; overflow:hidden; }
+.pc .pim { width:82px; height:100px; border-radius:8px; overflow:hidden; flex-shrink:0;
+  background:#18181C; position:relative; }
+.pc .pim img { width:100%; height:100%; object-fit:cover; }
+.pc .pcond { position:absolute; top:5px; left:5px; font-size:8px; font-weight:800;
+  font-family:"DejaVu Sans Mono",monospace; padding:2px 5px; border-radius:3px;
+  background:rgba(11,11,13,.86); color:#C8F751; letter-spacing:.4px; }
+.pc .pinfo { flex:1; display:flex; flex-direction:column; min-width:0; }
+.pc .ptop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.pc .pnm { font-size:14px; font-weight:800; color:#EDEDF0; letter-spacing:-.2px; }
+.pc .pstock { font-family:"DejaVu Sans Mono",monospace; font-size:8.5px; font-weight:700;
+  color:#C8F751; border:1px solid #37421a; border-radius:3px; padding:2px 5px;
+  letter-spacing:.4px; flex-shrink:0; }
+.pc .pspec { font-family:"DejaVu Sans Mono",monospace; font-size:10px; color:#6E6E76;
+  margin-top:7px; line-height:1.75; letter-spacing:.2px; }
+.pc .pbars { display:flex; gap:3px; margin-top:9px; }
+.pc .pbars i { height:3px; border-radius:2px; background:#222228; flex:1; }
+.pc .pbars i.f { background:#C8F751; }
+.pc .pbot { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between;
+  padding-top:9px; }
+.pc .ppr { font-family:"DejaVu Sans Mono",monospace; font-size:18px; font-weight:700;
+  color:#F2F2F2; letter-spacing:-.6px; font-variant-numeric:tabular-nums; }
+.pc .ppr i { font-size:10px; font-style:normal; color:#6E6E76; margin-right:2px; }
+.pc .pmeta { font-family:"DejaVu Sans Mono",monospace; font-size:8.5px; color:#4E4E56;
+  letter-spacing:.3px; text-align:right; line-height:1.6; }
+
+/* 底栏 */
+.tabs-bar { flex-shrink:0; height:64px; display:flex; align-items:center;
+  border-top:1px solid #1E1E22; background:#0B0B0D; padding-bottom:7px; position:relative; }
+.tabs-bar .tb { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  font-size:9.5px; font-weight:700; color:#4E4E56;
+  font-family:"DejaVu Sans Mono",monospace; letter-spacing:.6px; }
+.tabs-bar .tb svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8;
+  stroke-linecap:round; stroke-linejoin:round; }
+.tabs-bar .tb.on { color:#C8F751; }
+.tabs-bar .cb { flex:1; display:flex; justify-content:center; }
+.tabs-bar .cbtn { width:44px; height:32px; border-radius:8px; background:#C8F751;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 22px rgba(200,247,81,.28); }
+.tabs-bar .cbtn svg { width:16px; height:16px; stroke:#0B0B0D; fill:none; stroke-width:2.6;
+  stroke-linecap:round; }
+.hind { position:absolute; bottom:5px; left:50%; transform:translateX(-50%);
+  width:108px; height:4px; border-radius:3px; background:#3A3A42; }
+
+/* 对账小表 */
+.tbl { padding:0 14px 13px; }
+.tr { display:flex; align-items:center; justify-content:space-between; padding:10px 0;
+  border-bottom:1px solid #17171A; }
+.tr:last-child { border-bottom:0; }
+.tr .tl { font-size:12px; color:#A8A8B0; font-weight:600; }
+.tr .tv { font-family:"DejaVu Sans Mono",monospace; font-size:13px; font-weight:700;
+  color:#E6E6E6; font-variant-numeric:tabular-nums; }
+.tr .tv.dim { color:#5E5E66; font-weight:600; }
+.tr .tv.acc { color:#C8F751; }
+
+/* 动销进度条 */
+.bar { height:5px; border-radius:3px; background:#1C1C21; overflow:hidden; margin-top:11px; }
+.bar i { display:block; height:100%; background:linear-gradient(90deg,#7FA81E,#C8F751);
+  border-radius:3px; }
+
+/* embed 模式：被 compare.html 内嵌时只显示手机框 */
+body.embed { padding:0; gap:0; background:transparent; display:block; }
+body.embed .head { display:none; }
+body.embed .wrap { display:none; }
+body.embed .wrap.embed-target, body.embed .frame { display:block; }
+body.embed .frame { margin:0; box-shadow:none; }
+body.embed .flabel { display:none; }
+body.embed > .wrap:first-of-type { display:block; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="c-signal" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor" stroke="none"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor" stroke="none"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor" stroke="none"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="c-wifi" viewBox="0 0 16 12"><path d="M1 4.2a10.5 10.5 0 0 1 14 0M3.6 7a7 7 0 0 1 8.8 0M6.3 9.6a3.4 3.4 0 0 1 3.4 0"/><circle cx="8" cy="11" r=".9" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="c-batt" viewBox="0 0 26 12"><rect x=".7" y=".7" width="21" height="10.6" rx="3.2" opacity=".4"/><rect x="2.4" y="2.4" width="15.5" height="7.2" rx="1.9" fill="currentColor" stroke="none"/><path d="M23.4 4.3v3.4" stroke-width="2" stroke-linecap="round" opacity=".45"/></symbol>
+
+    <symbol id="c-shop" viewBox="0 0 24 24"><path d="M4 9.5V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5M3 9.5 5 4h14l2 5.5a3 3 0 0 1-5.5 1.5A3 3 0 0 1 12 12.5 3 3 0 0 1 8.5 11A3 3 0 0 1 3 9.5Z"/></symbol>
+    <symbol id="c-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0M16.4 14.6a5 5 0 0 1 4.8 4.6"/><circle cx="17.5" cy="9" r="2.4"/></symbol>
+    <symbol id="c-store" viewBox="0 0 24 24"><path d="M4 10v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9M3 10h18M5.5 3.5h13l2.5 6.5H3l2.5-6.5ZM9.5 20v-5h5v5"/></symbol>
+    <symbol id="c-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path d="M10.5 5.5h3"/><circle cx="12" cy="18.2" r="1.1"/></symbol>
+    <symbol id="c-share" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.6 18-3.9-7.5L3 9.6 21 3Z"/></symbol>
+    <symbol id="c-wallet" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M2.5 10.5h19"/><circle cx="17" cy="15" r="1.3" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="c-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3.2-3.2M20 16H7l3.2 3.2"/></symbol>
+    <symbol id="c-ledger" viewBox="0 0 24 24"><rect x="4" y="2.8" width="16" height="18.4" rx="2.4"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+    <symbol id="c-cloud" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 18 10.4a4.2 4.2 0 0 1-.7 8.1"/></symbol>
+    <symbol id="c-printer" viewBox="0 0 24 24"><path d="M7 8.5V3.5h10v5M3.5 8.5h17v7.5h-17zM7 13.5h10v7H7z"/></symbol>
+    <symbol id="c-template" viewBox="0 0 24 24"><path d="M14 2.8H6.5a2 2 0 0 0-2 2v14.4a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8.3L14 2.8ZM13.8 2.9v5.4h5.4"/></symbol>
+    <symbol id="c-bulb" viewBox="0 0 24 24"><path d="M9.5 18h5M10 21h4M12 2.8a6.4 6.4 0 0 0-3.7 11.6c.6.5 1 1.2 1 2v.6h5.4v-.6c0-.8.4-1.5 1-2A6.4 6.4 0 0 0 12 2.8Z"/></symbol>
+    <symbol id="c-headset" viewBox="0 0 24 24"><path d="M4 13.5v-1.5a8 8 0 0 1 16 0v1.5"/><rect x="2.3" y="13" width="4.4" height="6.3" rx="2"/><rect x="17.3" y="13" width="4.4" height="6.3" rx="2"/></symbol>
+    <symbol id="c-diamond" viewBox="0 0 24 24"><path d="M6 3.5h12l4 6-10 11L2 9.5l4-6ZM2 9.5h20M9 3.5 7 9.5l5 11 5-11-2-6"/></symbol>
+    <symbol id="c-mail" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m3.4 6.6 8.6 6.2 8.6-6.2"/></symbol>
+    <symbol id="c-tag" viewBox="0 0 24 24"><path d="M10.5 3.5H20a.5.5 0 0 1 .5.5v9.5L11 23 1.5 13.5 10.5 3.5Z"/><circle cx="16.5" cy="7.5" r="1.4"/></symbol>
+    <symbol id="c-box" viewBox="0 0 24 24"><path d="M3.5 8 12 3.5 20.5 8v8L12 20.5 3.5 16V8ZM3.5 8 12 12.5 20.5 8M12 12.5v8"/></symbol>
+    <symbol id="c-inbound" viewBox="0 0 24 24"><path d="M12 3.5v11M7.5 10.5 12 15l4.5-4.5M3.5 16.5v2.5a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-2.5"/></symbol>
+    <symbol id="c-wrench" viewBox="0 0 24 24"><path d="M15.5 3.5a5 5 0 0 0-5.9 6.4L3.5 16a2.4 2.4 0 0 0 3.4 3.4l6.1-6.1a5 5 0 0 0 6.4-5.9l-2.6 2.6-2.9-.7-.7-2.9 2.3-2.9Z"/></symbol>
+    <symbol id="c-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.5l8.5 7M5.5 9.4V19a1.5 1.5 0 0 0 1.5 1.5h3.6V15h2.8v5.5H17a1.5 1.5 0 0 0 1.5-1.5V9.4"/></symbol>
+    <symbol id="c-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></symbol>
+    <symbol id="c-me" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+    <symbol id="c-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="c-bell" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5ZM10.3 20a2 2 0 0 0 3.4 0"/></symbol>
+    <symbol id="c-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="c-logout" viewBox="0 0 24 24"><path d="M14.5 3.5H18a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-3.5M9.5 16.5 13.5 12.5l-4-4M13.5 12.5H3"/></symbol>
+  </defs>
+</svg>
+
+<div class="head">
+  <h1>方案 C · <em>数据终端</em></h1>
+  <p>第三版彻底跳出「消费级 App」的审美：把你这家店当成一个实时运行的系统来控制。纯黑底、荧光绿强调、等宽字体承载所有数字、细网格底纹。理由很直接——老板真正每天要看的是「在库多少台、今天毛利多少、哪台机器压了 30 天」，这类信息需要的是<b style="color:#C8F751">密度和精度</b>，不是留白和圆角。这一版最不像你给的参考，但它是唯一一个「看一眼就知道店在什么状态」的。</p>
+  <div class="tags">
+    <span class="tag">纯黑 #0B0B0D</span>
+    <span class="tag hi">荧光绿 #C8F751</span>
+    <span class="tag">等宽数字全站</span>
+    <span class="tag">22px 网格底纹</span>
+    <span class="tag">信息密度优先</span>
+  </div>
+</div>
+
+<!-- ============ 我的 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#c-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#c-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#c-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">我的</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll grid-bg">
+    <div class="term-head" style="position:relative;z-index:1">
+      <div class="id">OWNER · XM-0001</div>
+      <div class="nm">夏目数码</div>
+      <div class="ph">+86 176 6979 3761</div>
+      <div class="badges">
+        <span class="badge on">在营</span>
+        <span class="badge">库存 3 台</span>
+        <span class="badge">员工 4</span>
+        <span class="badge on">代理 12</span>
+        <span class="badge">7 角色</span>
+      </div>
+    </div>
+
+    <div class="sect"><span class="n">01</span><span class="z">店铺</span><span class="ln"></span></div>
+    <div class="menu">
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-shop"/></svg></div>
+        <div><div class="mi-t">小店设置</div><div class="mi-s">name · bio · logo</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-users"/></svg></div>
+        <div><div class="mi-t">员工与权限</div><div class="mi-s">4 members</div></div>
+        <div class="mi-r"><span class="mi-n">4</span><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-store"/></svg></div>
+        <div><div class="mi-t">门店管理</div><div class="mi-s">1 active</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-share"/></svg></div>
+        <div><div class="mi-t">分享管理</div><div class="mi-s">link · poster</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="n">02</span><span class="z">资金</span><span class="ln"></span></div>
+    <div class="menu">
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-wallet"/></svg></div>
+        <div><div class="mi-t">虚拟账户</div><div class="mi-s">balance</div></div>
+        <div class="mi-r"><span class="mi-v">¥28,400</span><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-swap"/></svg></div>
+        <div><div class="mi-t">代理结算</div><div class="mi-s">pending transfer</div></div>
+        <div class="mi-r"><span class="mi-n">2</span><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-ledger"/></svg></div>
+        <div><div class="mi-t">对账统计</div><div class="mi-s">monthly</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="n">03</span><span class="z">同售</span><span class="ln"></span></div>
+    <div class="menu">
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-tag"/></svg></div>
+        <div><div class="mi-t">闲鱼管理</div><div class="mi-s">12 listed</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-swap"/></svg></div>
+        <div><div class="mi-t">转转管理</div><div class="mi-s">unbound</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-cloud"/></svg></div>
+        <div><div class="mi-t">上下游货盘</div><div class="mi-s">3 peers</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="n">04</span><span class="z">渠道</span><span class="ln"></span></div>
+    <div class="menu">
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-inbound"/></svg></div>
+        <div><div class="mi-t">进货渠道</div><div class="mi-s">5 suppliers</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-users"/></svg></div>
+        <div><div class="mi-t">销售渠道</div><div class="mi-s">store · peer · agent</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+    </div>
+
+    <div class="sect"><span class="n">05</span><span class="z">设备与关于</span><span class="ln"></span></div>
+    <div class="menu">
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-printer"/></svg></div>
+        <div><div class="mi-t">标签打印机</div><div class="mi-s">disconnected</div></div>
+        <div class="mi-r"><span class="mi-v">设置</span><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-template"/></svg></div>
+        <div><div class="mi-t">打印模板</div><div class="mi-s">label · receipt</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-bulb"/></svg></div>
+        <div><div class="mi-t">使用教程</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-headset"/></svg></div>
+        <div><div class="mi-t">联系客服</div><div class="mi-s">09:00–21:00</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-diamond"/></svg></div>
+        <div><div class="mi-t">成为代理</div><div class="mi-s">invite &amp; earn</div></div>
+        <div class="mi-r"><span class="mi-n">申请</span><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-mail"/></svg></div>
+        <div><div class="mi-t">需求反馈</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+      <div class="mi"><div class="mi-ico"><svg><use href="#c-logout"/></svg></div>
+        <div><div class="mi-t">退出登录</div><div class="mi-s">sign out</div></div>
+        <div class="mi-r"><svg class="chev"><use href="#c-chev"/></svg></div></div>
+    </div>
+    <div style="height:18px"></div>
+  </div>
+
+  <div class="tabs-bar">
+    <div class="tb"><svg><use href="#c-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#c-ledger"/></svg>经营</div>
+    <div class="cb"><div class="cbtn"><svg><use href="#c-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#c-grid"/></svg>库存</div>
+    <div class="tb on"><svg><use href="#c-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 首页 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#c-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#c-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#c-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">夏目数码</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll grid-bg">
+    <div class="hdr" style="position:relative;z-index:1">
+      <div class="brand">
+        <div class="logo">夏</div>
+        <div>
+          <div class="bn">夏目数码</div>
+          <div class="bs">XIAMU DIGITAL</div>
+        </div>
+      </div>
+      <div class="live"><i></i>LIVE</div>
+    </div>
+
+    <div class="tabs-f">
+      <div class="tab on">全部 3</div>
+      <div class="tab">苹果 3</div>
+      <div class="tab">华为 0</div>
+    </div>
+
+    <div class="pcards">
+      <div class="pc">
+        <div class="pim"><img src="../assets/phone-blue.png" alt=""><span class="pcond">99 新</span></div>
+        <div class="pinfo">
+          <div class="ptop">
+            <div class="pnm">iPhone 17 Pro</div>
+            <div class="pstock">在库</div>
+          </div>
+          <div class="pspec">256G · 冰川蓝<br>电池 96% · 全原无拆修</div>
+          <div class="pbars"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></div>
+          <div class="pbot">
+            <div class="ppr"><i>¥</i>7,299</div>
+            <div class="pmeta">质保 90D<br>库龄 3 天</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pim"><img src="../assets/phone-white.png" alt=""><span class="pcond">准新</span></div>
+        <div class="pinfo">
+          <div class="ptop">
+            <div class="pnm">iPhone Air</div>
+            <div class="pstock">在库</div>
+          </div>
+          <div class="pspec">128G · 云白色<br>电池 100% · 官方售后</div>
+          <div class="pbars"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div>
+          <div class="pbot">
+            <div class="ppr"><i>¥</i>5,399</div>
+            <div class="pmeta">质保 90D<br>库龄 1 天</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc">
+        <div class="pim"><img src="../assets/phone-blue.png" alt="" style="filter:hue-rotate(-30deg) saturate(.7) brightness(1.08)"><span class="pcond">99 新</span></div>
+        <div class="pinfo">
+          <div class="ptop">
+            <div class="pnm">iPhone 16 Pro</div>
+            <div class="pstock">在库</div>
+          </div>
+          <div class="pspec">512G · 沙漠金<br>电池 92% · 已换原厂电池</div>
+          <div class="pbars"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div>
+          <div class="pbot">
+            <div class="ppr"><i>¥</i>6,899</div>
+            <div class="pmeta">质保 90D<br>库龄 <span style="color:#C8F751">42 天</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;font-family:'DejaVu Sans Mono',monospace;font-size:9px;
+      letter-spacing:2px;color:#3A3A42;padding:22px 0">
+      EVERY UNIT INSPECTED · 3 IN STOCK
+    </div>
+  </div>
+
+  <div class="tabs-bar">
+    <div class="tb on"><svg><use href="#c-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#c-ledger"/></svg>经营</div>
+    <div class="cb"><div class="cbtn"><svg><use href="#c-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#c-grid"/></svg>库存</div>
+    <div class="tb"><svg><use href="#c-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 库存 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#c-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#c-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#c-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">库存</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll grid-bg">
+    <div class="panel" style="position:relative;z-index:1;margin-top:2px">
+      <div class="panel-h">
+        <span class="ph">In Stock</span>
+        <span class="pa">详情 ›</span>
+      </div>
+      <div class="panel-b">
+        <div class="bignum">3<span class="u">台</span></div>
+        <div class="mrow" style="margin-top:18px">
+          <div class="mc"><div class="ml">今日入库</div><div class="mv">0</div></div>
+          <div class="mc"><div class="ml">在库成本</div><div class="mv">¥16,650</div></div>
+          <div class="mc"><div class="ml">今日出库</div><div class="mv">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn">
+      <div class="wi"><svg><use href="#c-bell"/></svg></div>
+      <div>
+        <div class="wt">2 台库龄超过 30 天</div>
+        <div class="ws">AGEING_WARN · 补货预警 0</div>
+      </div>
+      <div class="wa">›</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="ph">Sales Today</span><span class="pa">详情 ›</span></div>
+      <div class="panel-b">
+        <div class="bignum acc">0.00<span class="u">元</span></div>
+        <div style="font-family:'DejaVu Sans Mono',monospace;font-size:9.5px;color:#5E5E66;
+          margin-top:8px;letter-spacing:1px">今日销售额</div>
+        <div class="mrow" style="margin-top:18px">
+          <div class="mc"><div class="ml">销售台数</div><div class="mv">0</div></div>
+          <div class="mc"><div class="ml">利润额</div><div class="mv">0.00</div></div>
+          <div class="mc"><div class="ml">均台毛利</div><div class="mv">0</div></div>
+        </div>
+        <div class="mrow" style="margin-top:16px">
+          <div class="mc"><div class="ml">毛利率</div><div class="mv">0%</div></div>
+          <div class="mc"><div class="ml">客单价</div><div class="mv">0</div></div>
+          <div class="mc"><div class="ml">动销率</div><div class="mv">0%</div></div>
+        </div>
+        <div class="bar"><i style="width:1%"></i></div>
+        <div style="font-family:'DejaVu Sans Mono',monospace;font-size:9px;color:#4E4E56;
+          margin-top:8px;letter-spacing:.4px">实时销量 / 当日 0 点在库数量</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="ph">Outbound</span></div>
+      <div class="panel-b">
+        <div class="acts">
+          <div class="act"><svg><use href="#c-inbound"/></svg>手动出库</div>
+          <div class="act"><svg><use href="#c-grid"/></svg>扫码出库</div>
+          <div class="act"><svg><use href="#c-box"/></svg>批量出库</div>
+          <div class="act"><svg><use href="#c-ledger"/></svg>处理挂单</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="ph">Reconcile</span><span class="pa">更多 ›</span></div>
+      <div class="tbl">
+        <div class="tr"><span class="tl">退货入库</span><span class="tv dim">0 台</span></div>
+        <div class="tr"><span class="tl">欠款客户</span><span class="tv dim">0 位</span></div>
+        <div class="tr"><span class="tl">我欠供应商</span><span class="tv dim">¥0</span></div>
+      </div>
+    </div>
+    <div style="height:8px"></div>
+  </div>
+
+  <div class="tabs-bar">
+    <div class="tb"><svg><use href="#c-home"/></svg>首页</div>
+    <div class="tb"><svg><use href="#c-ledger"/></svg>经营</div>
+    <div class="cb"><div class="cbtn"><svg><use href="#c-plus"/></svg></div></div>
+    <div class="tb on"><svg><use href="#c-grid"/></svg>库存</div>
+    <div class="tb"><svg><use href="#c-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 经营 ============ -->
+<div class="wrap"><div class="frame">
+  <div class="sbar"><span>17:22</span><span class="r">
+    <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#c-signal"/></svg>
+    <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#c-wifi"/></svg>
+    <svg width="25" height="11" stroke="currentColor" fill="none" stroke-width="1"><use href="#c-batt"/></svg>
+  </span></div>
+  <div class="nav"><div class="t">经营</div>
+    <div class="cap"><i></i><span class="sp"></span><span class="rg"></span></div>
+  </div>
+
+  <div class="scroll grid-bg">
+    <div class="panel" style="position:relative;z-index:1;margin-top:2px">
+      <div class="panel-h"><span class="ph">Today · 2026-11-04</span><span class="pa">实时</span></div>
+      <div class="panel-b">
+        <div class="bignum">¥0<span class="u">销售额</span></div>
+        <div class="mrow" style="margin-top:18px">
+          <div class="mc"><div class="ml">毛利</div><div class="mv acc">¥0</div></div>
+          <div class="mc"><div class="ml">成交</div><div class="mv">0<small>台</small></div></div>
+          <div class="mc"><div class="ml">维修</div><div class="mv">0<small>单</small></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect"><span class="n">A</span><span class="z">维修业务</span><span class="ln"></span></div>
+    <div class="panel">
+      <div class="panel-b">
+        <div class="acts">
+          <div class="act"><svg><use href="#c-wrench"/></svg>维修开单</div>
+          <div class="act"><svg><use href="#c-ledger"/></svg>维修记录</div>
+          <div class="act wide"><svg><use href="#c-cloud"/></svg>维修统计 · 3 单进行中</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect"><span class="n">B</span><span class="z">配件业务</span><span class="ln"></span></div>
+    <div class="panel">
+      <div class="panel-b">
+        <div class="acts">
+          <div class="act"><svg><use href="#c-box"/></svg>配件分类</div>
+          <div class="act"><svg><use href="#c-wrench"/></svg>配件管理</div>
+          <div class="act"><svg><use href="#c-inbound"/></svg>配件入库</div>
+          <div class="act"><svg><use href="#c-inbound"/></svg>配件出库</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect"><span class="n">C</span><span class="z">日常收付款</span><span class="ln"></span></div>
+    <div class="panel">
+      <div class="panel-h"><span class="ph">本月结余</span><span class="pa">¥28,400</span></div>
+      <div class="tbl">
+        <div class="tr"><span class="tl">今日收款</span><span class="tv">¥0.00</span></div>
+        <div class="tr"><span class="tl">今日付款</span><span class="tv">¥0.00</span></div>
+        <div class="tr"><span class="tl">待收款</span><span class="tv dim">¥0.00</span></div>
+      </div>
+      <div class="panel-b" style="padding-top:0">
+        <div class="acts">
+          <div class="act"><svg><use href="#c-wallet"/></svg>日常记账</div>
+          <div class="act"><svg><use href="#c-ledger"/></svg>记账明细</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect"><span class="n">D</span><span class="z">综合</span><span class="ln"></span></div>
+    <div class="panel">
+      <div class="tbl">
+        <div class="tr"><span class="tl">搜机客商城</span><span class="tv acc">进入 ›</span></div>
+        <div class="tr"><span class="tl">保修查询</span><span class="tv dim">›</span></div>
+        <div class="tr"><span class="tl">我的订单</span><span class="tv dim">›</span></div>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+  </div>
+
+  <div class="tabs-bar">
+    <div class="tb"><svg><use href="#c-home"/></svg>首页</div>
+    <div class="tb on"><svg><use href="#c-ledger"/></svg>经营</div>
+    <div class="cb"><div class="cbtn"><svg><use href="#c-plus"/></svg></div></div>
+    <div class="tb"><svg><use href="#c-grid"/></svg>库存</div>
+    <div class="tb"><svg><use href="#c-me"/></svg>我的</div>
+    <div class="hind"></div>
+  </div>
+</div></div>
+
+
+<script>
+if (location.search.indexOf('embed=1') >= 0) {
+  document.body.classList.add('embed');
+  const wraps = document.querySelectorAll('.wrap');
+  if (wraps.length) { wraps[0].style.display = 'block'; }
+  document.querySelectorAll('.wrap').forEach((w, i) => { if (i > 0) w.remove(); });
+}
+</script>
+</body>
+</html>

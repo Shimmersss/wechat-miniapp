@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container has-tabbar">
   <brand-header />
 
   <view class="search-bar" bindtap="onSearchTap"><image class="search-icon" src="/assets/icons/search-gray.svg" />搜索品牌 / 型号 / 内存</view>

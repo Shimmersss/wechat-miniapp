@@ -1,4 +1,6 @@
-.scan-box { background: var(--c-navy); color: #fff; border-radius: var(--radius-lg); padding: 48rpx 0; display: flex; flex-direction: column; align-items: center; gap: 10rpx; margin-bottom: var(--gap); }
+.scan-box { background: var(--c-well); color: var(--c-ink-2); border-radius: var(--radius-lg); padding: 48rpx 0;
+  display: flex; flex-direction: column; align-items: center; gap: 10rpx; margin-bottom: var(--gap);
+  box-shadow: inset 0 2rpx 6rpx var(--c-hair); border: 2rpx dashed var(--c-ink-4); }
 .scan-icon { font-size: 80rpx; color: #fff; }
 .remove { width: 48rpx; text-align: center; color: var(--c-muted); font-size: 36rpx; margin-left: 12rpx; }
 .checkout { display: flex; align-items: center; justify-content: space-between; background: var(--c-surface); border-radius: var(--radius-lg); padding: 24rpx 28rpx; box-shadow: var(--shadow); }

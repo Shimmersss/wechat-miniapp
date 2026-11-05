@@ -36,6 +36,8 @@ createPage({
     try {
       const detail = await api.loan.detail(this.data.id);
       if (this.destroyed) return;
+      // 同上：缺少 id 时返回 null，先挡一道再解引用。
+      if (!detail) throw new Error("借还单不存在或已被删除");
       const photos = detail.photos || [];
       detail.items = detail.items.map((i) => ({ ...i, statusText: ITEM_STATUS[i.status] || i.status }));
       detail.timeline = (detail.timeline || []).slice().reverse().map((e) => ({
