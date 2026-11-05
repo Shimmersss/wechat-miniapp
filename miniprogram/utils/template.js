@@ -1,5 +1,8 @@
 /** 模板协议校验：前端提供即时提示，mock/后端仍须独立校验。 */
-const TYPES = ['text', 'number', 'select', 'boolean', 'ref', 'image'];
+const TYPES = ['text', 'number', 'select', 'boolean', 'ref', 'image', 'date'];
+const TYPE_LABELS = { text: '文本', number: '数字', select: '单选', boolean: '开关', ref: '引用', image: '图片', date: '日期' };
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const isDate = v => typeof v === 'string' && DATE.test(v) && new Date(v + 'T00:00:00Z').toISOString().slice(0, 10) === v;
 const INTERNAL_KEYS = ['supplier', 'receipt', 'internalNote'];
 function validateFields(fields) {
   if (!Array.isArray(fields) || !fields.length || fields.length > 50) return '模板需包含 1～50 个字段';
@@ -23,6 +26,7 @@ function validateFields(fields) {
       if (f.type === 'number' && (!['number', 'string'].includes(typeof value) || !String(value).trim() || !Number.isFinite(Number(value)))) return '数字字段默认值必须是有效数字';
       if (f.type === 'number' && ((f.min !== undefined && Number(value) < f.min) || (f.max !== undefined && Number(value) > f.max))) return '默认值超出数字范围';
       if (['text', 'ref'].includes(f.type) && typeof value !== 'string') return '文本字段默认值必须为文本';
+      if (f.type === 'date' && !isDate(value)) return '日期默认值格式应为 YYYY-MM-DD';
       if (f.type === 'boolean' && typeof value !== 'boolean') return '开关默认值必须为是或否';
       if (f.type === 'select' && !f.options.includes(value)) return '默认值必须属于选项';
       if (f.type === 'image') return '图片字段不能设置默认值';
@@ -46,7 +50,36 @@ function validateValues(fields, values) {
     if (['text', 'ref'].includes(f.type) && typeof v !== 'string') return `${f.label}必须为文本`;
     if (f.type === 'boolean' && typeof v !== 'boolean') return `${f.label}必须为是或否`;
     if (f.type === 'image' && (!Array.isArray(v) || v.some(x => !x || !x.fileId))) return `请上传${f.label}`;
+    if (f.type === 'date' && !isDate(v)) return `${f.label}应为有效日期`;
   }
   return '';
 }
-module.exports = { TYPES, validateFields, initialValues, validateValues };
+/** 型号规格：容量、颜色由型号单独配置，覆盖分类模板中同名下拉字段的选项 */
+const SPEC_KEYS = ['storage', 'color'];
+function validateSpecs(specs) {
+  if (specs === undefined || specs === null) return '';
+  if (typeof specs !== 'object' || Array.isArray(specs) || Object.keys(specs).some(k => !SPEC_KEYS.includes(k))) return '型号规格只支持容量和颜色';
+  for (const key of SPEC_KEYS) {
+    const list = specs[key];
+    if (list === undefined) continue;
+    if (!Array.isArray(list) || list.length > 30 || list.some(v => typeof v !== 'string' || !v.trim() || v.trim().length > 30) || new Set(list.map(v => v.trim())).size !== list.length) return '容量、颜色各最多 30 项，每项 1～30 字且不能重复';
+  }
+  return '';
+}
+function normalizeSpecs(specs) {
+  const result = {};
+  for (const key of SPEC_KEYS) result[key] = specs && Array.isArray(specs[key]) ? specs[key].map(v => v.trim()) : [];
+  return result;
+}
+/** 返回应用型号规格后的字段；型号未配置的项沿用分类模板选项，默认值不在新选项内时去掉 */
+function applySpecs(fields, specs) {
+  if (!specs) return fields;
+  return fields.map(f => {
+    const options = specs[f.key];
+    if (!SPEC_KEYS.includes(f.key) || f.type !== 'select' || !Array.isArray(options) || !options.length) return f;
+    const next = { ...f, options: options.slice() };
+    if (next.default !== undefined && !options.includes(next.default)) delete next.default;
+    return next;
+  });
+}
+module.exports = { TYPES, TYPE_LABELS, SPEC_KEYS, validateFields, initialValues, validateValues, validateSpecs, normalizeSpecs, applySpecs };

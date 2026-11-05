@@ -195,37 +195,37 @@ test("复检页面沿用入库快照与隐藏凭证，过期版本不可覆盖�
     payload.supplierId,
   );
 });
-test("盘点页面真实接口：缺失/未知、超时原样重试、历史持久化及不可改记录", async () => {
+test("盘点单页面真实接口：开单原样重试、边扫边勾、重复不计、异常登记、结束与差异处理只追加", async () => {
   const p = page(
     "miniprogram/packages/staff/inventory/stocktake.js",
     warehouse,
     "warehouse",
   );
+  const held = (await boss.inbound.createUnit({ ...payload, imei1: imei() }))
+    .id;
+  await f.admin.execute("UPDATE units SET status='recheck' WHERE id=?", [held]);
   await p.onLoad({ modelId: model.id, modelName: "验证" });
-  p.data.codes = [code, id, "UNKNOWN_VERIFY"]; // 两种编号指向同一台
-  const send = warehouse.inventory.stocktake;
+  p.setData({ statuses: ["in_stock"] });
+  const start = warehouse.inventory.startStocktake;
   let n = 0;
-  warehouse.inventory.stocktake = async (body) => {
-    const result = await send(body);
+  warehouse.inventory.startStocktake = async (body) => {
+    const result = await start(body);
     if (++n === 1) throw Object.assign(new Error("合成响应丢失"), { code: -1 });
     return result;
   };
-  await p.onSubmit();
+  await p.onStart();
   assert.ok(p.data.pending);
   const key = p.data.pending.requestKey;
   await p.send();
+  warehouse.inventory.startStocktake = start;
   assert.equal(p.data.pending, null);
-  assert.equal(p.data.result.expectedCount, 2);
-  assert.equal(p.data.result.matched, 1);
-  assert.equal(p.data.result.missing.length, 1);
-  assert.equal(p.data.result.extra.length, 1);
-  const recordId = p.data.result.id;
+  const sessionId = p.navigation.at(-1).query.id;
   assert.equal(
     Number(
       (
         await one(
           f.pool,
-          "SELECT COUNT(*) n FROM stocktakes WHERE request_key=?",
+          "SELECT COUNT(*) n FROM stocktake_sessions WHERE request_key=?",
           [key],
         )
       ).n,
@@ -236,33 +236,240 @@ test("盘点页面真实接口：缺失/未知、超时原样重试、历史持�
     (
       await f.api(
         "POST",
-        "/stocktakes",
-        { requestKey: key, scannedImeis: ["DIFFERENT"] },
+        "/stocktake-sessions",
+        { requestKey: key, statuses: ["recheck"], modelId: model.id },
         "warehouse",
       )
     ).status,
     409,
   );
-  await f.restart();
+  const expected = Number(
+    (
+      await one(
+        f.pool,
+        "SELECT COUNT(*) n FROM units WHERE model_id=? AND status='in_stock'",
+        [model.id],
+      )
+    ).n,
+  );
+  const run = page(
+    "miniprogram/packages/staff/inventory/stocktake-run.js",
+    warehouse,
+    "warehouse",
+  );
+  await run.onLoad({ id: sessionId });
+  assert.equal(run.data.session.expectedCount, expected);
+  assert.equal(run.data.list.length, Math.min(expected, 20));
+  await run.submit(code, true);
+  assert.equal(run.data.last.result, "matched");
+  // 同一台的另一种编号
+  await run.submit(id, true);
+  assert.equal(run.data.last.result, "duplicate");
+  assert.equal(run.data.session.scannedCount, 1);
+  await run.submit("UNKNOWN_VERIFY", true);
+  assert.equal(run.data.last.result, "unknown");
+  // 复检中的设备不在本次范围
+  await run.submit(held, true);
+  assert.equal(run.data.last.result, "out_of_scope");
+  assert.match(run.data.last.message, /复检/);
+  // 另一个人扫同一张单：已盘设备不重复计数
   assert.equal(
-    (await warehouse.inventory.stocktakeDetail(recordId)).matched,
-    1,
+    (
+      await f.api(
+        "POST",
+        `/stocktake-sessions/${sessionId}/scans`,
+        { code },
+        "boss",
+      )
+    ).data.result,
+    "duplicate",
   );
-  assert.ok(
-    (await warehouse.inventory.stocktakes({ pageSize: 1000 })).list.some(
-      (r) => r.id === recordId,
-    ),
+  run.setData({ tab: "extra" });
+  await run.loadList(true);
+  assert.equal(run.data.list.length, 2);
+  await run.close();
+  const resultId = run.navigation.at(-1).query.id;
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        `/stocktake-sessions/${sessionId}/close`,
+        {},
+        "warehouse",
+      )
+    ).data.id,
+    resultId,
   );
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        `/stocktake-sessions/${sessionId}/scans`,
+        { code },
+        "warehouse",
+      )
+    ).status,
+    409,
+  );
+  const result = page(
+    "miniprogram/packages/staff/inventory/stocktake-result.js",
+    warehouse,
+    "warehouse",
+  );
+  await result.onLoad({ id: resultId });
+  assert.equal(result.data.result.matched, 1);
+  assert.equal(result.data.result.missingCount, expected - 1);
+  assert.equal(result.data.result.extra.length, 2);
+  assert.equal(result.data.result.openCount, expected - 1 + 2);
+  await result.resolve("extra", "0", { value: "handled", label: "已处理" });
+  assert.equal(result.data.result.extra[0].resolution.resolution, "handled");
+  assert.equal(result.data.result.openCount, expected - 1 + 1);
   await assert.rejects(
     f.pool.execute("UPDATE stocktakes SET result=? WHERE id=?", [
       "{}",
-      recordId,
+      resultId,
     ]),
     (e) => e.code === "ER_TABLEACCESS_DENIED_ERROR",
   );
+  await assert.rejects(
+    f.pool.execute(
+      "UPDATE stocktake_resolutions SET note='篡改' WHERE stocktake_id=?",
+      [resultId],
+    ),
+    (e) => e.code === "ER_TABLEACCESS_DENIED_ERROR",
+  );
+  await f.restart();
+  assert.ok(
+    (await warehouse.inventory.stocktakes({ pageSize: 1000 })).list.some(
+      (r) => r.id === resultId,
+    ),
+  );
   assert.equal(
-    (await f.api("GET", "/stocktakes/" + recordId, undefined, "sales")).status,
+    (await f.api("GET", "/stocktakes/" + resultId, undefined, "sales")).status,
+    403,
+  );
+  assert.equal(
+    (await f.api("GET", "/stocktake-sessions", undefined, "sales")).status,
     403,
   );
   p.onUnload();
+});
+test("盘点期间离店的设备不算缺失；确认丢失只记结论不改库存；范围只能选店内状态", async () => {
+  const extraUnit = (
+    await boss.inbound.createUnit({ ...payload, imei1: imei() })
+  ).id;
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        "/stocktake-sessions",
+        { requestKey: "bad_" + Date.now(), statuses: ["sold"] },
+        "warehouse",
+      )
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        "/stocktake-sessions",
+        {
+          requestKey: "both_" + Date.now(),
+          modelId: model.id,
+          category: "phone",
+        },
+        "warehouse",
+      )
+    ).status,
+    400,
+  );
+  const session = (
+    await f.api(
+      "POST",
+      "/stocktake-sessions",
+      {
+        requestKey: "leave_" + Date.now(),
+        modelId: model.id,
+        statuses: ["in_stock"],
+      },
+      "warehouse",
+    )
+  ).data;
+  // 开盘后出借（直接改状态模拟），结束时归入“期间离店”
+  await f.admin.execute("UPDATE units SET status='loaned_out' WHERE id=?", [
+    extraUnit,
+  ]);
+  const result = (
+    await f.api(
+      "POST",
+      `/stocktake-sessions/${session.id}/close`,
+      {},
+      "warehouse",
+    )
+  ).data;
+  await f.admin.execute("UPDATE units SET status='in_stock' WHERE id=?", [
+    extraUnit,
+  ]);
+  assert.ok(
+    result.changed.some((c) => c.id === extraUnit && c.to === "loaned_out"),
+  );
+  assert.ok(!result.missingIds.includes(extraUnit));
+  assert.ok(result.missingIds.includes(id));
+  const lost = await f.api(
+    "POST",
+    `/stocktakes/${result.id}/resolutions`,
+    { type: "unit", target: id, resolution: "lost", note: "验证确认丢失" },
+    "warehouse",
+  );
+  assert.equal(lost.status, 200, lost.message);
+  assert.equal(
+    lost.data.missing.find((u) => u.id === id).resolution.resolution,
+    "lost",
+  );
+  assert.equal(
+    (await one(f.pool, "SELECT status FROM units WHERE id=?", [id])).status,
+    "in_stock",
+  );
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        `/stocktakes/${result.id}/resolutions`,
+        { type: "unit", target: extraUnit, resolution: "lost", note: "x" },
+        "warehouse",
+      )
+    ).status,
+    400,
+  );
+  const cancelled = (
+    await f.api(
+      "POST",
+      "/stocktake-sessions",
+      { requestKey: "cancel_" + Date.now(), modelId: model.id },
+      "warehouse",
+    )
+  ).data;
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        `/stocktake-sessions/${cancelled.id}/cancel`,
+        { reason: "范围选错" },
+        "warehouse",
+      )
+    ).data.status,
+    "cancelled",
+  );
+  assert.equal(
+    (
+      await f.api(
+        "POST",
+        `/stocktake-sessions/${cancelled.id}/close`,
+        {},
+        "warehouse",
+      )
+    ).status,
+    409,
+  );
 });

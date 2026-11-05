@@ -104,12 +104,12 @@ miniprogram/
 
 ### 阶段 A：营业与库存可信
 - [x] 员工登录：短信验证码、微信绑定、登录失败提示（`pages/login`，`utils/auth.js`）；正式短信/微信交换待外部配置
-- [x] 型号模板：模板字段编辑、版本发布、作为入库/采购/盘点型号选择器回传 `modelId`（`staff/templates/*`）
+- [x] 型号模板：每个分类一套模板（字段编辑、版本发布），型号单独配置容量/颜色，作为入库型号选择器回传 `modelId`（`staff/templates/*`）；入库/采购/验收统一读 `GET /models/:id/form`
 - [x] 采购单：供应商选择、明细行增删、运单绑定与扫码（首期不查轨迹）（`staff/purchase/*`、`staff/suppliers`）
 - [x] 到货验收：逐台验收表单、异常分支、数量比对（`staff/acceptance`）
 - [x] 单台入库：按模板字段动态渲染（`staff/inbound/index`）
 - [x] 批量入库：连续扫码逐台行编辑（`staff/inbound/batch`，与单台共用 `inbound/form.js`）
-- [x] 库存：搜索/扫码查找、筛选、改价弹层、库存流水、分享开关（含批量代理转发）、手动/扫码出库、复检、盘点、详情借还入口（`staff/inventory/*`）
+- [x] 库存：搜索/扫码查找、筛选、改价弹层、库存流水、分享开关（含批量代理转发）、手动/扫码出库、复检、盘点单（开单快照、边扫边勾、差异只记录不改库存，`staff/inventory/stocktake*`）、详情借还入口（`staff/inventory/*`）
 - [ ] 标签打印：标签数据接口与页面已完成，**蓝牙打印机对接未做**（`staff/inventory/label.js` 仍是 `TODO(codex)`，点击提示“打印机对接待实现”）
 - [x] 收银与销售：顾客信息、优惠改价留痕、退款权限、收款凭证（开单可选上传/详情补传）、代理来源（`staff/pos`、`staff/sales/*`）
 - [ ] 收银小票/收款码打印（发票首期不做，已定案）

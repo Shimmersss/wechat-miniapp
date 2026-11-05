@@ -38,7 +38,8 @@ test('发布、权限、冲突、快照、列表筛选与字段裁剪', async ()
   assert.equal((await call('/templates/t_phone/versions', 'POST', { baseVersion: original.version, fields: original.fields })).code, 403);
   role = 'boss';
   assert.equal((await call('/templates/no-such')).code, 404);
-  assert.equal((await call('/templates', 'GET', { category: 'tablet' })).data.total, 0);
+  // 每个分类一套模板：平板分类只有自己的分类模板
+  assert.equal((await call('/templates', 'GET', { category: 'tablet' })).data.total, 1);
   const fields = copy(original.fields);
   fields[0].default = fields[0].options[0];
   let res = await call('/templates/t_phone/versions', 'POST', { baseVersion: original.version, fields });
@@ -47,9 +48,10 @@ test('发布、权限、冲突、快照、列表筛选与字段裁剪', async ()
   fields[0].label = '外部引用修改';
   assert.notEqual((await call('/templates/t_phone')).data.fields[0].label, fields[0].label);
   assert.equal((await call('/templates/t_phone/versions', 'POST', { baseVersion: original.version, fields })).code, 409);
-  const template = (await call('/templates/t_phone')).data;
+  // 入库按型号表单：分类模板叠加该型号的容量、颜色
+  const template = (await call('/models/m_17pm/form')).data;
   const attributes = {};
-  template.fields.forEach(f => { attributes[f.key] = f.type === 'select' ? f.options[0] : f.type === 'number' ? 96 : f.type === 'image' ? [{ fileId: 'receipt-internal', url: 'internal-receipt' }] : '内部供应商'; });
+  template.fields.forEach(f => { attributes[f.key] = f.type === 'select' ? f.options[0] : f.type === 'number' ? 96 : f.type === 'image' ? [{ fileId: 'receipt-internal', url: 'internal-receipt' }] : f.type === 'date' ? '2027-01-01' : '内部供应商'; });
   const payload = { modelId: 'm_17pm', templateVersion: template.version, attributes, imei1: '490154203237518', cost: 6200, retail: 7200, wholesale: 6800, agentBase: 6800, internalNote: '内部备注', publicImages: [{ url: 'public-device' }], flags: { showInShop: true, sharePeer: true } };
   assert.equal((await call('/inbound/units', 'POST', { ...payload, attributes: {} })).code, 400);
   assert.equal((await call('/inbound/units', 'POST', { ...payload, templateVersion: 0 })).code, 409);

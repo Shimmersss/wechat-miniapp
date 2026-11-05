@@ -10,7 +10,12 @@ const {
   requirePerm,
   audit,
 } = require("./core");
-const { validateFields } = require("../../miniprogram/utils/template");
+const {
+  validateFields,
+  validateSpecs,
+  normalizeSpecs,
+  applySpecs,
+} = require("../../miniprogram/utils/template");
 const { isImei } = require("../../miniprogram/utils/validate");
 module.exports = async function catalog(app, { pool, route }) {
   const canManage = (request) =>
@@ -76,6 +81,7 @@ module.exports = async function catalog(app, { pool, route }) {
       series: row.series,
       name: row.name,
       templateId: row.template_id,
+      specs: normalizeSpecs(json(row.specs)),
     };
     if (includeTac) {
       const [mappings] = await db.execute(
@@ -90,21 +96,44 @@ module.exports = async function catalog(app, { pool, route }) {
   route("GET", "/catalog/categories", async (request) => {
     readModels(request);
     const [rows] = await pool.execute(
-      "SELECT id value,label FROM categories ORDER BY created_at,id",
+      "SELECT id value,label,template_id templateId FROM categories ORDER BY created_at,id",
     );
     return list(rows, rows.length, { page: 1, pageSize: rows.length });
   });
   route("POST", "/catalog/categories", async (request) => {
     write(request);
     const label = text(request.body?.label, "分类名称", 50),
-      value = id();
+      copyTemplateId = text(request.body?.copyTemplateId, "基础模板", 60),
+      value = id(),
+      templateId = id();
     return transaction(pool, async (db) => {
+      // 新分类复制一份基础模板作为本分类模板，之后该分类所有型号共用
+      const base = await template(db, copyTemplateId);
       await db.execute("INSERT INTO categories (id,label) VALUES (?,?)", [
         value,
         label,
       ]);
-      await audit(db, request, "新增分类", value, { after: { label } });
-      return { value, label };
+      await db.execute(
+        "INSERT INTO templates (id,name,category_id,current_version) VALUES (?,?,?,1)",
+        [templateId, label + "通用模板", value],
+      );
+      await db.execute(
+        "INSERT INTO template_versions (template_id,version,fields,description_presets,operator_id) VALUES (?,1,?,?,?)",
+        [
+          templateId,
+          JSON.stringify(base.fields),
+          JSON.stringify(base.descriptionPresets),
+          request.user.id,
+        ],
+      );
+      await db.execute("UPDATE categories SET template_id=? WHERE id=?", [
+        templateId,
+        value,
+      ]);
+      await audit(db, request, "新增分类", value, {
+        after: { label, templateId, copiedFrom: copyTemplateId },
+      });
+      return { value, label, templateId };
     });
   });
   route("PUT", "/catalog/categories/:id", async (request) => {
@@ -125,7 +154,7 @@ module.exports = async function catalog(app, { pool, route }) {
         before: { label: current.label },
         after: { label },
       });
-      return { value: current.id, label };
+      return { value: current.id, label, templateId: current.template_id };
     });
   });
   route("GET", "/models/tree", async (request) => {
@@ -170,9 +199,16 @@ module.exports = async function catalog(app, { pool, route }) {
     )
       fail(400, "TAC 必须为不重复的八位数字");
     const source = tacs.length ? text(d.tacSource, "TAC 核验来源", 200) : "";
+    const specError = validateSpecs(d.specs);
+    if (specError) fail(400, specError);
     return transaction(pool, async (db) => {
-      if (!(await one(db, "SELECT id FROM categories WHERE id=?", [category])))
-        fail(400, "分类不存在");
+      const categoryRow = await one(
+        db,
+        "SELECT id,template_id FROM categories WHERE id=?",
+        [category],
+      );
+      if (!categoryRow) fail(400, "分类不存在");
+      if (!categoryRow.template_id) fail(400, "该分类还没有入库模板");
       const old = existingId
         ? await one(db, "SELECT * FROM models WHERE id=? FOR UPDATE", [
             existingId,
@@ -184,40 +220,16 @@ module.exports = async function catalog(app, { pool, route }) {
         "SELECT brand FROM models WHERE brand_label=? LIMIT 1",
         [brandLabel],
       );
-      const modelId = old?.id || id();
-      let templateId = old?.template_id;
-      const shared = old
-        ? await one(db, "SELECT COUNT(*) n FROM models WHERE template_id=?", [
-            templateId,
-          ])
-        : null;
-      if (!old || (old.category_id !== category && Number(shared.n) > 1)) {
-        const base = await template(
-          db,
-          old ? templateId : text(d.copyTemplateId, "基础模板", 60),
-        );
-        templateId = id();
-        await db.execute(
-          "INSERT INTO templates (id,name,category_id,current_version) VALUES (?,?,?,1)",
-          [templateId, name + "入库模板", category],
-        );
-        await db.execute(
-          "INSERT INTO template_versions (template_id,version,fields,description_presets,operator_id) VALUES (?,1,?,?,?)",
-          [
-            templateId,
-            JSON.stringify(base.fields),
-            JSON.stringify(base.descriptionPresets),
-            request.user.id,
-          ],
-        );
-      } else if (old.category_id !== category)
-        await db.execute("UPDATE templates SET category_id=? WHERE id=?", [
-          category,
-          templateId,
-        ]);
+      const modelId = old?.id || id(),
+        // 型号统一使用所属分类的模板；只单独配置容量和颜色
+        templateId = categoryRow.template_id,
+        specs =
+          d.specs === undefined && old
+            ? normalizeSpecs(json(old.specs))
+            : normalizeSpecs(d.specs);
       if (old)
         await db.execute(
-          "UPDATE models SET category_id=?,brand=?,brand_label=?,series=?,name=?,template_id=? WHERE id=?",
+          "UPDATE models SET category_id=?,brand=?,brand_label=?,series=?,name=?,template_id=?,specs=? WHERE id=?",
           [
             category,
             brandRow?.brand || brandLabel,
@@ -225,12 +237,13 @@ module.exports = async function catalog(app, { pool, route }) {
             series,
             name,
             templateId,
+            JSON.stringify(specs),
             modelId,
           ],
         );
       else
         await db.execute(
-          "INSERT INTO models (id,category_id,brand,brand_label,series,name,template_id) VALUES (?,?,?,?,?,?,?)",
+          "INSERT INTO models (id,category_id,brand,brand_label,series,name,template_id,specs) VALUES (?,?,?,?,?,?,?,?)",
           [
             modelId,
             category,
@@ -239,6 +252,7 @@ module.exports = async function catalog(app, { pool, route }) {
             series,
             name,
             templateId,
+            JSON.stringify(specs),
           ],
         );
       await db.execute("DELETE FROM tac_mappings WHERE model_id=?", [modelId]);
@@ -248,8 +262,14 @@ module.exports = async function catalog(app, { pool, route }) {
           [tac, modelId, source],
         );
       await audit(db, request, old ? "修改型号" : "新增型号", modelId, {
-        before: old ? { name: old.name, category: old.category_id } : null,
-        after: { name, category, templateId, tacs, source },
+        before: old
+          ? {
+              name: old.name,
+              category: old.category_id,
+              specs: json(old.specs),
+            }
+          : null,
+        after: { name, category, templateId, specs, tacs, source },
       });
       return modelView(
         db,
@@ -262,6 +282,23 @@ module.exports = async function catalog(app, { pool, route }) {
   route("PUT", "/models/:id", (request) =>
     saveModel(request, request.params.id),
   );
+  /** 入库表单：分类模板当前版本 + 型号规格覆盖后的字段，入库/采购/验收共用 */
+  route("GET", "/models/:id/form", async (request) => {
+    read(request);
+    const model = await one(pool, "SELECT * FROM models WHERE id=?", [
+      request.params.id,
+    ]);
+    if (!model) fail(404, "型号不存在");
+    const base = await template(pool, model.template_id),
+      specs = normalizeSpecs(json(model.specs));
+    return {
+      ...base,
+      fields: applySpecs(base.fields, specs),
+      modelId: model.id,
+      modelName: model.name,
+      specs,
+    };
+  });
   route("GET", "/templates", async (request) => {
     write(request);
     const pagination = page(request.query),

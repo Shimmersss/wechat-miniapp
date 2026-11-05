@@ -1,4 +1,5 @@
 const { one, transaction } = require("./db");
+const { applySpecs } = require("../../miniprogram/utils/template");
 const {
   PERM,
   fail,
@@ -383,7 +384,7 @@ module.exports = async function (app, { pool, config, route }) {
                   name: m.template_name,
                   version: m.current_version,
                   category: m.category_id,
-                  fields: json(m.fields),
+                  fields: applySpecs(json(m.fields), json(m.specs)),
                   descriptionPresets: json(m.description_presets),
                 };
               await db.execute(

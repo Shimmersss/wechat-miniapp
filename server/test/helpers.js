@@ -136,9 +136,11 @@ function attributes(template, receipt) {
             : 0
           : f.type === "image"
             ? [{ fileId: receipt.fileId }]
-            : f.key === "supplier"
-              ? "由服务端核验"
-              : "验证参数",
+            : f.type === "date"
+              ? "2027-01-01"
+              : f.key === "supplier"
+                ? "由服务端核验"
+                : "验证参数",
     ]),
   );
 }

@@ -1,19 +1,30 @@
-<wxs module="f" src="../../../utils/filters.wxs" />
 <theme-shell>
 <view class="container">
- <view class="notice">按所选状态和型号比对。</view>
  <view wx:if="{{error}}" class="notice">{{error}}</view>
- <view wx:if="{{!result}}" class="card">
-  <button class="btn btn-soft btn-block mb" bindtap="onChooseModel" disabled="{{saving || pending}}">{{model ? model.name : '全部型号（点击选择）'}}</button><button wx:if="{{model}}" class="btn btn-line btn-sm mb" bindtap="onClearModel" disabled="{{saving || pending}}">清除型号限制</button>
+ <section-card wx:if="{{sessions.length}}" title="进行中的盘点">
+  <view wx:for="{{sessions}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onSession">
+   <view class="flex-1"><view class="small">{{item.scope.modelName || item.scope.categoryLabel || '全部型号'}}{{item.note ? ' · ' + item.note : ''}}</view><view class="tiny muted">{{item.operator}} 开单 · {{item.timeText}}</view><view class="tiny muted">已盘 {{item.scannedCount}} / 应盘 {{item.expectedCount}} · 异常 {{item.extraCount}}</view></view><text>继续 ›</text>
+  </view>
+ </section-card>
+ <view class="card">
+  <view class="h2">新建盘点单</view>
+  <view class="tiny muted mt-sm">开单时按范围生成应盘清单，之后边扫边勾，扫码记录实时保存，可中途退出、多人同时扫同一张单。盘点只记录差异，不改库存。</view>
+  <view class="small mt">盘点范围</view>
+  <view class="chips mt-sm"><view class="chip {{!category && !model ? 'active' : ''}}" data-value="" bindtap="onCategory">全部</view><view wx:for="{{categories}}" wx:key="value" class="chip {{category === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onCategory">{{item.label}}</view></view>
+  <view class="row gap-sm mt"><button class="btn btn-soft btn-sm flex-1" bindtap="onChooseModel" disabled="{{saving || pending}}">{{model ? '型号：' + model.name : '只盘某个型号'}}</button><button wx:if="{{model}}" class="btn btn-line btn-sm" bindtap="onClearModel" disabled="{{saving || pending}}">清除</button></view>
+  <view class="small mt">库存状态（只列实物在店里的状态）</view>
   <checkbox-group bindchange="onStatuses"><label wx:for="{{choices}}" wx:key="value" class="status-option"><checkbox value="{{item.value}}" checked="{{item.checked}}" disabled="{{saving || pending}}" />{{item.label}}</label></checkbox-group>
-  <view class="row gap-sm mt"><input class="input flex-1" value="{{input}}" bindinput="onInput" bindconfirm="onAdd" placeholder="设备编号 / 完整 IMEI" disabled="{{saving || pending}}" /><button class="btn btn-soft btn-sm" bindtap="onAdd" disabled="{{saving || pending}}">添加</button><button class="btn btn-line btn-sm" bindtap="onScan" disabled="{{saving || pending}}">扫码</button></view>
-  <view class="small muted mt">已记录 {{codes.length}} 个编号</view><view wx:for="{{codes}}" wx:key="*this" class="list-item"><text class="small">{{item}}</text><button class="btn btn-line btn-sm" data-code="{{item}}" bindtap="onRemove" disabled="{{saving || pending}}">移除</button></view>
-  <button wx:if="{{!pending}}" class="btn btn-primary btn-block mt" bindtap="onSubmit" loading="{{saving}}" disabled="{{saving}}">保存盘点结果</button><view wx:else class="notice mt">结果未知，保留原内容重试以防重复记录。<button class="btn btn-primary btn-block mt" bindtap="send" loading="{{saving}}" disabled="{{saving}}">原样重试</button></view>
+  <input class="input mt" value="{{note}}" bindinput="onNote" maxlength="200" placeholder="说明（选填），如：月底全盘、柜台A" disabled="{{saving || pending}}" />
+  <button wx:if="{{!pending}}" class="btn btn-primary btn-block mt" bindtap="onStart" loading="{{saving}}" disabled="{{saving}}">开始盘点</button>
+  <view wx:else class="notice mt">结果未知，保留原内容重试以防重复开单。<button class="btn btn-primary btn-block mt" bindtap="send" loading="{{saving}}" disabled="{{saving}}">原样重试</button></view>
  </view>
- <view wx:if="{{result}}" class="card"><view class="h2">盘点结果</view><view class="small muted mt">{{result.time}} · {{result.operator}}</view><view class="mt">应有 {{result.expectedCount}} · 扫描编号 {{result.scannedCount}} · 匹配 {{result.matched}} 台</view><view class="mt">缺少 {{result.missing.length}} 台 · 范围外/未知 {{result.extra.length}} 个</view><view class="tiny muted mt"></view>
-  <view wx:for="{{result.missing}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onUnit"><view><view class="small">{{item.name}}</view><view class="tiny muted">{{item.imeiMasked}} · {{f.label(statusMap,item.status)}}</view></view><text>查看 ›</text></view>
-  <view wx:for="{{result.extra}}" wx:key="code" class="list-item small">{{item.code}} · {{item.reason}}</view><button class="btn btn-soft btn-block mt" bindtap="onNew">开始新盘点</button>
- </view>
- <section-card title="历史盘点"><view wx:for="{{history}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onRecord"><view><view class="small">{{item.time}} · {{item.operator}}</view><view class="tiny muted">应有 {{item.expectedCount}} · 匹配 {{item.matched}} · 缺少 {{item.missingCount}} · 异常 {{item.extraCount}}</view></view><text>›</text></view><button wx:if="{{historyMore}}" class="btn btn-line btn-block mt" bindtap="onMore" loading="{{historyLoading}}">加载更多</button></section-card>
+ <section-card title="已结束的盘点">
+  <view wx:if="{{!history.length && !historyLoading}}" class="tiny muted">暂无记录</view>
+  <view wx:for="{{history}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onRecord">
+   <view class="flex-1"><view class="small">{{item.timeText}} · {{item.operator}}{{item.scope.modelName || item.scope.categoryLabel ? ' · ' + (item.scope.modelName || item.scope.categoryLabel) : ''}}</view><view class="tiny muted">应盘 {{item.expectedCount}} · 盘到 {{item.matched}} · 缺失 {{item.missingCount}} · 异常 {{item.extraCount}}{{item.changedCount ? ' · 期间离店 ' + item.changedCount : ''}}</view></view>
+   <status-pill wx:if="{{item.openCount}}" text="{{item.openCount}} 项待处理" tone="orange" /><text wx:else>›</text>
+  </view>
+  <button wx:if="{{historyMore}}" class="btn btn-line btn-block mt" bindtap="onMore" loading="{{historyLoading}}">加载更多</button>
+ </section-card>
 </view>
 </theme-shell>

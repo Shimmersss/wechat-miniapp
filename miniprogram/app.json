@@ -68,6 +68,8 @@
         "audit/index",
         "profile/index",
         "inventory/stocktake",
+        "inventory/stocktake-run",
+        "inventory/stocktake-result",
         "consults/index",
         "consults/detail",
         "repair/parts"

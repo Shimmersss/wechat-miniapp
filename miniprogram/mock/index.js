@@ -22,7 +22,7 @@ const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM } = require('../co
 const { REPAIR_FLOW } = require('../constants/status');
 
 const { isImei } = require('../utils/validate');
-const { validateFields, validateValues } = require('../utils/template');
+const { validateFields, validateValues, applySpecs, normalizeSpecs } = require('../utils/template');
 const clone = value => JSON.parse(JSON.stringify(value));
 const templateHistory = {};
 db.templates.forEach(t => { templateHistory[t.id] = [clone(t)]; });
@@ -110,8 +110,14 @@ function requirePermission(...permissions) {
 function getTemplate(id) {
   return db.templates.find(t => t.id === id) || fail(404, '模板不存在');
 }
+/** 入库表单：分类模板当前版本叠加型号的容量、颜色选项 */
+function modelForm(modelId) {
+  const model = db.models.find(m => m.id === modelId) || fail(404, '型号不存在');
+  const template = getTemplate(model.templateId), specs = normalizeSpecs(model.specs);
+  return { ...template, fields: applySpecs(template.fields, specs), modelId: model.id, modelName: model.name, specs };
+}
 
-const inboundRoutes = createInboundRoutes(db, { fail, requirePermission, clone, getTemplate, getOperator: () => ROLE_LABELS[currentRole()] });
+const inboundRoutes = createInboundRoutes(db, { fail, requirePermission, clone, getTemplate, modelForm, getOperator: () => ROLE_LABELS[currentRole()] });
 function validatePurchaseFiles(input, scope, trustedIds = new Set()) {
   if (!Array.isArray(input) || input.length > 9) fail(400, '图片列表无效');
   return input.map(f => {
@@ -212,6 +218,10 @@ const routes = [
       series.models.push(clone((ROLE_PERMISSIONS[currentRole()] || []).includes(PERM.TEMPLATE_MANAGE) ? m : model));
     });
     return brands;
+  }],
+  ['GET', '/models/:id/form', (d, h, p) => {
+    requirePermission(PERM.TEMPLATE_MANAGE, PERM.INBOUND, PERM.PURCHASE_MANAGE, PERM.ACCEPTANCE);
+    return clone(modelForm(p.id));
   }],
   ['GET', '/templates', (d) => {
     requirePermission(PERM.TEMPLATE_MANAGE);

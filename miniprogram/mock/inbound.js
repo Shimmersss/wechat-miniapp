@@ -1,11 +1,11 @@
 const { PERM } = require('../constants/roles');
 const { isImei } = require('../utils/validate');
 const { validateValues } = require('../utils/template');
-module.exports = function inbound(db, { fail, requirePermission, clone, getTemplate, getOperator }) {
+module.exports = function inbound(db, { fail, requirePermission, clone, getTemplate, modelForm, getOperator }) {
   let sequence = 0;
   function prepare(d, seen) {
     const model = db.models.find(m => m.id === d.modelId) || fail(400, '请选择有效型号');
-    const template = getTemplate(model.templateId);
+    const template = modelForm(model.id);
     if (d.templateVersion !== template.version) fail(409, '模板已更新，请重新选择型号');
     if (db.acceptanceReservations?.[d.imei1] || (d.imei2 && db.acceptanceReservations?.[d.imei2])) fail(409, '串码正在异常验收中');
     const attributes = d.attributes || {};

@@ -24,7 +24,7 @@ createPage({
       const detail = await api.purchase.detail(this.data.id);
       if (detail.status !== 'pending_ship') throw new Error('已发货采购单不能修改');
       if (detail.supplierId === undefined || detail.freight === undefined || detail.lines.some(l => l.unitCost === undefined)) throw new Error('当前账号不能读取完整采购信息');
-      const templates = await Promise.all(detail.lines.map(l => api.template.detail(l.templateId)));
+      const templates = await Promise.all(detail.lines.map(l => api.template.modelForm(l.modelId)));
       this.setData({ supplierName: detail.supplier, form: { supplierId: detail.supplierId, expectedAt: detail.expectedAt, freight: String(detail.freight), remark: detail.remark }, lines: detail.lines.map((l, index) => ({ ...l, key: 'purchase_line_' + ++sequence, specFields: templates[index].fields.filter(f => ['storage', 'color', 'version'].includes(f.key)).map(f => ({ ...f, required: false })) })) });
     } catch (e) { this.setData({ error: e.message }); }
     finally { this.setData({ loading: false }); }
@@ -43,7 +43,7 @@ createPage({
     const key = this.selectionKey, revision = this.modelRevision = (this.modelRevision || 0) + 1;
     this.setData({ loading: true });
     try {
-      const template = await api.template.detail(model.templateId);
+      const template = await api.template.modelForm(model.id);
       if (this.destroyed || revision !== this.modelRevision) return;
       const index = this.data.lines.findIndex(l => l.key === key);
       if (index < 0) return;

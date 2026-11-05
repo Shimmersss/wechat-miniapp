@@ -1,7 +1,7 @@
 const {PERM,UNIT_STATUS,SENSITIVE_FIELDS}=Object.assign({},require('../constants/roles'),require('../constants/status'));
 const {validateValues}=require('../utils/template');
 module.exports=function(db,{fail,requirePermission,clone,paginate,currentRole,staffUnit,validateFiles}){
- let seq=0;const takes=[], requests={};db.inventoryLedger=db.inventoryLedger||[];
+ let seq=0;db.inventoryLedger=db.inventoryLedger||[];
  const uid=()=> 'inventory_'+Date.now()+'_'+ ++seq;
  const find=id=>db.units.find(u=>u.id===id)||fail(404,'设备不存在');
  const visible=key=>!SENSITIVE_FIELDS[key]||SENSITIVE_FIELDS[key].includes(currentRole());
@@ -12,10 +12,8 @@ module.exports=function(db,{fail,requirePermission,clone,paginate,currentRole,st
  function form(u){const snap=u.templateSnapshot||{version:1,fields:[]};const fields=snap.fields.filter(f=>f.key!=='supplier'&&visible(f.key)&&(!f.visibility.includes('internal')||visible('internalNote')));const view=staffUnit(u);const values=Object.fromEntries((view.parameters||[]).filter(p=>fields.some(f=>f.key===p.key)).map(p=>[p.key,p.value]));return{unitId:u.id,name:u.name,templateVersion:snap.version,inspectionVersion:u.inspectionVersion||1,fields:clone(fields),values,hiddenKeys:fields.filter(f=>f.type==='image'&&!(values[f.key]||[]).length&&(u.attributes[f.key]||[]).length).map(f=>f.key)};}
  /** 单台详情契约（GET/改价/复检一致）：有借还权限且设备在未完结借还单中时带 loan */
  function unitDetail(raw){const u=staffUnit(raw);let canLoan=true;try{requirePermission(PERM.LOAN_MANAGE);}catch(e){canLoan=false;}const o=canLoan&&(db.loanTransactions||[]).find(o=>o.items.some(i=>i.unitId===raw.id&&i.status!=='closed'));if(o)u.loan={id:o.id,no:o.no,type:o.type};return u;}
- const takeRead=()=>{read();requirePermission(PERM.STOCKTAKE);};
- const summary=t=>{const {missingIds,extra,matchedIds,...rest}=t;return{...rest,missingCount:missingIds.length,extraCount:extra.length};};
- const detail=t=>({...summary(t),missingIds:t.missingIds,matchedIds:t.matchedIds,missing:t.missingIds.map(id=>staffUnit(find(id))),extra:t.extra.map(e=>({...e,code:visible('fullImei')?e.code:'***'}))});
  return[
+ ...require('./stocktake')(db,{fail,requirePermission,clone,paginate,currentRole,staffUnit}),
  ['GET','/units',d=>{read();let rows=db.units;if(d.status){if(!UNIT_STATUS[d.status])fail(400,'库存状态无效');rows=rows.filter(u=>u.status===d.status);}if(d.modelId)rows=rows.filter(u=>u.modelId===d.modelId);
  if(d.keyword){const key=String(d.keyword);if(/^\d+$/.test(key)&&key.length!==15&&!visible('fullImei'))fail(400,'串码查询请扫描完整 IMEI');rows=rows.filter(u=>u.name.includes(key)||u.id===key||u.imei1===key||u.imei2===key);}
  if(d.imei)rows=rows.filter(u=>u.imei1===d.imei||u.imei2===d.imei);
@@ -33,8 +31,5 @@ module.exports=function(db,{fail,requirePermission,clone,paginate,currentRole,st
  ['GET','/units/:id/recheck-form',(d,h,p)=>{read();requirePermission(PERM.ACCEPTANCE);const u=find(p.id);if(u.status!=='recheck')fail(409,'设备不在待复检状态');return form(u);}],
  ['POST','/units/:id/recheck',(d,h,p)=>{read();requirePermission(PERM.ACCEPTANCE);const u=find(p.id);if(u.status!=='recheck'||d.inspectionVersion!==(u.inspectionVersion||1))fail(409,'复检状态或版本已更新');if(!['pass','fail'].includes(d.result)||!d.reason||!d.reason.trim())fail(400,'请填写复检结论和原因');const fields=(u.templateSnapshot||{}).fields||[], input=d.attributes||{},values=clone(u.attributes||{});if(typeof input!=='object'||Array.isArray(input))fail(400,'复检参数无效');for(const k of Object.keys(input)){const f=form(u).fields.find(f=>f.key===k);if(!f)fail(403,'无权修改复检字段');values[k]=f.type==='image'?validateFiles(input[k],f.visibility.includes('internal')?'internal':'public'):input[k];}const error=validateValues(fields,values);if(error)fail(400,error);if(d.result==='pass'&&values.refurbishment==='正在整备')fail(400,'整备尚未完成');u.attributes=values;u.status=d.result==='pass'?'in_stock':'recheck';u.inspectionVersion=(u.inspectionVersion||1)+1;for(const k of ['storage','color','grade','battery','version'])u[k]=values[k];ledger(u,'recheck',u.status,'recheck',d.reason);note('库存复检',u,d.reason);return unitDetail(u);}],
  ['GET','/units/:id/label',(d,h,p)=>{read();requirePermission(PERM.LABEL_PRINT);const u=find(p.id);return{unitId:u.id,name:u.name,storage:u.storage,grade:u.grade,retail:u.retail,qrcodeText:u.id,imeiMasked:staffUnit(u).imeiMasked};}],
- ['GET','/stocktakes',d=>{takeRead();return clone(paginate(takes.map(summary),d));}],
- ['GET','/stocktakes/:id',(d,h,p)=>{takeRead();return detail(takes.find(t=>t.id===p.id)||fail(404,'盘点记录不存在'));}],
- ['POST','/stocktakes',d=>{takeRead();if(!Array.isArray(d.scannedImeis)||!d.scannedImeis.length||d.scannedImeis.length>1000||d.scannedImeis.some(c=>typeof c!=='string'||!c.trim()||c.length>80))fail(400,'盘点编号无效');const codes=[...new Set(d.scannedImeis.map(c=>c.trim()))],statuses=[...new Set(d.statuses||['in_stock','locked','repairing','recheck'])].sort();if(!statuses.length||statuses.some(s=>!UNIT_STATUS[s]))fail(400,'盘点范围无效');const signature=JSON.stringify({codes:codes.slice().sort(),statuses,modelId:d.modelId||null});if(d.requestKey&&requests[d.requestKey]){const old=requests[d.requestKey];if(old.signature!==signature)fail(409,'提交标识冲突');return detail(old.take);}const expected=db.units.filter(u=>statuses.includes(u.status)&&(!d.modelId||d.modelId===u.modelId)),matched=new Set(),extra=[];codes.forEach(code=>{const unit=db.units.find(u=>[u.id,u.imei1,u.imei2].includes(code));if(unit&&expected.includes(unit))matched.add(unit.id);else extra.push({code,reason:unit?'设备不在本次盘点范围':'未找到该设备'});});const take={id:uid(),time:new Date().toISOString(),operator:currentRole(),scope:{statuses,modelId:d.modelId||null},expectedCount:expected.length,scannedCount:codes.length,matched:matched.size,matchedIds:[...matched],missingIds:expected.filter(u=>!matched.has(u.id)).map(u=>u.id),extra};takes.unshift(take);if(d.requestKey)requests[d.requestKey]={signature,take};note('库存盘点',take,'');return detail(take);}]
  ];
 };

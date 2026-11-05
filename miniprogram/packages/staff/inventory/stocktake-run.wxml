@@ -1,0 +1,35 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
+<view class="container">
+ <view wx:if="{{error}}" class="notice">{{error}}</view>
+ <view wx:if="{{session}}" class="card">
+  <view class="row"><text class="h2 flex-1">{{session.scope.modelName || session.scope.categoryLabel || '全部型号'}}</text><status-pill text="{{session.status === 'open' ? '盘点中' : session.status === 'closed' ? '已结束' : '已作废'}}" tone="{{session.status === 'open' ? 'blue' : 'gray'}}" /></view>
+  <view class="tiny muted mt-sm">{{session.operator}} 开单{{session.note ? ' · ' + session.note : ''}}</view>
+  <view class="progress mt"><view class="progress-bar" style="width: {{session.expectedCount ? session.scannedCount * 100 / session.expectedCount : 0}}%"></view></view>
+  <view class="row mt-sm"><text class="small flex-1">已盘 <text class="strong">{{session.scannedCount}}</text> / 应盘 {{session.expectedCount}}</text><text class="small {{session.extraCount ? 'red' : 'muted'}}">异常 {{session.extraCount}}</text></view>
+  <view wx:if="{{session.status === 'closed'}}" class="notice mt">本单已结束。<button class="btn btn-primary btn-block mt" bindtap="onResult">查看盘点结果</button></view>
+  <view wx:if="{{session.status === 'cancelled'}}" class="notice mt">本单已作废：{{session.cancelReason}}</view>
+ </view>
+ <view wx:if="{{session.status === 'open'}}" class="card">
+  <view class="row gap-sm"><input class="input flex-1" value="{{input}}" bindinput="onInput" bindconfirm="onAdd" confirm-type="done" placeholder="设备编号 / 完整 IMEI" disabled="{{busy}}" /><button class="btn btn-soft btn-sm" bindtap="onAdd" disabled="{{busy}}">添加</button></view>
+  <view class="row gap-sm mt"><button class="btn btn-line btn-sm flex-1" bindtap="onScan" disabled="{{busy || scanning}}">扫一台</button><button class="btn btn-dark btn-sm flex-1" bindtap="onScanLoop" disabled="{{busy || scanning}}">{{scanning ? '连续扫码中…' : '连续扫码'}}</button></view>
+  <view wx:if="{{last}}" class="feedback {{last.tone}} mt">
+   <view class="small strong">{{last.message}}</view>
+   <view class="tiny">{{last.name ? last.name + ' · ' + last.imeiMasked : last.code}}</view>
+  </view>
+ </view>
+ <view class="chips mb"><view wx:for="{{tabs}}" wx:key="value" class="chip {{tab === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onTab">{{item.label}}</view></view>
+ <view class="card">
+  <view wx:if="{{!list.length && !listLoading}}" class="tiny muted">{{tab === 'pending' ? '应盘设备已全部盘到' : tab === 'scanned' ? '还没有盘到的设备' : '没有异常编号'}}</view>
+  <block wx:if="{{tab === 'extra'}}">
+   <view wx:for="{{list}}" wx:key="id" class="list-item" data-id="{{item.unitId}}" bindtap="onUnit"><view class="flex-1"><view class="small">{{item.name || item.code}}</view><view class="tiny red">{{item.reason}}</view><view class="tiny muted">{{item.scanner}} · {{item.timeText}}</view></view><text wx:if="{{item.unitId}}">›</text></view>
+  </block>
+  <block wx:else>
+   <view wx:for="{{list}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onUnit"><view class="flex-1"><view class="small">{{item.name}} {{item.storage || ''}} {{item.color || ''}}</view><view class="tiny muted">{{item.imeiMasked}}{{item.scannedAt ? ' · ' + item.scanner + ' ' + item.timeText : ''}}</view></view><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+  </block>
+  <button wx:if="{{more && list.length}}" class="btn btn-line btn-block mt" bindtap="onReachBottom" loading="{{listLoading}}">加载更多</button>
+ </view>
+ <view wx:if="{{session.status === 'open'}}" class="footer-space"></view>
+ <view wx:if="{{session.status === 'open'}}" class="footer-bar"><button class="btn btn-line" bindtap="onCancel" disabled="{{busy || scanning}}">作废</button><button class="btn btn-primary" bindtap="onClose" disabled="{{busy || scanning}}">结束盘点</button></view>
+</view>
+</theme-shell>
