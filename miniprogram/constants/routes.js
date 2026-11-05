@@ -40,6 +40,8 @@ module.exports = {
   INVENTORY: '/packages/staff/inventory/list',
   INVENTORY_DETAIL: '/packages/staff/inventory/detail',
   STOCKTAKE: '/packages/staff/inventory/stocktake',
+  STOCKTAKE_RUN: '/packages/staff/inventory/stocktake-run',
+  STOCKTAKE_RESULT: '/packages/staff/inventory/stocktake-result',
   INVENTORY_LABEL: '/packages/staff/inventory/label',
   POS: '/packages/staff/pos/index',
   SALES_LIST: '/packages/staff/sales/list',

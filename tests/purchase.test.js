@@ -13,7 +13,7 @@ function imei() {
 }
 test('采购 mock 与真实契约一致：逐台验收原子性、字段裁剪、幂等及异常复验', async () => {
   let r = await call('/suppliers', 'POST', { name: '采购测试供应商', active: true }); assert.equal(r.code, 0);
-  const supplier = r.data, template = db.templates.find(t => t.id === 't_phone');
+  const supplier = r.data, template = (await call('/models/m_17pm/form')).data;
   r = await call('/purchase-orders', 'POST', { supplierId: supplier.id, expectedAt: '2026-11-20', freight: '12.34', lines: [{ modelId: 'm_17pm', quantity: 3, unitCost: '1000.12' }] });
   assert.equal(r.code, 0); const po = r.data; assert.equal(po.amount, 3012.70);
   r = await call('/purchase-orders/' + po.id + '/shipments', 'POST', { carrier: 'SF', trackingNo: 'MOCKVERIFY001' });
@@ -26,7 +26,7 @@ test('采购 mock 与真实契约一致：逐台验收原子性、字段裁剪�
   assert.equal(r.data.amount, undefined); assert.equal(r.data.lines[0].unitCost, undefined); assert.equal(r.data.supplierId, undefined);
   assert.equal((await call('/purchase-orders', 'GET', { supplierId: supplier.id })).code, 403);
   const proof = mock.registerFile({ filePath: 'fixture-receipt.png', scope: 'internal' });
-  const values = Object.fromEntries(template.fields.map(f => [f.key, f.type === 'image' ? [proof] : f.type === 'select' ? f.options[0] : f.type === 'number' ? 90 : '验证参数']));
+  const values = Object.fromEntries(template.fields.map(f => [f.key, f.type === 'image' ? [proof] : f.type === 'select' ? f.options[0] : f.type === 'number' ? 90 : f.type === 'date' ? '2027-01-01' : '验证参数']));
   const lineId = po.lines[0].id;
   const makePass = () => ({ modelId: 'm_17pm', lineId, templateVersion: template.version, imei1: imei(), result: 'pass', cost: '0.01', attributes: { ...values }, retail: '1300', wholesale: '1200', agentBase: '1200', receiptImages: [proof] });
   const first = makePass(), second = makePass(), failed = { lineId, imei1: imei(), result: 'fail', remark: '合成测试机况异常', receiptImages: [proof] };

@@ -2,28 +2,79 @@ const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
 const { PERM } = require('../../../constants/roles');
 const { ROUTES } = require('../../../utils/router');
-const { UNIT_STATUS } = require('../../../constants/status');
-const { scan, unitCode } = require('../../../utils/scan');
+const { UNIT_STATUS, STOCKTAKE_SCOPE, STOCKTAKE_DEFAULT_SCOPE } = require('../../../constants/status');
 const events = require('../../../utils/events');
+const { date } = require('../../../utils/format');
 let sequence = 0;
+/**
+ * 库存盘点入口：进行中的盘点单、新建盘点单（范围快照应盘清单）、已结束的盘点历史。
+ * 扫码在 stocktake-run 页，结果与差异处理在 stocktake-result 页。
+ */
 createPage({
- requireStaff:true, permission:PERM.STOCKTAKE,
- data:{ codes:[], input:'', statuses:['in_stock','locked','repairing','recheck'], choices:Object.keys(UNIT_STATUS).map(value=>({value,label:UNIT_STATUS[value].label,checked:['in_stock','locked','repairing','recheck'].includes(value)})), model:null, result:null, pending:null, saving:false, error:'', history:[], historyPage:0, historyMore:true, historyLoading:false },
- onLoad(query){this.setData({statusMap:UNIT_STATUS,model:query.modelId?{id:query.modelId,name:decodeURIComponent(query.modelName||'所选型号')}:null});this.offModel=events.on('stocktake:model-selected',m=>{const p=getCurrentPages();if(p[p.length-2]===this&&!this.locked())this.setData({model:m});});return this.loadHistory(true);},
- onUnload(){if(this.offModel)this.offModel();},
- locked(){return this.data.saving||!!this.data.pending||!!this.data.result;},
- onInput(e){if(!this.locked())this.setData({input:e.detail.value});},
- onAdd(){if(this.locked())return;const code=unitCode(this.data.input);if(!code||code.length>80)return this.$toast('请输入有效设备编号或串码');if(this.data.codes.includes(code))return this.$toast('已经扫描');if(this.data.codes.length>=1000)return this.$toast('每次最多1000个编号');this.setData({codes:this.data.codes.concat(code),input:''});},
- async onScan(){if(this.locked())return;try{this.setData({input:unitCode(await scan())});this.onAdd();}catch(_){}},
- onRemove(e){if(!this.locked())this.setData({codes:this.data.codes.filter(c=>c!==e.currentTarget.dataset.code)});},
- onStatuses(e){if(!this.locked())this.setData({statuses:e.detail.value,choices:this.data.choices.map(c=>({...c,checked:e.detail.value.includes(c.value)}))});},
- onChooseModel(){if(!this.locked())this.$go(ROUTES.TEMPLATES,{select:'1',from:'stocktake'});},
- onClearModel(){if(!this.locked())this.setData({model:null});},
- async onSubmit(){if(this.locked())return;if(!this.data.codes.length||!this.data.statuses.length)return this.$toast('请添加设备并选择盘点状态范围');const pending={requestKey:'stocktake_'+Date.now()+'_'+ ++sequence+'_'+Math.random().toString(36).slice(2),scannedImeis:this.data.codes.slice(),statuses:this.data.statuses.slice()};if(this.data.model)pending.modelId=this.data.model.id;this.setData({pending});return this.send();},
- async send(){if(this.data.saving||!this.data.pending)return;this.setData({saving:true,error:''});try{const result=await api.inventory.stocktake(this.data.pending);this.setData({result,pending:null});await this.loadHistory(true);}catch(e){this.setData({error:e.message});if(Number(e.code)>=400&&Number(e.code)<500)this.setData({pending:null});}finally{this.setData({saving:false});}},
- onNew(){if(!this.data.saving&&!this.data.pending)this.setData({result:null,codes:[],error:''});},
- async loadHistory(reset){if(this.data.historyLoading)return;this.setData({historyLoading:true});const page=reset?1:this.data.historyPage+1;try{const res=await api.inventory.stocktakes({page,pageSize:20});const history=reset?res.list:this.data.history.concat(res.list);this.setData({history,historyPage:page,historyMore:history.length<res.total});}catch(e){this.setData({error:e.message});}finally{this.setData({historyLoading:false});}},
- onMore(){return this.loadHistory(false);},
- async onRecord(e){if(this.data.saving||this.data.pending)return;this.setData({saving:true,error:''});try{this.setData({result:await api.inventory.stocktakeDetail(e.currentTarget.dataset.id)});}catch(err){this.setData({error:err.message});}finally{this.setData({saving:false});}},
- onUnit(e){this.$go(ROUTES.INVENTORY_DETAIL,{id:e.currentTarget.dataset.id});}
+  requireStaff: true, permission: PERM.STOCKTAKE,
+  data: {
+    sessions: [], categories: [], category: '', model: null, note: '',
+    statuses: STOCKTAKE_DEFAULT_SCOPE.slice(),
+    choices: STOCKTAKE_SCOPE.map(value => ({ value, label: UNIT_STATUS[value].label, checked: STOCKTAKE_DEFAULT_SCOPE.includes(value) })),
+    pending: null, saving: false, error: '',
+    history: [], historyPage: 0, historyMore: true, historyLoading: false
+  },
+  onLoad(query) {
+    if (query.modelId) this.setData({ model: { id: query.modelId, name: decodeURIComponent(query.modelName || '所选型号') } });
+    this.offModel = events.on('stocktake:model-selected', m => { const p = getCurrentPages(); if (p[p.length - 2] === this && !this.locked()) this.setData({ model: { id: m.id, name: m.name }, category: '' }); });
+    return this.load();
+  },
+  onShow() { if (this.loaded) return this.refresh(); },
+  onUnload() { if (this.offModel) this.offModel(); },
+  onPullDownRefresh() { return this.refresh().finally(() => wx.stopPullDownRefresh()); },
+  locked() { return this.data.saving || !!this.data.pending; },
+  async load() {
+    try { const res = await api.template.categories(); this.setData({ categories: res.list }); } catch (e) { this.setData({ error: e.message }); }
+    await this.refresh();
+    this.loaded = true;
+  },
+  async refresh() {
+    try { const res = await api.inventory.stocktakeSessions({ status: 'open', page: 1, pageSize: 50 }); this.setData({ sessions: res.list.map(s => ({ ...s, timeText: date(s.createdAt) })) }); } catch (e) { this.setData({ error: e.message }); }
+    return this.loadHistory(true);
+  },
+  onCategory(e) { if (!this.locked()) this.setData({ category: e.currentTarget.dataset.value, model: null }); },
+  onChooseModel() { if (!this.locked()) this.$go(ROUTES.TEMPLATES, { select: '1', from: 'stocktake' }); },
+  onClearModel() { if (!this.locked()) this.setData({ model: null }); },
+  onStatuses(e) { if (!this.locked()) this.setData({ statuses: e.detail.value, choices: this.data.choices.map(c => ({ ...c, checked: e.detail.value.includes(c.value) })) }); },
+  onNote(e) { if (!this.locked()) this.setData({ note: e.detail.value }); },
+  onStart() {
+    if (this.locked()) return;
+    if (!this.data.statuses.length) return this.$toast('请至少选择一种库存状态');
+    const pending = { requestKey: 'stocktake_' + Date.now() + '_' + ++sequence + '_' + Math.random().toString(36).slice(2), statuses: this.data.statuses.slice(), note: this.data.note.trim() };
+    if (this.data.model) pending.modelId = this.data.model.id;
+    else if (this.data.category) pending.category = this.data.category;
+    this.setData({ pending });
+    return this.send();
+  },
+  /** 开单结果未知时保留同一提交标识原样重试，避免重复开单 */
+  async send() {
+    if (this.data.saving || !this.data.pending) return;
+    this.setData({ saving: true, error: '' });
+    try {
+      const session = await api.inventory.startStocktake(this.data.pending);
+      this.setData({ pending: null, note: '' });
+      this.$go(ROUTES.STOCKTAKE_RUN, { id: session.id });
+    } catch (e) {
+      this.setData({ error: e.message });
+      if (Number(e.code) >= 400 && Number(e.code) < 500) this.setData({ pending: null });
+    } finally { this.setData({ saving: false }); }
+  },
+  onSession(e) { this.$go(ROUTES.STOCKTAKE_RUN, { id: e.currentTarget.dataset.id }); },
+  onRecord(e) { this.$go(ROUTES.STOCKTAKE_RESULT, { id: e.currentTarget.dataset.id }); },
+  async loadHistory(reset) {
+    if (this.data.historyLoading) return;
+    this.setData({ historyLoading: true });
+    const page = reset ? 1 : this.data.historyPage + 1;
+    try {
+      const res = await api.inventory.stocktakes({ page, pageSize: 20 });
+      const rows = res.list.map(r => ({ ...r, timeText: date(r.time) })), history = reset ? rows : this.data.history.concat(rows);
+      this.setData({ history, historyPage: page, historyMore: history.length < res.total });
+    } catch (e) { this.setData({ error: e.message }); } finally { this.setData({ historyLoading: false }); }
+  },
+  onMore() { return this.loadHistory(false); }
 });

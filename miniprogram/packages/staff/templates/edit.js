@@ -8,7 +8,7 @@ createPage({
   data: {
     id: '', detail: null, dirty: false, publishing: false, error: '',
     editor: null, editIndex: -1, types: TYPES,
-    typeLabels: ['文本', '数字', '单选', '开关', '关联文本', '图片'],
+    typeLabels: ['文本', '数字', '单选', '开关', '关联文本', '图片', '日期'],
     visibilityOptions: [{ value: 'customer', label: '顾客' }, { value: 'peer', label: '同行' }, { value: 'internal', label: '仅内部' }],
     history: [], historyPage: 0, historyMore: true, historyLoading: false, historyVisible: false
   },

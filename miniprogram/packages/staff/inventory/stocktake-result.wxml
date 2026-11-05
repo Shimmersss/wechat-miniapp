@@ -1,0 +1,34 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<view class="container">
+ <view wx:if="{{error}}" class="notice">{{error}}</view>
+ <block wx:if="{{result}}">
+  <view class="card">
+   <view class="h2">{{result.scope.modelName || result.scope.categoryLabel || '全部型号'}}</view>
+   <view class="tiny muted mt-sm">{{result.startedText ? result.startedText + ' 开始 · ' : ''}}{{result.timeText}} 由 {{result.operator}} 结束{{result.scope.note ? ' · ' + result.scope.note : ''}}</view>
+   <view class="stats mt">
+    <view class="stat"><view class="stat-value">{{result.expectedCount}}</view><view class="tiny muted">应盘</view></view>
+    <view class="stat"><view class="stat-value">{{result.matched}}</view><view class="tiny muted">盘到</view></view>
+    <view class="stat"><view class="stat-value {{result.missingCount ? 'red' : ''}}">{{result.missingCount}}</view><view class="tiny muted">缺失</view></view>
+    <view class="stat"><view class="stat-value {{result.extraCount ? 'red' : ''}}">{{result.extraCount}}</view><view class="tiny muted">异常</view></view>
+   </view>
+   <view class="tiny muted mt">盘点只记录差异和处理结论，不会改动库存状态。计数为结束时的结果，设备资料按当前权限显示。</view>
+   <view wx:if="{{result.openCount}}" class="notice mt">还有 {{result.openCount}} 项差异未处理</view>
+  </view>
+  <section-card wx:if="{{result.missing.length}}" title="缺失设备（应在店但没盘到）">
+   <view wx:for="{{result.missing}}" wx:key="id" class="list-item">
+    <view class="flex-1" data-id="{{item.id}}" bindtap="onUnit"><view class="small">{{item.name}} {{item.storage || ''}} {{item.color || ''}}</view><view class="tiny muted">{{item.imeiMasked}} · 当前{{f.label(statusMap, item.status)}}</view><view wx:if="{{item.resolution}}" class="tiny muted">{{item.resolution.operator}} {{item.resolution.timeText}}：{{item.resolution.note}}</view></view>
+    <view class="actions"><status-pill wx:if="{{item.resolution}}" text="{{item.resolution.label}}" tone="{{f.tone(resolutionMap, item.resolution.resolution)}}" /><button class="btn btn-line btn-sm" data-type="unit" data-target="{{item.id}}" bindtap="onResolve" disabled="{{busy}}">处理</button></view>
+   </view>
+  </section-card>
+  <section-card wx:if="{{result.extra.length}}" title="异常编号（不在应盘清单）">
+   <view wx:for="{{result.extra}}" wx:key="key" class="list-item">
+    <view class="flex-1" data-id="{{item.unitId}}" bindtap="onUnit"><view class="small">{{item.code}}</view><view class="tiny red">{{item.reason}}</view><view wx:if="{{item.resolution}}" class="tiny muted">{{item.resolution.operator}} {{item.resolution.timeText}}：{{item.resolution.note}}</view></view>
+    <view class="actions"><status-pill wx:if="{{item.resolution}}" text="{{item.resolution.label}}" tone="{{f.tone(resolutionMap, item.resolution.resolution)}}" /><button class="btn btn-line btn-sm" data-type="extra" data-target="{{item.key}}" bindtap="onResolve" disabled="{{busy}}">处理</button></view>
+   </view>
+  </section-card>
+  <section-card wx:if="{{result.changed.length}}" title="盘点期间离店（不算缺失）">
+   <view wx:for="{{result.changed}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onUnit"><view class="flex-1"><view class="small">{{item.name}}</view><view class="tiny muted">{{item.imeiMasked}} · {{f.label(statusMap, item.from)}} → {{f.label(statusMap, item.to)}}</view></view><text>›</text></view>
+  </section-card>
+  <view wx:if="{{!result.missing.length && !result.extra.length && !result.changed.length}}" class="notice">账实相符，没有差异。</view>
+ </block>
+</view>

@@ -2,3 +2,4 @@
 .chip { flex-shrink: 0; }
 .catalog-mask { position: fixed; inset: 0; z-index: 100; background: var(--c-navy); display: flex; align-items: flex-end; }
 .catalog-panel { box-sizing: border-box; max-height: 88vh; padding: 32rpx 32rpx 64rpx; background: var(--c-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.spec-text { height: 160rpx; }

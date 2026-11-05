@@ -30,7 +30,7 @@ module.exports = function inboundPage(batch) {
       if (this.data.submitting || this.data.fieldUploads || this.data.uploading) return this.$toast('请等待上传完成');
       const revision = this.modelRevision = (this.modelRevision || 0) + 1;
       this.setData({ modelLoading: true });
-      return Promise.all([api.template.detail(model.templateId), api.inbound.costPresets({ modelId: model.id })]).then(([template, costPresets]) => {
+      return Promise.all([api.template.modelForm(model.id), api.inbound.costPresets({ modelId: model.id })]).then(([template, costPresets]) => {
         if (this.destroyed || revision !== this.modelRevision) return;
         const rows = this.data.rows.map(r => ({ ...r, attributes: {} }));
         this.setData({ model, templateFields: template.fields, parameterFields: template.fields.filter(f => f.type !== 'image'), imageFields: template.fields.filter(f => f.type === 'image'), rowFields: template.fields.filter(f => ['battery', 'grade', 'refurbishment'].includes(f.key)), templateVersion: template.version, attributes: initialValues(template.fields), descriptionPresets: template.descriptionPresets || { peer: [], customer: [] }, costPresets, rows });

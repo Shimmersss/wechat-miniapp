@@ -25,6 +25,8 @@ test('代理 mock：申请审核、加价上限、代理分享价、链接下单
  role='agent';let mine=(await call('/agent/commissions')).data;assert.equal(mine.summary.pendingAmount,200);
  role='finance';const e=(await call('/admin/agent-earnings','GET',{status:'pending'})).data.list.find(x=>x.orderId===req.id);
  assert.equal((await call('/admin/agent-earnings/settle','POST',{ids:[e.id],reason:'微信转账'})).data.settled,1);
+ role='boss';assert.equal((await call('/sales-orders/'+sale.id+'/refund','POST',{requestKey:key(),kind:'adjustment',reason:'划痕补差价',items:[{itemId:sale.items[0].id,amount:'100'}]})).code,0);
+ role='agent';mine=(await call('/agent/commissions')).data;assert.equal(mine.summary.pendingAmount,0);assert.equal(mine.summary.settledAmount,200);assert.ok(!mine.list.some(e=>e.kind==='reversal'));// 已定：差价退款不扣减代理收益
  role='boss';await call('/sales-orders/'+sale.id+'/refund','POST',{requestKey:key(),kind:'return',reason:'退货',items:[{itemId:sale.items[0].id}]});
  role='agent';mine=(await call('/agent/commissions')).data;assert.equal(mine.summary.settledAmount,200);assert.equal(mine.summary.pendingAmount,-200);
  role='sales';let src=(await call('/sales-orders/'+sale.id)).data.agentSources;assert.equal(src.length,1);assert.equal(src[0].sharePrice,unit.agentBase+200);assert.ok(src[0].agentName);assert.equal(src[0].markup,undefined);assert.equal(src[0].earnings,undefined);

@@ -20,10 +20,24 @@ module.exports = {
   recheckForm: (id) => http.get(`/units/${id}/recheck-form`),
   /** { result:'pass'|'fail', reason, inspectionVersion, attributes:仅改动字段 } → 最新员工单机视图；型号/串码/货源不可修改 */
   recheck: (id, data) => http.post(`/units/${id}/recheck`, data, { loading: true }),
-  /** { requestKey?, scannedImeis:string[], statuses?:string[], modelId? } → { id, expectedCount, scannedCount, matched, missing, extra }；保存审计结果，不改库存 */
-  stocktake: (data) => http.post('/stocktakes', data, { loading: true }),
-  /** { page?, pageSize? } → 盘点历史分页（范围、时间、操作人、差异数量） */
+  /** { status?: 'open'|'closed'|'cancelled', page?, pageSize? } → 盘点单分页（范围、开单人、应盘/已盘/异常数），默认进行中 */
+  stocktakeSessions: (params) => http.get('/stocktake-sessions', params),
+  /** { requestKey, statuses?, modelId? | category?, note? } → 盘点单；开单时按范围快照应盘清单，只能选店内状态 */
+  startStocktake: (data) => http.post('/stocktake-sessions', data, { loading: true }),
+  /** sessionId → { id, status, scope, note, operator, createdAt, expectedCount, scannedCount, extraCount, stocktakeId } */
+  stocktakeSession: (id) => http.get(`/stocktake-sessions/${id}`),
+  /** sessionId, { state: 'pending'|'scanned'|'extra', page?, pageSize? } → 待盘/已盘设备（员工单机视图 + scannedAt/scanner）或异常编号 */
+  stocktakeUnits: (id, params) => http.get(`/stocktake-sessions/${id}/units`, params),
+  /** sessionId, { code } → { result:'matched'|'duplicate'|'out_of_scope'|'unknown', message, code, unit, expectedCount, scannedCount, extraCount }；重复扫码不重复计数 */
+  scanStocktake: (id, data) => http.post(`/stocktake-sessions/${id}/scans`, data),
+  /** sessionId → 盘点结果详情（同 stocktakeDetail）；重复提交返回同一结果，不改库存 */
+  closeStocktake: (id) => http.post(`/stocktake-sessions/${id}/close`, {}, { loading: true }),
+  /** sessionId, { reason } → 已作废的盘点单 */
+  cancelStocktake: (id, data) => http.post(`/stocktake-sessions/${id}/cancel`, data, { loading: true }),
+  /** { page?, pageSize? } → 已结束盘点分页（范围、时间、操作人、缺失/异常/期间变动数、openCount 未处理差异数） */
   stocktakes: (params) => http.get('/stocktakes', params),
-  /** id → 原盘点结果与差异设备的当前授权视图，原计数不随库存变化 */
-  stocktakeDetail: (id) => http.get(`/stocktakes/${id}`)
+  /** id → 盘点结果：missing（带 resolution）、changed（盘点期间离店）、extra（带 key 与 resolution）；原计数不随库存变化 */
+  stocktakeDetail: (id) => http.get(`/stocktakes/${id}`),
+  /** id, { type:'unit'|'extra', target: unitId|extra.key, resolution: unit→pending/found/lost，extra→pending/handled, note } → 最新盘点结果；只追加处理记录，不改库存 */
+  resolveStocktake: (id, data) => http.post(`/stocktakes/${id}/resolutions`, data, { loading: true })
 };

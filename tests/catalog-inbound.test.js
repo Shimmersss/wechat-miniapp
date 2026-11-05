@@ -13,25 +13,36 @@ function imei(serial) {
 }
 function values(fields) {
   const result = {};
-  fields.forEach(f => { result[f.key] = f.type === 'select' ? f.options[0] : f.type === 'image' ? [{ fileId: 'fixture', url: 'fixture-private' }] : f.type === 'number' ? 96 : '测试输入'; });
+  fields.forEach(f => { result[f.key] = f.type === 'select' ? f.options[0] : f.type === 'image' ? [{ fileId: 'fixture', url: 'fixture-private' }] : f.type === 'number' ? 96 : f.type === 'date' ? '2027-01-01' : '测试输入'; });
   return result;
 }
-test('分类与型号管理、独立模板、核验映射、整批原子性', async () => {
+test('分类与型号管理、分类模板与型号规格、核验映射、整批原子性', async () => {
   for (const r of ['customer', 'agent', 'sales', 'warehouse']) {
     role = r;
     assert.equal((await call('/catalog/categories', 'POST', { label: '不能创建' })).code, 403);
     assert.equal((await call('/models', 'POST', {})).code, 403);
   }
   role = 'boss';
-  const category = (await call('/catalog/categories', 'POST', { label: '游戏掌机' })).data;
-  assert.ok(category.value);
+  assert.equal((await call('/catalog/categories', 'POST', { label: '游戏掌机' })).code, 400);
+  const category = (await call('/catalog/categories', 'POST', { label: '游戏掌机', copyTemplateId: 't_phone' })).data;
+  assert.ok(category.value); assert.ok(category.templateId); assert.notEqual(category.templateId, 't_phone');
   assert.equal((await call('/catalog/categories', 'POST', { label: ' 游戏掌机 ' })).code, 400);
   assert.equal((await call(`/catalog/categories/${category.value}`, 'PUT', { label: '掌机' })).code, 0);
-  const payload = { category: category.value, name: '测试设备', brandLabel: '测试品牌', series: '测试系列', copyTemplateId: 't_phone', tacs: [] };
+  const payload = { category: category.value, name: '测试设备', brandLabel: '测试品牌', series: '测试系列', tacs: [] };
   const model = (await call('/models', 'POST', payload)).data;
-  assert.ok(model.id); assert.notEqual(model.templateId, 't_phone');
-  const template = (await call(`/templates/${model.templateId}`)).data;
-  assert.equal(template.version, 1);
+  assert.ok(model.id); assert.equal(model.templateId, category.templateId);
+  // 同分类的型号共用分类模板，只各自配置容量和颜色
+  assert.equal((await call('/models', 'POST', { ...payload, name: '重复规格', specs: { color: ['红', '红'] } })).code, 400);
+  const colored = (await call('/models', 'POST', { ...payload, name: '带颜色型号', specs: { storage: ['1T'], color: ['冰川白'] } })).data;
+  assert.equal(colored.templateId, category.templateId);
+  const coloredForm = (await call(`/models/${colored.id}/form`)).data;
+  assert.deepEqual(coloredForm.fields.find(f => f.key === 'color').options, ['冰川白']);
+  assert.deepEqual(coloredForm.fields.find(f => f.key === 'storage').options, ['1T']);
+  assert.ok(coloredForm.fields.some(f => f.key === 'idLock') && !coloredForm.fields.find(f => f.key === 'grade').options.includes('未激活'));
+  const template = (await call(`/models/${model.id}/form`)).data;
+  assert.equal(template.version, 1); assert.equal(template.id, category.templateId);
+  const colorBad = await call('/inbound/units', 'POST', { modelId: colored.id, templateVersion: coloredForm.version, condition: 'new', attributes: { ...values(coloredForm.fields), color: '黑色' }, cost: '1', retail: '2', wholesale: '2', agentBase: '2', imei1: imei(9), flags: { showInShop: false, sharePeer: false, shareAgent: false } });
+  assert.equal(colorBad.code, 400);
   assert.equal((await call('/models', 'POST', payload)).code, 400);
   let result = await call('/inbound/identify-model', 'POST', { imei: imei(1) });
   assert.equal(result.data.matched, false);
@@ -54,7 +65,8 @@ test('分类与型号管理、独立模板、核验映射、整批原子性', as
   role = 'boss';
   const common = { modelId: model.id, templateVersion: template.version, condition: 'new', attributes: values(template.fields), cost: '200', retail: '300', wholesale: '260', agentBase: '260', flags: { showInShop: true, sharePeer: true, shareAgent: false } };
   const before = db.units.length;
-  const wrongModel = await call('/inbound/units', 'POST', { ...common, modelId: 'm_17pm', templateVersion: db.templates.find(t => t.id === 't_phone').version, imei1: imei(4) });
+  const otherForm = (await call('/models/m_17pm/form')).data;
+  const wrongModel = await call('/inbound/units', 'POST', { ...common, modelId: 'm_17pm', templateVersion: otherForm.version, attributes: values(otherForm.fields), imei1: imei(4) });
   assert.equal(wrongModel.code, 400); assert.match(wrongModel.message, /型号不一致/);
   const badPresets = await call(`/templates/${model.templateId}/versions`, 'POST', { baseVersion: template.version, fields: template.fields, descriptionPresets: { peer: ['有效'], customer: Array(7).fill('过多描述') } });
   assert.equal(badPresets.code, 400);

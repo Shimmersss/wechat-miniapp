@@ -14,3 +14,7 @@
 .photo image { width: 120rpx; height: 120rpx; border-radius: var(--radius-sm); }
 .photo button { margin: 0; font-size: 22rpx; line-height: 44rpx; padding: 0; color: var(--c-muted); background: var(--c-surface-soft); }
 .upload { margin: 12rpx 0 0; font-size: 26rpx; line-height: 60rpx; padding: 0 24rpx; color: var(--c-ink); background: var(--c-surface-soft); border-radius: var(--radius-sm); }
+.date-row { display: flex; align-items: center; gap: 16rpx; }
+.flex-picker { flex: 1; }
+.value-input.placeholder { color: var(--c-muted); line-height: 60rpx; }
+.clear { font-size: 24rpx; color: var(--c-muted); line-height: 60rpx; }

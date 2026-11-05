@@ -11,12 +11,38 @@ test('库存 mock：改价版本、分享状态、复检与盘点历史真正保
  r=await call('/units/'+id+'/recheck-form');assert.equal(r.code,0);
  assert.equal((await call('/units/'+id+'/recheck','POST',{inspectionVersion:r.data.inspectionVersion,result:'pass',reason:'验证复检',attributes:{refurbishment:'整备完成'}})).code,0);
  assert.equal((await call('/units/'+id)).data.status,'in_stock');assert.equal((await call('/units/'+id+'/ledger')).data.total,1);
- const request={requestKey:'fixture-stocktake',scannedImeis:[id,'UNKNOWN'],statuses:['in_stock']};
- r=await call('/stocktakes','POST',request);assert.equal(r.code,0);assert.equal(r.data.matched,1);assert.equal(r.data.extra.length,1);const recordId=r.data.id;
- assert.equal((await call('/stocktakes','POST',request)).data.id,recordId);assert.equal((await call('/stocktakes')).data.total,1);
- assert.equal((await call('/stocktakes/'+recordId)).data.id,recordId);
- assert.equal((await call('/stocktakes','POST',{...request,scannedImeis:['OTHER']})).code,409);
- role='sales';assert.equal((await call('/units/'+id+'/price','PATCH',{retail:1})).code,403);assert.equal((await call('/stocktakes')).code,403);
+ // 盘点单：开单快照、边扫边勾、重复不计、范围外与未知记异常、结束生成结果、差异处理只追加不改库存
+ const other=db.units.find(u=>u.status==='in_stock'&&u.id!==id),sold=db.units.find(u=>u.status==='sold');
+ const start={requestKey:'fixture-stocktake',statuses:['in_stock']};
+ r=await call('/stocktake-sessions','POST',start);assert.equal(r.code,0);const sid=r.data.id,expected=r.data.expectedCount;assert.ok(expected>=2);
+ assert.equal((await call('/stocktake-sessions','POST',start)).data.id,sid);
+ assert.equal((await call('/stocktake-sessions','POST',{...start,note:'不同内容'})).code,409);
+ assert.equal((await call('/stocktake-sessions','POST',{requestKey:'bad-scope',statuses:['sold']})).code,400);
+ r=await call('/stocktake-sessions/'+sid+'/scans','POST',{code:id});assert.equal(r.data.result,'matched');assert.equal(r.data.scannedCount,1);
+ if(unit.imei1){r=await call('/stocktake-sessions/'+sid+'/scans','POST',{code:unit.imei1});assert.equal(r.data.result,'duplicate');assert.equal(r.data.scannedCount,1);}
+ r=await call('/stocktake-sessions/'+sid+'/scans','POST',{code:'UNKNOWN'});assert.equal(r.data.result,'unknown');
+ if(sold){r=await call('/stocktake-sessions/'+sid+'/scans','POST',{code:sold.id});assert.equal(r.data.result,'out_of_scope');assert.match(r.data.message,/已售/);}
+ assert.equal((await call('/stocktake-sessions/'+sid+'/scans','POST',{code:'UNKNOWN'})).data.result,'duplicate');
+ assert.equal((await call('/stocktake-sessions/'+sid+'/units',"GET",{state:'pending'})).data.total,expected-1);
+ assert.equal((await call('/stocktake-sessions/'+sid+'/units',"GET",{state:'extra'})).data.total,sold?2:1);
+ other.status='loaned_out';// 盘点期间离店
+ r=await call('/stocktake-sessions/'+sid+'/close','POST');assert.equal(r.code,0);const recordId=r.data.id;
+ other.status='in_stock';
+ assert.equal(r.data.matched,1);assert.ok(r.data.changed.some(c=>c.id===other.id&&c.to==='loaned_out'));assert.ok(!r.data.missingIds.includes(other.id));
+ assert.equal(r.data.missing.length,expected-2);assert.equal(r.data.openCount,r.data.missing.length+r.data.extra.length);
+ assert.equal((await call('/stocktake-sessions/'+sid+'/close','POST')).data.id,recordId);
+ assert.equal((await call('/stocktake-sessions/'+sid+'/scans','POST',{code:other.id})).code,409);
+ assert.equal((await call('/stocktakes')).data.total,1);assert.equal((await call('/stocktakes/'+recordId)).data.id,recordId);
+ if(r.data.missing.length){const target=r.data.missing[0].id,before=db.units.find(u=>u.id===target).status;
+  assert.equal((await call('/stocktakes/'+recordId+'/resolutions','POST',{type:'unit',target,resolution:'handled',note:'x'})).code,400);
+  r=await call('/stocktakes/'+recordId+'/resolutions','POST',{type:'unit',target,resolution:'lost',note:'确认丢失'});assert.equal(r.data.missing[0].resolution.resolution,'lost');
+  assert.equal(db.units.find(u=>u.id===target).status,before);}
+ r=await call('/stocktakes/'+recordId+'/resolutions','POST',{type:'extra',target:'0',resolution:'handled',note:'已核实'});assert.equal(r.data.extra[0].resolution.label,'已处理');
+ const cancelled=(await call('/stocktake-sessions','POST',{requestKey:'fixture-cancel'})).data;
+ assert.equal((await call('/stocktake-sessions/'+cancelled.id+'/cancel','POST',{reason:''})).code,400);
+ assert.equal((await call('/stocktake-sessions/'+cancelled.id+'/cancel','POST',{reason:'范围选错'})).data.status,'cancelled');
+ assert.equal((await call('/stocktake-sessions',"GET",{status:'open'})).data.total,0);
+ role='sales';assert.equal((await call('/units/'+id+'/price','PATCH',{retail:1})).code,403);assert.equal((await call('/stocktake-sessions')).code,403);assert.equal((await call('/stocktakes')).code,403);
  role='customer';assert.equal((await call('/units/'+id)).code,403);
 });
 test('库存 mock：在库汇总只算 in_stock，成本总额按角色裁剪',async()=>{

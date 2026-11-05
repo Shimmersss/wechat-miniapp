@@ -6,6 +6,7 @@ const immutable = new Set([
   "unit_inspections",
   "acceptance_batches",
   "stocktakes",
+  "stocktake_resolutions",
   "visit_events",
   "report_exports",
   "share_items",
