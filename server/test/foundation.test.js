@@ -160,7 +160,7 @@ test("持久化、并发发布和审计/版本只追加权限", async () => {
   let r = await api(
     "POST",
     "/catalog/categories",
-    { label: prefix },
+    { label: prefix, copyTemplateId: "t_phone" },
     bossToken,
   );
   assert.equal(r.status, 200);

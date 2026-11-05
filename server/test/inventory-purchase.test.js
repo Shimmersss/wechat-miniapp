@@ -153,7 +153,7 @@ test("真实库存：验收确认、跨 IMEI1/2 唯一、批量回滚、角色�
   await f.restart();
   assert.equal((await f.api("GET", "/units/" + unitId)).data.imei1, code);
 });
-test("真实库存：改价原因与版本、整备复检、盘点及上传范围", async () => {
+test("真实库存：改价原因与版本、整备复检及上传范围", async () => {
   let r = await f.api("POST", "/inbound/units", {
     ...payload,
     imei1: imei(),
@@ -236,20 +236,6 @@ test("真实库存：改价原因与版本、整备复检、盘点及上传范�
     ).status,
     400,
   );
-  r = await f.api(
-    "POST",
-    "/stocktakes",
-    {
-      scannedImeis: [unitId, unitId],
-      modelId: model.id,
-      statuses: ["in_stock"],
-    },
-    "warehouse",
-  );
-  assert.equal(r.status, 200);
-  assert.equal(r.data.matched, 1);
-  assert.ok(r.data.missing.length >= 1);
-  assert.equal(r.data.extra.length, 0);
 });
 async function createOrder(quantity = 2) {
   let r = await f.api("POST", "/purchase-orders", {

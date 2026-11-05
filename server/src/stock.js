@@ -3,7 +3,10 @@ const { one } = require("./db");
 const { PERM, SENSITIVE_FIELDS, fail, id, text, json } = require("./core");
 const { cents, money, flags } = require("./validation");
 const { isImei } = require("../../miniprogram/utils/validate");
-const { validateValues } = require("../../miniprogram/utils/template");
+const {
+  validateValues,
+  applySpecs,
+} = require("../../miniprogram/utils/template");
 const { signFile } = require("./files");
 const { lockFiles, fileLinks } = require("./repair-files");
 /** 敏感字段可见性：按登录时加载的角色配置（roles.visible_fields）判断，未配置时用默认表 */
@@ -82,7 +85,8 @@ function stockService({ config }) {
     if (!model) fail(400, "型号不存在");
     if (input.templateVersion !== model.current_version)
       fail(409, "模板已更新，请重新加载型号");
-    const fields = json(model.fields),
+    // 分类模板字段叠加型号的容量、颜色选项；快照保存叠加后的字段
+    const fields = applySpecs(json(model.fields), json(model.specs)),
       attributes = {};
     if (
       !input.attributes ||

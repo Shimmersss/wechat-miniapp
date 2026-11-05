@@ -1,0 +1,5 @@
+.stats { display: flex; }
+.stat { flex: 1; text-align: center; }
+.stat-value { font-size: 40rpx; font-weight: 700; }
+.red { color: var(--c-red); }
+.actions { display: flex; align-items: center; gap: 12rpx; margin-left: 16rpx; flex-shrink: 0; }

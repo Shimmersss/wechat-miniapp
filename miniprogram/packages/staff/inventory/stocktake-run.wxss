@@ -1,0 +1,7 @@
+.progress { height: 12rpx; border-radius: var(--radius-pill); background: var(--c-surface-soft); overflow: hidden; }
+.progress-bar { height: 100%; background: var(--c-green); border-radius: var(--radius-pill); }
+.strong { font-weight: 700; }
+.red { color: var(--c-red); }
+.feedback { border-radius: var(--radius); padding: 20rpx 24rpx; background: var(--c-surface-soft); color: var(--c-ink-2); }
+.feedback.green { background: var(--c-green-soft); color: var(--c-green); }
+.feedback.red { background: var(--c-red-soft); color: var(--c-red); }

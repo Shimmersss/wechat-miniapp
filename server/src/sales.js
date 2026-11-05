@@ -618,7 +618,7 @@ module.exports = async function (
           );
           await agents.onReturn(db, r, o.id, p.i.unit_id, target);
         }
-        // TODO(confirm): 差价退款（adjustment）是否同步扣减代理收益，框架文档仅规定退款冲回。
+        // 已定（2026-11-04）：差价退款（adjustment）不扣减代理收益，仅整机退货冲回。
       }
       await audit(db, r, "销售退款", o.id, {
         after: {

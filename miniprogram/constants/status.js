@@ -131,8 +131,19 @@ const CONDITION_TYPE = [
   { value: 'new', label: '新机' }
 ];
 
-/** 顾客端搜索的成色选项，与默认手机模板“成色”下拉一致；按模板公开取值精确匹配 */
-const GRADE_OPTIONS = ['准新', '未激活', '99新', '98新', '97新', '95新', '9成新'];
+/** 顾客端搜索的成色选项，与默认手机模板“成色”下拉一致；按模板公开取值精确匹配。“未激活”已拆到独立的激活状态字段 */
+const GRADE_OPTIONS = ['准新', '99新', '98新', '97新', '95新', '9成新'];
+
+/** 盘点只能选实物在店内的状态；在途、已售、出借中、已归还的设备不应出现在应盘清单 */
+const STOCKTAKE_SCOPE = ['pending_acceptance', 'accepting', 'abnormal', 'in_stock', 'locked', 'recheck', 'repairing', 'borrowed_in'];
+const STOCKTAKE_DEFAULT_SCOPE = ['in_stock', 'locked', 'recheck', 'repairing', 'borrowed_in'];
+/** 盘点差异处理：只记录结论，不改库存状态 */
+const STOCKTAKE_RESOLUTION = {
+  pending: { label: '待查', tone: 'orange' },
+  found: { label: '已找到', tone: 'green' },
+  lost: { label: '确认丢失', tone: 'red' },
+  handled: { label: '已处理', tone: 'green' }
+};
 
 module.exports = {
   UNIT_STATUS,
@@ -151,5 +162,8 @@ module.exports = {
   PRICE_TYPE,
   DEVICE_CATEGORY,
   CONDITION_TYPE,
-  GRADE_OPTIONS
+  GRADE_OPTIONS,
+  STOCKTAKE_SCOPE,
+  STOCKTAKE_DEFAULT_SCOPE,
+  STOCKTAKE_RESOLUTION
 };

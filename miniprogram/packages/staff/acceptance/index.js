@@ -46,7 +46,7 @@ createPage({
     if (!line) return this.$toast('采购明细不存在');
     this.setData({ loading: true, error: '' });
     try {
-      const template = await api.template.detail(line.templateId);
+      const template = await api.template.modelForm(line.modelId);
       if (this.destroyed) return;
       const fields = template.fields.filter(f => f.key !== 'supplier' && f.key !== 'receipt');
       const receipt = { key: 'receipt', label: '收货凭证（内部）', type: 'image', visibility: ['internal'], required: true, filterable: false };

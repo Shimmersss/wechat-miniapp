@@ -389,6 +389,22 @@ test("加价上限、代理分享价快照、链接下单锁库、按分享价�
   assert.equal(overview.settledAmount, 200);
 
   const itemId = sale.items[0].id;
+  // 已定：差价退款不扣减代理收益
+  r = await f.api("POST", "/sales-orders/" + sale.id + "/refund", {
+    requestKey: key(),
+    kind: "adjustment",
+    reason: "划痕补差价",
+    items: [{ itemId, amount: "100" }],
+  });
+  assert.equal(r.status, 200, r.message);
+  overview = (await agent("GET", "/agent/overview")).data;
+  assert.equal(overview.pendingAmount, 0);
+  assert.equal(overview.settledAmount, 200);
+  assert.ok(
+    !(await agent("GET", "/agent/commissions")).data.list.some(
+      (e) => e.kind === "reversal",
+    ),
+  );
   r = await f.api("POST", "/sales-orders/" + sale.id + "/refund", {
     requestKey: key(),
     kind: "return",

@@ -108,10 +108,17 @@ const templates = [
 ];
 
 templates.forEach(t => t.fields.forEach(f => { f.filterable = f.type === 'select'; }));
+// 每个分类一套模板：手机用 t_phone，其他演示分类复制一份手机模板
+categories.forEach(c => {
+  if (c.value === 'phone') { c.templateId = 't_phone'; return; }
+  const copy = JSON.parse(JSON.stringify(templates[0]));
+  templates.push({ ...copy, id: 't_' + c.value, category: c.value, name: c.label + '通用模板', version: 1 });
+  c.templateId = 't_' + c.value;
+});
 const models = [
-  { id: 'm_17pm', category: 'phone', brand: 'apple', brandLabel: '苹果', series: 'iPhone 17 系列', name: 'iPhone 17 Pro Max', templateId: 't_phone' },
-  { id: 'm_17p', category: 'phone', brand: 'apple', brandLabel: '苹果', series: 'iPhone 17 系列', name: 'iPhone 17 Pro', templateId: 't_phone' },
-  { id: 'm_16p', category: 'phone', brand: 'apple', brandLabel: '苹果', series: 'iPhone 16 系列', name: 'iPhone 16 Pro', templateId: 't_phone' }
+  { id: 'm_17pm', category: 'phone', brand: 'apple', brandLabel: '苹果', series: 'iPhone 17 系列', name: 'iPhone 17 Pro Max', templateId: 't_phone', specs: { storage: ['256G', '512G', '1T', '2T'], color: ['星宇橙色', '深蓝色', '银色'] } },
+  { id: 'm_17p', category: 'phone', brand: 'apple', brandLabel: '苹果', series: 'iPhone 17 系列', name: 'iPhone 17 Pro', templateId: 't_phone', specs: { storage: ['256G', '512G', '1T'], color: ['星宇橙色', '深蓝色', '银色'] } },
+  { id: 'm_16p', category: 'phone', brand: 'apple', brandLabel: '苹果', series: 'iPhone 16 系列', name: 'iPhone 16 Pro', templateId: 't_phone', specs: { storage: ['128G', '256G', '512G', '1T'], color: ['沙漠色钛金属', '原色钛金属', '白色钛金属', '黑色钛金属'] } }
 ];
 
 const staff = [
