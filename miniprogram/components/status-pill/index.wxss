@@ -1,7 +1,20 @@
-.pill { display: inline-block; padding: 4rpx 16rpx; border-radius: 999rpx; font-size: 22rpx; font-weight: 500; line-height: 1.6; white-space: nowrap; }
-.green { background: var(--c-green-soft); color: var(--c-green); }
-.orange { background: var(--c-orange-soft); color: var(--c-orange); }
-.red { background: var(--c-red-soft); color: var(--c-red); }
-.blue { background: var(--c-blue-soft); color: var(--c-blue); }
-.gold { background: var(--c-surface-soft); color: var(--c-ink); }
-.gray { background: var(--c-surface-soft); color: var(--c-muted); }
+/* 状态标签：默认是一块凹槽（次要信息）。只有真正需要你注意的状态才给颜色。
+ * 遵循方案 G「颜色极度克制」：大多数状态是灰的，红色只留给失败/预警，绿色只留给正常完成。 */
+.pill {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  background: var(--c-well);
+  color: var(--c-ink-2);
+  box-shadow: inset 0 1rpx 2rpx var(--c-hair);
+}
+.green { background: var(--c-green-soft); color: var(--c-green); box-shadow: none; }
+.red { background: var(--c-red-soft); color: var(--c-red); box-shadow: none; }
+.orange { background: var(--c-orange-soft); color: var(--c-orange); box-shadow: none; }
+.blue { background: var(--c-blue-soft); color: var(--c-blue); box-shadow: none; }
+.gold { background: var(--c-well); color: var(--c-ink); }
+.gray { background: var(--c-well); color: var(--c-muted); }

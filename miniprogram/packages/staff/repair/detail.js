@@ -162,6 +162,9 @@ createPage({
         api.repair.options(),
       ]);
       if (this.destroyed || revision !== this._load) return;
+      // 路由缺少 id 时 mock/后端可能返回 null（而不是 404），这里必须挡一道，
+      // 否则 apply() 里读 detail.status 会抛 "reading 'status' of null"。
+      if (!detail) throw new Error("维修单不存在或已被删除");
       this.apply(detail);
       this.setData({
         options,

@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "backgroundColor": "#F2F3F5",
+  "usingComponents": {
+    "frost-nav": "../components/frost-nav/index",
+    "frost-tabbar": "../components/frost-tabbar/index"
+  }
+}

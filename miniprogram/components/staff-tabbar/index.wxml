@@ -1,3 +1,6 @@
+<!-- 占位必须参与正常文档流：放在 fixed 的 .tabbar 之前作为兄弟节点，
+     这样它撑开的高度就在页面内容末尾，内容才不会被悬浮底栏压住。 -->
+<view class="ph"></view>
 <view class="tabbar">
   <view wx:for="{{tabs}}" wx:key="key" class="tab {{active === item.key ? 'active' : ''}}" data-key="{{item.key}}" data-url="{{item.url}}" bindtap="onTap">
     <image class="icon" src="/assets/icons/{{item.icon}}{{active === item.key ? '' : '-gray'}}.svg" />

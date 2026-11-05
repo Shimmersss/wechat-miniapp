@@ -1,5 +1,11 @@
-.price { font-weight: 600; letter-spacing: -0.5rpx; font-variant-numeric: tabular-nums; }
-.yen { font-size: 0.7em; margin-right: 2rpx; }
-.sm { font-size: 28rpx; } .md { font-size: 34rpx; } .lg { font-size: 56rpx; }
-.price.price { color: var(--c-ink); } .ink { color: var(--c-ink); } .gold { color: var(--c-gold); } .white { color: #fff; }
-.none { font-size: 24rpx; color: var(--c-muted); }
+/* 价格：全站唯一的红色用法之一。金额必须是视觉焦点，所以字重比正文高一档。 */
+.price { font-weight: 800; letter-spacing: -0.6rpx; font-variant-numeric: tabular-nums; color: var(--c-price); }
+.yen { font-size: 0.72em; margin-right: 2rpx; font-weight: 700; }
+.sm { font-size: 28rpx; }
+.md { font-size: 34rpx; }
+.lg { font-size: 56rpx; letter-spacing: -1.6rpx; }
+.ink { color: var(--c-ink); }
+.gold { color: var(--c-ink); }     /* 历史名：墨色，不再是金色 */
+.white { color: #fff; }
+/* 无权限 / 隐藏：降级成小一号的灰字，不能和真数字抢注意力 */
+.none { font-size: 24rpx; color: var(--c-muted); font-weight: 500; }

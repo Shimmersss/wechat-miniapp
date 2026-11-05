@@ -1,0 +1,12 @@
+.bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: var(--frost-glass-flat);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: 0 1rpx 0 var(--frost-hair);
+}
+.title {
+  position: absolute; left: 36rpx; display: flex; align-items: center;
+  font-size: 36rpx; font-weight: 800; letter-spacing: -0.6rpx; color: var(--frost-ink);
+  white-space: nowrap; overflow: hidden;
+}

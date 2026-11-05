@@ -1,0 +1,81 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<frost-nav title="库存数据" />
+<view class="frost">
+  <view class="aura"></view>
+  <view class="body">
+    <view wx:if="{{error}}" class="notice card">{{error}}</view>
+
+    <view class="hero glass">
+      <view class="hero-top">
+        <view class="pill" bindtap="togglePrivacy">
+          <image class="pill-icon" src="/packages/demo/icons/eye-soft.svg" />{{privacy ? '显示数据' : '数据隐藏'}}
+        </view>
+        <view class="more" bindtap="onNavigate" data-url="{{routes.INVENTORY}}">详情 ›</view>
+      </view>
+      <view class="metrics">
+        <view class="m" bindtap="onNavigate" data-url="{{routes.INVENTORY}}">
+          <view class="mv num">{{stats ? stats.inventory.inStock : '--'}}</view>
+          <view class="ml">在库数</view>
+        </view>
+        <view class="m">
+          <view class="mv num">{{stats ? stats.inventory.todayInbound : '--'}}</view>
+          <view class="ml">今日入库</view>
+        </view>
+        <view class="m">
+          <view wx:if="{{stats && stats.inventory.stockCost !== undefined}}" class="mv num">{{f.maskMoney(stats.inventory.stockCost, privacy)}}</view>
+          <view wx:else class="mv mv-none">无权限查看</view>
+          <view class="ml">在库成本</view>
+        </view>
+      </view>
+      <view wx:if="{{quick.length}}" class="quick-grid">
+        <view wx:for="{{quick}}" wx:key="text" class="quick" bindtap="onNavigate" data-url="{{item.url}}">
+          <view class="quick-ico"><image class="quick-img" src="/packages/demo/icons/{{item.icon}}.svg" /></view>
+          <text class="ellipsis">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{stats}}" class="alert mt" bindtap="onNavigate" data-url="{{routes.INVENTORY}}">
+      <view class="alert-ico"><image class="alert-img" src="/packages/demo/icons/bell.svg" /></view>
+      <view class="alert-text">
+        <view class="alert-title">待复检 {{stats.inventory.recheck}} 台 · 待验收 {{stats.inventory.pendingAcceptance}} 台</view>
+        <view class="alert-sub">在途 {{stats.inventory.inTransit}} · 维修中 {{stats.inventory.repairing}} · 出借 {{stats.inventory.loanedOut}}</view>
+      </view>
+      <image class="chev" src="/packages/demo/icons/chev-gray.svg" />
+    </view>
+
+    <view wx:if="{{stats}}" class="card sales mt">
+      <view class="sales-head">
+        <text class="sales-title">今日销售</text>
+        <view class="tag" bindtap="togglePrivacy"><image class="tag-icon" src="/packages/demo/icons/eye-soft.svg" />{{privacy ? '显示' : '隐藏'}}</view>
+        <text class="more" bindtap="onNavigate" data-url="{{routes.STATS}}">详情 ›</text>
+      </view>
+      <view class="cells">
+        <view class="cell well"><view class="cv num">{{stats.sales.count}}</view><view class="cl">销售（台）</view></view>
+        <view class="cell well"><view class="cv num red">{{f.maskMoney(stats.sales.amount, privacy)}}</view><view class="cl">销售净额（元）</view></view>
+        <view class="cell well">
+          <view wx:if="{{stats.sales.profit !== undefined}}" class="cv num">{{f.maskMoney(stats.sales.profit, privacy)}}</view>
+          <view wx:else class="cv cv-none">无权限查看</view>
+          <view class="cl">毛利（元）</view>
+        </view>
+        <view class="cell well">
+          <view wx:if="{{stats.sales.margin !== undefined}}" class="cv num">{{f.percent(stats.sales.margin, privacy)}}</view>
+          <view wx:else class="cv cv-none">无权限查看</view>
+          <view class="cl">毛利率</view>
+        </view>
+        <view class="cell well"><view class="cv num">{{f.maskMoney(stats.sales.avgOrder, privacy)}}</view><view class="cl">客单价（元）</view></view>
+        <view class="cell well"><view class="cv num">{{f.maskMoney(stats.sales.refundAmount, privacy)}}</view><view class="cl">退款（元）</view></view>
+      </view>
+      <view class="rate">
+        <text>动销率 {{f.percent(stats.sales.sellThrough, privacy)}}</text>
+        <text class="rate-sub">今日销量 / 0 点在库数</text>
+      </view>
+      <view class="btns">
+        <view wx:if="{{canSell}}" class="btn primary" bindtap="onNavigate" data-url="{{routes.POS}}">扫码收银</view>
+        <view class="btn" bindtap="onNavigate" data-url="{{routes.SALES_LIST}}">销售记录</view>
+        <view class="btn" bindtap="onNavigate" data-url="{{routes.INVENTORY}}">库存列表</view>
+      </view>
+    </view>
+  </view>
+  <frost-tabbar active="stock" />
+</view>

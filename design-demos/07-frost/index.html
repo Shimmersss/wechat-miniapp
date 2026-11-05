@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<script src="../icons-v2.js"></script>
+<title>方案 G · 雾白层叠</title>
+<style>
+/* 方案 G · 雾白层叠
+   全白色系，不靠颜色分层，靠「虚化 + 投影深度 + 凹凸」分层：
+   L0 页面底   #F2F3F5 冷灰，顶部一团极淡的彩色光晕（模糊 40px），只给玻璃层提供可被虚化的内容
+   L1 玻璃层   顶栏、浮动底栏、每页一个主卡：半透明白 + backdrop-filter 虚化，最高一层，投影最深
+   L2 白卡     纯白 + 两段投影（贴边细影 + 远处柔影），中间层
+   L3 凹槽     卡内图标底、按钮、小数据格：比白卡更灰，内凹，最低一层
+   颜色只剩近黑墨色 + 价格红 + 少量功能色（图标自带） */
+:root {
+  --ink:#111215; --ink2:#4B4F57; --ink3:#9599A1; --ink4:#BFC2C8;
+  --bg:#F2F3F5; --card:#FFFFFF; --well:#F3F4F6;
+  --red:#E5484D; --green:#1F9D55; --blue:#2F6BEB;
+  --e1:0 1px 2px rgba(17,18,21,.04), 0 6px 18px rgba(17,18,21,.05);
+  --e2:0 1px 2px rgba(17,18,21,.05), 0 12px 32px rgba(17,18,21,.08);
+  --e3:0 2px 6px rgba(17,18,21,.06), 0 22px 48px rgba(17,18,21,.14);
+  --glass:linear-gradient(160deg,rgba(255,255,255,.82) 0%,rgba(255,255,255,.5) 55%,rgba(255,255,255,.62) 100%);
+  --blur:blur(22px) saturate(180%);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+body {
+  font-family:"Noto Sans CJK SC","PingFang SC",-apple-system,sans-serif;
+  background:#E6E8EC; color:var(--ink);
+  padding:52px 40px 90px; display:flex; flex-wrap:wrap; gap:44px; justify-content:center;
+  align-items:flex-start;
+}
+.head { width:100%; max-width:1700px; margin-bottom:4px; }
+.head h1 { font-size:27px; font-weight:800; letter-spacing:-.6px; }
+.head p { font-size:14px; color:#6E727A; margin-top:8px; line-height:1.7; max-width:1120px; }
+.head .tags { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.head .tag { font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:999px;
+  background:rgba(255,255,255,.8); color:#3A3D44; box-shadow:var(--e1); }
+
+.wrap { position:relative; }
+.frame {
+  width:390px; height:940px; border-radius:46px; overflow:hidden; position:relative;
+  background:var(--bg); box-shadow:0 30px 70px rgba(30,34,44,.18), 0 0 0 1px rgba(0,0,0,.05);
+}
+
+/* L0：光晕，被上面的玻璃层虚化后只剩一点暖冷色温 */
+.aura { position:absolute; left:-40px; right:-40px; top:-60px; height:520px; pointer-events:none;
+  background:
+    radial-gradient(210px 180px at 16% 26%, #C9DBFF, transparent 70%),
+    radial-gradient(230px 190px at 88% 20%, #FFD6C2, transparent 70%),
+    radial-gradient(250px 210px at 56% 60%, #E3D6FF, transparent 72%);
+  filter:blur(34px); opacity:1;
+  -webkit-mask-image:linear-gradient(#000 55%, transparent); mask-image:linear-gradient(#000 55%, transparent); }
+
+/* L1：毛玻璃顶栏 */
+.topbar { position:absolute; top:0; left:0; right:0; z-index:5;
+  background:rgba(246,247,249,.62); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:0 1px 0 rgba(17,18,21,.05); }
+.statusbar { height:46px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px 0 28px; font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+.statusbar .right { display:flex; gap:6px; align-items:center; }
+.statusbar svg { display:block; }
+.navbar { padding:2px 18px 10px; display:flex; align-items:center; justify-content:space-between; }
+.navbar .title { font-size:18px; font-weight:800; letter-spacing:-.4px; }
+.capsule { display:flex; align-items:center; border-radius:999px; padding:5px 13px;
+  background:rgba(255,255,255,.75); box-shadow:inset 0 0 0 1px rgba(17,18,21,.07); }
+.capsule .dot { width:5.5px; height:5.5px; border-radius:50%; background:var(--ink); }
+.capsule .sep { width:1px; height:13px; background:rgba(17,18,21,.12); margin:0 11px; }
+.capsule .ring { width:11px; height:11px; border:1.6px solid var(--ink); border-radius:50%; position:relative; }
+.capsule .ring::after { content:""; position:absolute; inset:2.5px; border-radius:50%; background:var(--ink); }
+
+.scroll { position:absolute; inset:0; overflow-y:auto; padding:96px 0 112px; z-index:1;
+  scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* L1：悬浮毛玻璃底栏，内容从它下面滑过 */
+.tabbar { position:absolute; left:14px; right:14px; bottom:20px; height:64px; z-index:6;
+  display:flex; align-items:center; border-radius:26px;
+  background:rgba(255,255,255,.66); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--e3), inset 0 0 0 1px rgba(255,255,255,.8); }
+.tabbar .t { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-size:10.5px; color:var(--ink3); font-weight:600; }
+.tabbar .t svg { width:21px; height:21px; stroke:currentColor; fill:none; stroke-width:1.9;
+  stroke-linecap:round; stroke-linejoin:round; }
+.tabbar .t.on { color:var(--ink); font-weight:800; }
+.tabbar .t.on svg { stroke-width:2.2; }
+.tabbar .mid { flex:1; display:flex; justify-content:center; }
+.plus { width:46px; height:46px; border-radius:16px; background:var(--ink); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 18px rgba(17,18,21,.3), inset 0 1px 0 rgba(255,255,255,.18); }
+.plus svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round; }
+.home-ind { position:absolute; bottom:-13px; left:50%; transform:translateX(-50%);
+  width:114px; height:4.5px; border-radius:3px; background:var(--ink); opacity:.85; }
+
+/* 通用：玻璃主卡 / 白卡 / 凹槽 */
+.glass { background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--e3), inset 0 0 0 1px rgba(255,255,255,.85); }
+
+/* ============ 我的 ============ */
+.profile { margin:6px 14px 0; border-radius:26px; padding:18px 18px 16px; position:relative; }
+.profile { background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--e3), inset 0 0 0 1px rgba(255,255,255,.85); }
+.profile::after { display:none; }
+.profile .row { display:flex; align-items:center; gap:14px; }
+.avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(160deg,#F8DCC6,#E8BE9E);
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 3px #fff, 0 6px 14px rgba(17,18,21,.12); }
+.avatar svg { width:28px; height:28px; stroke:#8A6A4E; fill:none; stroke-width:1.8; }
+.profile .pname { font-size:17px; font-weight:800; letter-spacing:-.3px; }
+.profile .phone { font-size:12.5px; color:var(--ink3); margin-top:5px; font-variant-numeric:tabular-nums; }
+.logout { margin-left:auto; width:36px; height:36px; border-radius:12px; background:rgba(255,255,255,.8);
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--e1); }
+.logout svg { width:18px; height:18px; stroke:var(--ink2); fill:none; stroke-width:1.9; }
+.quota { display:flex; margin-top:16px; padding:12px 4px 10px; border-radius:18px;
+  background:rgba(255,255,255,.55); box-shadow:inset 0 0 0 1px rgba(255,255,255,.9); }
+.quota .q { flex:1; text-align:center; }
+.quota .qi { display:flex; justify-content:center; }
+.quota .qbox { width:36px; height:36px; border-radius:12px; background:#fff;
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--e1); }
+.quota .qbox svg { width:23px; height:23px; }
+.quota .qt { font-size:11.5px; color:var(--ink); margin-top:7px; font-weight:700; }
+.quota .qd { font-size:10px; color:var(--ink3); margin-top:2px; }
+
+.sheet { padding-top:4px; }
+.grp { margin:12px 14px 0; background:var(--card); border-radius:22px; padding:2px 6px 4px; box-shadow:var(--e1); }
+.sec-title { padding:16px 12px 6px; font-size:15px; font-weight:800; letter-spacing:-.2px; }
+.tile-grid { display:flex; flex-wrap:wrap; }
+.tile { width:25%; padding:8px 2px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+.tile.three { width:33.33%; }
+.tile-grid.five .tile { width:20%; }
+.ico, .bi { width:50px; height:50px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  background:var(--well); box-shadow:inset 0 1px 2px rgba(17,18,21,.04); }
+.ico svg { width:32px; height:32px; }
+.tile .lbl { font-size:12px; color:var(--ink2); font-weight:600; line-height:1.28; }
+.solid-gold svg { stroke:#2B2200 !important; }
+
+/* ============ 首页 ============ */
+.brandbar { display:flex; align-items:center; gap:11px; padding:6px 18px 14px; }
+.brandbar .blogo { width:40px; height:40px; border-radius:13px; background:var(--ink); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800;
+  box-shadow:0 6px 14px rgba(17,18,21,.22); }
+.brandbar .bname { font-size:16px; font-weight:800; letter-spacing:-.3px; }
+.brandbar .bslo { font-size:11px; color:var(--ink3); margin-top:3px; }
+.search { margin:0 14px 14px; height:46px; border-radius:16px; display:flex; align-items:center;
+  padding:0 16px; gap:9px; font-size:13px; color:var(--ink3);
+  background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--e2), inset 0 0 0 1px rgba(255,255,255,.9); }
+.search svg { width:16px; height:16px; stroke:var(--ink3); fill:none; stroke-width:2.1; stroke-linecap:round; }
+.chips { display:flex; gap:8px; padding:0 14px 16px; }
+.chip { padding:7px 16px; border-radius:999px; font-size:12.5px; font-weight:700; color:var(--ink2);
+  background:#fff; box-shadow:var(--e1); }
+.chip.on { background:var(--ink); color:#fff; box-shadow:0 6px 14px rgba(17,18,21,.22); }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 14px; }
+.pcard { background:var(--card); border-radius:22px; overflow:hidden; box-shadow:var(--e2); }
+.pcard .pimg { height:160px; margin:6px 6px 0; border-radius:17px; position:relative; overflow:hidden;
+  background:linear-gradient(170deg,#F6F7F9,#EBEDF0); }
+.pcard .pimg img { width:100%; height:100%; object-fit:cover; mix-blend-mode:multiply; }
+.pcard .pbadge { position:absolute; top:8px; left:8px; z-index:2; font-size:10px; font-weight:800;
+  padding:3px 9px; border-radius:999px; color:var(--ink);
+  background:rgba(255,255,255,.7); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+.pcard .pbody { padding:10px 12px 13px; }
+.pcard .pn { font-size:13.5px; font-weight:800; letter-spacing:-.2px; }
+.pcard .ps { font-size:11px; color:var(--ink3); margin-top:4px; }
+.pcard .pf { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+.pcard .pp { font-size:17px; font-weight:800; color:var(--red); letter-spacing:-.5px; }
+.pcard .pp i { font-size:11px; font-style:normal; }
+.pcard .pg { font-size:10px; color:var(--ink2); background:var(--well); border-radius:6px; padding:3px 7px; }
+.endnote { text-align:center; font-size:11px; color:var(--ink4); padding:18px 0 10px; }
+
+/* ============ 库存 ============ */
+.stock-card { margin:6px 14px 0; border-radius:26px; padding:17px 16px 16px;
+  background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--e3), inset 0 0 0 1px rgba(255,255,255,.85); }
+.stock-card .top { display:flex; align-items:center; justify-content:space-between; }
+.pill { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700;
+  border-radius:999px; padding:4px 10px; color:var(--ink2); background:rgba(255,255,255,.75);
+  box-shadow:inset 0 0 0 1px rgba(17,18,21,.06); }
+.pill svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2; }
+.more { font-size:11.5px; color:var(--ink3); font-weight:700; }
+.metrics { display:flex; margin-top:16px; }
+.metrics .m { flex:1; }
+.metrics .m + .m { padding-left:14px; border-left:1px solid rgba(17,18,21,.07); }
+.metrics .mv { font-size:30px; font-weight:800; letter-spacing:-1.2px; line-height:1.05; font-variant-numeric:tabular-nums; }
+.metrics .mv small { font-size:14px; color:var(--ink4); margin-left:2px; }
+.metrics .ml { font-size:11px; color:var(--ink3); margin-top:6px; }
+.quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:18px; }
+.quick { display:flex; align-items:center; gap:7px; padding:9px 8px; border-radius:14px;
+  background:#fff; box-shadow:var(--e1); font-size:11.5px; font-weight:700; color:var(--ink); }
+.quick .qi { width:26px; height:26px; border-radius:9px; background:var(--well);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.quick svg { width:18px; height:18px; flex-shrink:0; }
+.alert { margin:14px 14px 0; border-radius:18px; padding:13px 15px; display:flex; align-items:center; gap:11px;
+  background:#fff; box-shadow:var(--e1), inset 3px 0 0 var(--red); }
+.alert .ai { width:32px; height:32px; border-radius:11px; background:#FFF0EF; display:flex;
+  align-items:center; justify-content:center; flex-shrink:0; }
+.alert .ai svg { width:15px; height:15px; stroke:var(--red); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.alert .at { font-size:13.5px; font-weight:800; }
+.alert .as { font-size:11px; color:var(--ink3); margin-top:3px; }
+.alert .ac { margin-left:auto; }
+.alert .ac svg { width:15px; height:15px; stroke:var(--ink4); fill:none; stroke-width:2.2; }
+.stat-card { margin:12px 14px 0; background:var(--card); border-radius:22px; padding:16px; box-shadow:var(--e1); }
+.stat-head { display:flex; align-items:center; gap:8px; }
+.stat-head .st { font-size:16px; font-weight:800; letter-spacing:-.2px; }
+.stat-head .sbtn { display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:var(--ink2);
+  background:var(--well); border-radius:999px; padding:3px 9px; font-weight:700; }
+.stat-head .sbtn svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2; }
+.stat-head .smore { margin-left:auto; font-size:11.5px; color:var(--ink3); font-weight:700; }
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.stat-grid > div { background:var(--well); border-radius:14px; padding:12px 13px; }
+.stat-grid .sv { font-size:22px; font-weight:800; letter-spacing:-.8px; font-variant-numeric:tabular-nums; line-height:1.1; }
+.stat-grid > div:nth-child(2) .sv { color:var(--red); }
+.stat-grid .sl { font-size:10.5px; color:var(--ink3); margin-top:5px; }
+.rate { margin-top:14px; font-size:12.5px; color:var(--ink); font-weight:800; display:flex; justify-content:space-between; align-items:baseline; }
+.rate b { font-weight:800; }
+.rate small { font-size:10.5px; color:var(--ink3); font-weight:500; }
+.btn-row { display:flex; gap:8px; margin-top:12px; }
+.btn-row .b { flex:1; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center;
+  font-size:12.5px; font-weight:700; background:#fff; color:var(--ink);
+  box-shadow:inset 0 0 0 1px rgba(17,18,21,.08); }
+.btn-row .b.solo { flex:0 0 31%; }
+.btn-wide { margin:14px 14px 4px; height:44px; border-radius:15px; background:#fff; box-shadow:var(--e1);
+  display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+
+/* ============ 经营 ============ */
+.topstat { display:flex; margin:6px 14px 0; gap:8px; }
+.topstat .ts { flex:1; border-radius:20px; padding:14px 13px;
+  background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--e2), inset 0 0 0 1px rgba(255,255,255,.85); }
+.topstat .tl { font-size:10.5px; color:var(--ink3); font-weight:600; }
+.topstat .tv { font-size:22px; font-weight:800; letter-spacing:-.8px; margin-top:6px; font-variant-numeric:tabular-nums; }
+.topstat .tv.red { color:var(--red); }
+.topstat .tv.green { color:var(--green); }
+.biz-card { margin:12px 14px 0 !important; background:var(--card); border-radius:22px; padding:16px 14px 14px; box-shadow:var(--e1); }
+.biz-head { display:flex; align-items:baseline; gap:8px; padding:0 2px; }
+.biz-head .bt { font-size:15.5px; font-weight:800; letter-spacing:-.2px; }
+.biz-head .bd { font-size:11px; color:var(--ink3); margin-left:auto; background:var(--well);
+  padding:2px 9px; border-radius:999px; font-weight:600; }
+.biz-grid { display:flex; margin-top:14px; }
+.biz-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.biz-item .bi svg { width:30px; height:30px; }
+.biz-item .bl { font-size:12px; color:var(--ink2); font-weight:600; }
+
+body.embed { padding:0; gap:0; background:transparent; display:block; }
+body.embed .head { display:none; }
+body.embed .frame { margin:0; box-shadow:none; }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>方案 G · 雾白层叠</h1>
+  <p>全白色系。白色方案最容易糊成一片，所以这版不靠颜色分层，而是靠<b>虚化</b>和<b>高度</b>：顶部一团极淡的彩色光晕作为最底层，顶栏、悬浮底栏和每页唯一的主卡是半透明毛玻璃，压在光晕和内容上方；普通内容是纯白卡，只有一层很浅的投影；卡里的图标底、数据格、按钮做成比白卡更灰的凹槽。越重要越"高"、越透，越次要越"低"、越实。</p>
+  <div class="tags">
+    <span class="tag">四层：光晕 → 白卡 → 毛玻璃 / 凹槽</span>
+    <span class="tag">墨色 #111215 唯一主色</span>
+    <span class="tag">价格红 #E5484D</span>
+    <span class="tag">悬浮玻璃底栏</span>
+    <span class="tag">backdrop-filter 需真机验证</span>
+  </div>
+</div>
+
+<!-- ============ 我的 ============ -->
+<div class="wrap"><div class="frame mine"><div class="aura"></div>
+  <div class="topbar">
+  <div class="statusbar">
+    <span>17:22</span>
+    <span class="right">
+      <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#i-signal"/></svg>
+      <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#i-wifi"/></svg>
+      <svg width="25" height="11" fill="currentColor"><use href="#i-batt"/></svg>
+    </span>
+  </div>
+  <div class="navbar">
+    <div class="title">我的</div>
+    <div class="capsule"><span class="dot"></span><span class="sep"></span><span class="ring"></span></div>
+  </div>
+  </div>
+
+  <div class="scroll">
+    <div class="profile">
+      <div class="row">
+        <div class="avatar"><svg stroke-linecap="round"><use href="#i-user"/></svg></div>
+        <div>
+          <div class="pname">夏目数码 · 老板</div>
+          <div class="phone">176 6979 3761</div>
+        </div>
+        <div class="logout"><svg stroke-linecap="round" stroke-linejoin="round"><use href="#i-logout"/></svg></div>
+      </div>
+      <div class="quota">
+        <div class="q"><div class="qi"><div class="qbox"><svg stroke-linecap="round" stroke-linejoin="round"><use href="#i-stock"/></svg></div></div><div class="qt">库存管理</div><div class="qd">长期有效</div></div>
+        <div class="q"><div class="qi"><div class="qbox"><svg stroke-linecap="round" stroke-linejoin="round"><use href="#i-wrench"/></svg></div></div><div class="qt">维修业务</div><div class="qd">长期有效</div></div>
+        <div class="q"><div class="qi"><div class="qbox"><svg stroke-linecap="round" stroke-linejoin="round"><use href="#i-parts"/></svg></div></div><div class="qt">配件业务</div><div class="qd">长期有效</div></div>
+        <div class="q"><div class="qi"><div class="qbox"><svg stroke-linecap="round" stroke-linejoin="round"><use href="#i-link"/></svg></div></div><div class="qt">代理分销</div><div class="qd">长期有效</div></div>
+      </div>
+    </div>
+
+    <div class="sheet">
+    <div class="grp">
+    <div class="sec-title">店铺管理</div>
+    <div class="tile-grid five">
+      <div class="tile"><div class="ico g-violet"><svg><use href="#i-shop"/></svg></div><div class="lbl">小店设置</div></div>
+      <div class="tile"><div class="ico g-orange"><svg><use href="#i-users"/></svg></div><div class="lbl">员工管理</div></div>
+      <div class="tile"><div class="ico g-gold"><svg><use href="#i-store"/></svg></div><div class="lbl">门店管理</div></div>
+      <div class="tile"><div class="ico g-blue"><svg><use href="#i-phone"/></svg></div><div class="lbl">更换手机</div></div>
+      <div class="tile"><div class="ico g-blue"><svg><use href="#i-share"/></svg></div><div class="lbl">分享管理</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sec-title">财务管理</div>
+    <div class="tile-grid">
+      <div class="tile three"><div class="ico g-red"><svg><use href="#i-wallet"/></svg></div><div class="lbl">虚拟账户</div></div>
+      <div class="tile three"><div class="ico g-teal"><svg><use href="#i-swap"/></svg></div><div class="lbl">代理结算</div></div>
+      <div class="tile three"><div class="ico g-blue"><svg><use href="#i-tab-ledger"/></svg></div><div class="lbl">对账统计</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sec-title">同售管理</div>
+    <div class="tile-grid">
+      <div class="tile three"><div class="ico solid-gold"><svg><use href="#i-tag"/></svg></div><div class="lbl">闲鱼管理</div></div>
+      <div class="tile three"><div class="ico solid-dark"><svg><use href="#i-swap"/></svg></div><div class="lbl">转转管理</div></div>
+      <div class="tile three"><div class="ico g-blue"><svg><use href="#i-transfer"/></svg></div><div class="lbl">同行货盘</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sec-title">渠道管理</div>
+    <div class="tile-grid">
+      <div class="tile three"><div class="ico g-blue"><svg><use href="#i-inbound"/></svg></div><div class="lbl">进货渠道</div></div>
+      <div class="tile three"><div class="ico g-blue"><svg><use href="#i-users"/></svg></div><div class="lbl">销售渠道</div></div>
+      <div class="tile three"><div class="ico g-teal"><svg><use href="#i-cloud"/></svg></div><div class="lbl">上下游货盘</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sec-title">打印管理</div>
+    <div class="tile-grid">
+      <div class="tile three"><div class="ico g-blue"><svg><use href="#i-printer"/></svg></div><div class="lbl">打印机</div></div>
+      <div class="tile three"><div class="ico g-gold"><svg><use href="#i-template"/></svg></div><div class="lbl">打印模板</div></div>
+    </div>
+    </div>
+
+    <div class="grp">
+    <div class="sec-title">其他功能</div>
+    <div class="tile-grid">
+      <div class="tile"><div class="ico g-blue"><svg><use href="#i-settings"/></svg></div><div class="lbl">偏好设置</div></div>
+      <div class="tile"><div class="ico g-green"><svg><use href="#i-bulb"/></svg></div><div class="lbl">使用教程</div></div>
+      <div class="tile"><div class="ico g-blue"><svg><use href="#i-headset"/></svg></div><div class="lbl">联系客服</div></div>
+      <div class="tile"><div class="ico g-gold"><svg><use href="#i-diamond"/></svg></div><div class="lbl">成为代理</div></div>
+      <div class="tile"><div class="ico g-teal"><svg><use href="#i-mail"/></svg></div><div class="lbl">需求反馈</div></div>
+      <div class="tile"><div class="ico g-gray"><svg><use href="#i-link"/></svg></div><div class="lbl">邀请好友</div></div>
+      <div class="tile"><div class="ico g-green"><svg><use href="#i-broom"/></svg></div><div class="lbl">抹除数据</div></div>
+    </div>
+    </div>
+    <div style="height:22px"></div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="t"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="t"><svg><use href="#i-tab-ledger"/></svg>经营</div>
+    <div class="mid"><div class="plus"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="t"><svg><use href="#i-tab-grid"/></svg>库存</div>
+    <div class="t on"><svg><use href="#i-tab-my"/></svg>我的</div>
+    <div class="home-ind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 首页 ============ -->
+<div class="wrap"><div class="frame home"><div class="aura"></div>
+  <div class="topbar">
+  <div class="statusbar">
+    <span>17:22</span>
+    <span class="right">
+      <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#i-signal"/></svg>
+      <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#i-wifi"/></svg>
+      <svg width="25" height="11" fill="currentColor"><use href="#i-batt"/></svg>
+    </span>
+  </div>
+  <div class="navbar">
+    <div class="title">夏目数码</div>
+    <div class="capsule"><span class="dot"></span><span class="sep"></span><span class="ring"></span></div>
+  </div>
+  </div>
+
+  <div class="scroll">
+    <div class="brandbar">
+      <div class="blogo">夏</div>
+      <div>
+        <div class="bname">夏目数码</div>
+        <div class="bslo">让价格透明 · 让产品放心</div>
+      </div>
+    </div>
+
+    <div class="search"><svg stroke-linecap="round"><use href="#i-search"/></svg>搜索品牌 / 型号 / 内存</div>
+
+    <div class="chips">
+      <div class="chip on">全部</div>
+      <div class="chip">苹果</div>
+      <div class="chip">华为</div>
+      <div class="chip">三星</div>
+    </div>
+
+    <div class="grid2">
+      <div class="pcard">
+        <div class="pimg"><span class="pbadge">99 新</span><img src="../assets/phone-blue.png" alt=""></div>
+        <div class="pbody">
+          <div class="pn">iPhone 17 Pro</div>
+          <div class="ps">256G · 冰川蓝 · 电池 96%</div>
+          <div class="pf"><div class="pp"><i>¥</i>7,299</div><div class="pg">质保 90 天</div></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pimg"><span class="pbadge">准新</span><img src="../assets/phone-white.png" alt=""></div>
+        <div class="pbody">
+          <div class="pn">iPhone Air</div>
+          <div class="ps">128G · 云白色 · 电池 100%</div>
+          <div class="pf"><div class="pp"><i>¥</i>5,399</div><div class="pg">质保 90 天</div></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pimg"><span class="pbadge">99 新</span><img src="../assets/phone-blue.png" alt="" style="filter:hue-rotate(-38deg) saturate(.85)"></div>
+        <div class="pbody">
+          <div class="pn">iPhone 16 Pro</div>
+          <div class="ps">512G · 沙漠金 · 电池 92%</div>
+          <div class="pf"><div class="pp"><i>¥</i>6,899</div><div class="pg">质保 90 天</div></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pimg"><img src="../assets/phone-white.png" alt="" style="filter:hue-rotate(140deg) saturate(.7)"></div>
+        <div class="pbody">
+          <div class="pn">华为 Mate 60 Pro</div>
+          <div class="ps">256G · 雅川青 · 电池 95%</div>
+          <div class="pf"><div class="pp"><i>¥</i>4,599</div><div class="pg">质保 90 天</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="endnote">— 每台设备独立检测 · 公开机况 —</div>
+  </div>
+
+  <div class="tabbar">
+    <div class="t on"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="t"><svg><use href="#i-tab-ledger"/></svg>经营</div>
+    <div class="mid"><div class="plus"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="t"><svg><use href="#i-tab-grid"/></svg>库存</div>
+    <div class="t"><svg><use href="#i-tab-my"/></svg>我的</div>
+    <div class="home-ind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 库存数据 ============ -->
+<div class="wrap"><div class="frame stock"><div class="aura"></div>
+  <div class="topbar">
+  <div class="statusbar">
+    <span>17:22</span>
+    <span class="right">
+      <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#i-signal"/></svg>
+      <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#i-wifi"/></svg>
+      <svg width="25" height="11" fill="currentColor"><use href="#i-batt"/></svg>
+    </span>
+  </div>
+  <div class="navbar">
+    <div class="title">库存数据</div>
+    <div class="capsule"><span class="dot"></span><span class="sep"></span><span class="ring"></span></div>
+  </div>
+  </div>
+
+  <div class="scroll">
+    <div class="stock-card">
+      <div class="top">
+        <div class="pill"><svg><use href="#i-eye"/></svg>数据隐藏</div>
+        <div class="more">详情 ›</div>
+      </div>
+      <div class="metrics">
+        <div class="m"><div class="mv">3<small>›</small></div><div class="ml">在库数</div></div>
+        <div class="m"><div class="mv">0<small>›</small></div><div class="ml">今日入库</div></div>
+        <div class="m"><div class="mv">16,650</div><div class="ml">在库成本</div></div>
+      </div>
+      <div class="quick-grid">
+        <div class="quick"><div class="qi"><svg><use href="#i-inbound"/></svg></div>入库登记</div>
+        <div class="quick"><div class="qi"><svg><use href="#i-box"/></svg></div>库存盘点</div>
+        <div class="quick"><div class="qi"><svg><use href="#i-cloud"/></svg></div>共享云仓</div>
+        <div class="quick"><div class="qi"><svg><use href="#i-store"/></svg></div>门店调拨</div>
+        <div class="quick"><div class="qi"><svg><use href="#i-record"/></svg></div>入库记录</div>
+        <div class="quick"><svg><use href="#i-tab-ledger"/></svg>对账统计</div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <div class="ai"><svg><use href="#i-bell"/></svg></div>
+      <div>
+        <div class="at">商品预警</div>
+        <div class="as">库龄预警 2 台 · 补货预警 0 台</div>
+      </div>
+      <div class="ac"><svg><use href="#i-chev"/></svg></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="st">销售</div>
+        <div class="sbtn"><svg><use href="#i-eye"/></svg>数据隐藏</div>
+        <div class="smore">详情 ›</div>
+      </div>
+      <div class="stat-grid">
+        <div><div class="sv">0</div><div class="sl">今日销售（台）</div></div>
+        <div><div class="sv">0.00</div><div class="sl">今日销售额（元）</div></div>
+        <div><div class="sv">0.00</div><div class="sl">今日利润额（元）</div></div>
+        <div><div class="sv">0</div><div class="sl">均台毛利（元）</div></div>
+        <div><div class="sv">0%</div><div class="sl">毛利率</div></div>
+        <div><div class="sv">0</div><div class="sl">客单价（元）</div></div>
+      </div>
+      <div class="rate"><b>动销率 0%</b><small>实时销量 / 当日 0 点的在库数量</small></div>
+      <div class="btn-row">
+        <div class="b">手动出库</div>
+        <div class="b">扫码出库</div>
+        <div class="b">批量出库</div>
+      </div>
+      <div class="btn-row">
+        <div class="b solo">处理挂单</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-head">
+        <div class="st">财务对账</div>
+        <div class="smore">更多 ›</div>
+      </div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div><div class="sv">0 ›</div><div class="sl">退货入库（台）</div></div>
+        <div><div class="sv">0 ›</div><div class="sl">欠款客户</div></div>
+        <div><div class="sv">0 ›</div><div class="sl">我欠供应商</div></div>
+      </div>
+    </div>
+
+    <div class="btn-wide">更多数据</div>
+  </div>
+
+  <div class="tabbar">
+    <div class="t"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="t"><svg><use href="#i-tab-ledger"/></svg>经营</div>
+    <div class="mid"><div class="plus"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="t on"><svg><use href="#i-tab-grid"/></svg>库存</div>
+    <div class="t"><svg><use href="#i-tab-my"/></svg>我的</div>
+    <div class="home-ind"></div>
+  </div>
+</div></div>
+
+<!-- ============ 经营 ============ -->
+<div class="wrap"><div class="frame biz"><div class="aura"></div>
+  <div class="topbar">
+  <div class="statusbar">
+    <span>17:22</span>
+    <span class="right">
+      <svg width="17" height="11" fill="currentColor" stroke="none"><use href="#i-signal"/></svg>
+      <svg width="15" height="11" stroke="currentColor" fill="none" stroke-width="1.7"><use href="#i-wifi"/></svg>
+      <svg width="25" height="11" fill="currentColor"><use href="#i-batt"/></svg>
+    </span>
+  </div>
+  <div class="navbar">
+    <div class="title">经营</div>
+    <div class="capsule"><span class="dot"></span><span class="sep"></span><span class="ring"></span></div>
+  </div>
+  </div>
+
+  <div class="scroll">
+    <div class="topstat">
+      <div class="ts"><div class="tl">今日销售净额</div><div class="tv red">¥0</div></div>
+      <div class="ts"><div class="tl">今日毛利</div><div class="tv green">¥0</div></div>
+      <div class="ts"><div class="tl">在库</div><div class="tv">3 台</div></div>
+    </div>
+
+    <div class="biz-card" style="margin-top:12px">
+      <div class="biz-head"><span class="bt">维修业务</span><span class="bd">进行中 3 单</span></div>
+      <div class="biz-grid">
+        <div class="biz-item"><div class="bi g-orange"><svg><use href="#i-wrench"/></svg></div><div class="bl">维修开单</div></div>
+        <div class="biz-item"><div class="bi g-green"><svg><use href="#i-list"/></svg></div><div class="bl">维修记录</div></div>
+        <div class="biz-item"><div class="bi g-orange"><svg><use href="#i-trend"/></svg></div><div class="bl">维修统计</div></div>
+      </div>
+    </div>
+
+    <div class="biz-card">
+      <div class="biz-head"><span class="bt">配件业务</span><span class="bd">库存 128 件</span></div>
+      <div class="biz-grid">
+        <div class="biz-item"><div class="bi g-red"><svg><use href="#i-parts"/></svg></div><div class="bl">配件分类</div></div>
+        <div class="biz-item"><div class="bi g-blue"><svg><use href="#i-wrench"/></svg></div><div class="bl">配件管理</div></div>
+        <div class="biz-item"><div class="bi g-green"><svg><use href="#i-inbound"/></svg></div><div class="bl">配件入库</div></div>
+        <div class="biz-item"><div class="bi g-orange"><svg><use href="#i-inbound"/></svg></div><div class="bl">配件出库</div></div>
+      </div>
+    </div>
+
+    <div class="biz-card">
+      <div class="biz-head"><span class="bt">日常收付款</span><span class="bd">本月结余 ¥28,400</span></div>
+      <div class="biz-grid">
+        <div class="biz-item"><div class="bi g-orange"><svg><use href="#i-wallet"/></svg></div><div class="bl">日常记账</div></div>
+        <div class="biz-item"><div class="bi g-blue"><svg><use href="#i-tab-ledger"/></svg></div><div class="bl">记账明细</div></div>
+      </div>
+    </div>
+
+    <div class="biz-card">
+      <div class="biz-head"><span class="bt">综合</span><span class="bd">待办 4 项</span></div>
+      <div class="biz-grid">
+        <div class="biz-item"><div class="bi g-green"><svg><use href="#i-cart"/></svg></div><div class="bl">搜机客商城</div></div>
+        <div class="biz-item"><div class="bi g-blue"><svg><use href="#i-shield"/></svg></div><div class="bl">保修查询</div></div>
+        <div class="biz-item"><div class="bi g-green"><svg><use href="#i-order"/></svg></div><div class="bl">我的订单</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="t"><svg><use href="#i-tab-home"/></svg>首页</div>
+    <div class="t on"><svg><use href="#i-tab-ledger"/></svg>经营</div>
+    <div class="mid"><div class="plus"><svg><use href="#i-plus"/></svg></div></div>
+    <div class="t"><svg><use href="#i-tab-grid"/></svg>库存</div>
+    <div class="t"><svg><use href="#i-tab-my"/></svg>我的</div>
+    <div class="home-ind"></div>
+  </div>
+</div></div>
+
+
+
+<script>
+if (location.search.indexOf('embed=1') >= 0) {
+  document.body.classList.add('embed');
+  document.querySelectorAll('.wrap').forEach((w, i) => { if (i > 0) w.remove(); });
+}
+</script>
+</body>
+</html>

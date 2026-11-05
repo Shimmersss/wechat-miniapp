@@ -1,5 +1,21 @@
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; padding-bottom: env(safe-area-inset-bottom); background: rgba(255,255,255,.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 1rpx solid #E5E5EA; }
-.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4rpx; height: 100rpx; color: #8E8E93; }
+/* 顾客端底栏：原生 tabBar 机制，只能全宽，不能做成悬浮胶囊
+ * （胶囊需要额外占位，会和原生 tabBar 的预留空间打架）。
+ * 用毛玻璃 + 去边框，尽量和员工端的悬浮底栏保持同一套语言。 */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--c-glass-flat);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 -8rpx 32rpx rgba(17, 18, 21, 0.05);
+}
+.tab {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4rpx; height: 104rpx;
+  color: var(--c-muted);
+}
 .icon { width: 46rpx; height: 46rpx; }
-.text { font-size: 24rpx; line-height: 1.2; }
-.active { color: #1D1D1F; font-weight: 600; }
+.text { font-size: 22rpx; line-height: 1.2; font-weight: 600; }
+.active { color: var(--c-ink); }

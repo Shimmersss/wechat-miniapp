@@ -1,0 +1,46 @@
+<wxs module="f" src="../../../utils/filters.wxs" />
+<frost-nav title="{{brand.name}}" />
+<view class="frost">
+  <view class="aura"></view>
+  <view class="body">
+    <view class="brandbar">
+      <view class="logo">夏</view>
+      <view class="flex-1">
+        <view class="bname">{{brand.name}}</view>
+        <view class="bslo">{{brand.slogan}}</view>
+      </view>
+      <view class="stock-pill num">现货 {{todayStock}} 台</view>
+    </view>
+
+    <view class="search glass" bindtap="onSearch">
+      <image class="search-icon" src="/packages/demo/icons/search-gray.svg" />
+      <text>搜索品牌 / 型号 / 内存</text>
+    </view>
+
+    <scroll-view scroll-x enable-flex class="chips">
+      <view wx:for="{{brands}}" wx:key="value" class="chip {{activeBrand === item.value ? 'on' : ''}}" data-value="{{item.value}}" bindtap="onBrand">{{item.label}}</view>
+    </scroll-view>
+
+    <view wx:if="{{error}}" class="notice card">{{error}}</view>
+
+    <view class="grid2">
+      <view wx:for="{{units}}" wx:key="id" class="pcard" data-id="{{item.id}}" bindtap="onUnit">
+        <view class="pimg well">
+          <image wx:if="{{item.cover}}" class="pimg-in" src="{{item.cover}}" mode="aspectFill" lazy-load />
+          <text wx:if="{{item.grade}}" class="pbadge">{{item.grade}}</text>
+        </view>
+        <view class="pbody">
+          <view class="pn ellipsis">{{item.name}}</view>
+          <view class="ps ellipsis">{{item.storage}} · {{item.color}}<block wx:if="{{item.battery !== undefined}}"> · 电池 {{item.battery}}%</block></view>
+          <view class="pf">
+            <text class="pp num"><text class="yen">¥</text>{{f.money(item.price)}}</text>
+            <text wx:if="{{item.warrantyDays}}" class="pg">质保 {{item.warrantyDays}} 天</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{!loading && !units.length && !error}}" class="endnote">暂无在售现货</view>
+    <view class="endnote">— 每台设备独立检测 · 公开机况 —</view>
+  </view>
+  <frost-tabbar active="home" />
+</view>
