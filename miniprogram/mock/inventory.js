@@ -1,5 +1,6 @@
 const {PERM,UNIT_STATUS,SENSITIVE_FIELDS}=Object.assign({},require('../constants/roles'),require('../constants/status'));
 const {validateValues}=require('../utils/template');
+const createStocktake=require('./stocktake');
 module.exports=function(db,{fail,requirePermission,clone,paginate,currentRole,staffUnit,validateFiles}){
  let seq=0;db.inventoryLedger=db.inventoryLedger||[];
  const uid=()=> 'inventory_'+Date.now()+'_'+ ++seq;
@@ -13,7 +14,7 @@ module.exports=function(db,{fail,requirePermission,clone,paginate,currentRole,st
  /** 单台详情契约（GET/改价/复检一致）：有借还权限且设备在未完结借还单中时带 loan */
  function unitDetail(raw){const u=staffUnit(raw);let canLoan=true;try{requirePermission(PERM.LOAN_MANAGE);}catch(e){canLoan=false;}const o=canLoan&&(db.loanTransactions||[]).find(o=>o.items.some(i=>i.unitId===raw.id&&i.status!=='closed'));if(o)u.loan={id:o.id,no:o.no,type:o.type};return u;}
  return[
- ...require('./stocktake')(db,{fail,requirePermission,clone,paginate,currentRole,staffUnit}),
+ ...createStocktake(db,{fail,requirePermission,clone,paginate,currentRole,staffUnit}),
  ['GET','/units',d=>{read();let rows=db.units;if(d.status){if(!UNIT_STATUS[d.status])fail(400,'库存状态无效');rows=rows.filter(u=>u.status===d.status);}if(d.modelId)rows=rows.filter(u=>u.modelId===d.modelId);
  if(d.keyword){const key=String(d.keyword);if(/^\d+$/.test(key)&&key.length!==15&&!visible('fullImei'))fail(400,'串码查询请扫描完整 IMEI');rows=rows.filter(u=>u.name.includes(key)||u.id===key||u.imei1===key||u.imei2===key);}
  if(d.imei)rows=rows.filter(u=>u.imei1===d.imei||u.imei2===d.imei);
