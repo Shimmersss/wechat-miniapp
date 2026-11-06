@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view wx:if="{{result}}" class="card">
     <view class="h2">{{result.type === 'loan_out' ? '出借单' : '借入单'}}已保存</view>
@@ -54,3 +55,4 @@
     </view>
   </block>
 </view>
+</theme-shell>

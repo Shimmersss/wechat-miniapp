@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <view wx:if="{{me.status === 'pending'}}" class="card center">
@@ -21,11 +22,12 @@
     <section-card title="代理协议要点">
       <view class="small rule">· 代理收益 = 你在总部代理底价上设置的加价，加价不能超过门店给定的固定金额上限。</view>
       <view class="small rule">· 顾客通过你的链接下单后短时锁定设备，由门店确认收款成交；每成交一单记一笔收益。</view>
-      <view class="small rule">· 收益按单记账，公司线下转账；退货会冲回该单收益，已转账的在后续转账中抵扣。</view>
-      <view class="small rule">· 首期只做一级代理；你不能修改总部库存与底价，也看不到成本和其他代理数据。</view>
+      <view class="small rule"></view>
+      <view class="small rule"></view>
       <view class="agree" bindtap="onAgree"><view class="check {{agreed ? 'on' : ''}}">{{agreed ? '✓' : ''}}</view><text class="small">我已阅读并同意以上代理协议</text></view>
     </section-card>
     <view class="footer-space"></view>
     <view class="footer-bar"><button class="btn btn-primary" bindtap="onSubmit" loading="{{saving}}" disabled="{{saving}}">{{me.status === 'rejected' ? '重新提交申请' : '提交申请'}}</button></view>
   </block>
 </view>
+</theme-shell>

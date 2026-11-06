@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <view wx:if="{{loading && !detail}}" class="small muted">加载中…</view>
@@ -62,3 +63,4 @@
     <view wx:elif="{{detail.openCount && detail.storedStatus !== 'closed'}}" class="footer-bar"><button class="btn btn-primary" bindtap="onOpenReturn">登记归还</button></view>
   </block>
 </view>
+</theme-shell>

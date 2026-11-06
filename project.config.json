@@ -40,9 +40,17 @@
     "include": []
   },
   "condition": {},
+  "watchOptions": {
+    "ignore": [
+      ".local/**",
+      "server/node_modules/**",
+      ".git/**"
+    ]
+  },
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false
 }

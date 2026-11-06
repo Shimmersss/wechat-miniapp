@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view wx:if="{{error}}" class="notice">{{error}}</view>
   <section-card dark="{{true}}">
@@ -13,5 +14,5 @@
     <view wx:for="{{members}}" wx:key="appliedAt" class="list-item"><text>{{item.name}}</text><view class="row-start gap-sm"><text class="tiny muted">{{item.appliedText}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view></view>
     <empty-state wx:if="{{!members.length}}" text="还没有邀请到代理" />
   </section-card>
-  <view class="notice">首期只做一级代理：好友用你的邀请码申请，审核通过后成为你的直属代理。邀请本身不产生收益。</view>
 </view>
+</theme-shell>

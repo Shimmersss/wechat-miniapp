@@ -2,13 +2,16 @@ const config = require('./config/index');
 const auth = require('./utils/auth');
 const channel = require('./utils/channel');
 const track = require('./utils/track');
+const theme = require('./utils/theme');
 
 App({
   globalData: {
     brand: config.brand,
     user: null,
     // 金额遮挡：只影响屏幕显示，不替代接口权限（见框架文档 8.2）
-    privacy: false
+    privacy: false,
+    // 当前生效主题：'light' | 'dark'（由 utils/theme 统一维护）
+    theme: 'light'
   },
 
   onLaunch(options) {
@@ -16,6 +19,8 @@ App({
     channel.captureFromLaunch(options);
     this.globalData.user = auth.getCachedUser();
     this.globalData.privacy = !!wx.getStorageSync('privacy');
+    // 主题要在首屏渲染前定下来，避免闪一下浅色
+    this.globalData.theme = theme.init();
     auth.silentLogin().catch((err) => console.warn('[app] silent login failed', err));
   },
 

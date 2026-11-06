@@ -1,5 +1,6 @@
+<theme-shell>
 <view wx:if="{{loading}}" class="container muted">正在核验商品…</view>
-<view wx:if="{{error}}" class="container"><view class="notice">{{error}}</view><button class="btn btn-line" bindtap="load">重试</button><button class="btn btn-primary mt" bindtap="onBrowseShop">浏览店铺现货</button></view>
+<view wx:if="{{error}}" class="container"><view class="notice">{{error}}</view><button class="btn btn-line btn-block" bindtap="load">重试</button><button class="btn btn-primary btn-block mt" bindtap="onBrowseShop">浏览店铺现货</button></view>
 <view wx:if="{{unit}}" class="page">
   <swiper wx:if="{{unit.images.length}}" class="gallery" circular bindchange="onSwiperChange">
     <swiper-item wx:for="{{unit.images}}" wx:key="*this">
@@ -57,3 +58,4 @@
     </block>
   </view>
 </view>
+</theme-shell>

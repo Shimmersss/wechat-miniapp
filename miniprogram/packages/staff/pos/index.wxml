@@ -1,6 +1,6 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container has-staff-tabbar">
- <view class="notice">仅登记已实际收款的交易。保存后扣库；本页不会发起微信或支付宝扣款。</view>
  <view wx:if="{{referral}}" class="notice">{{referral.kind === 'order' ? '已关联代理订单：按锁定时的代理分享价成交，成交后为代理记一笔收益。' : '已关联顾客意向。意向价不锁价，成交按当前库存报价核算。'}}</view>
  <view wx:if="{{error}}" class="notice">{{error}}</view>
  <view wx:if="{{order}}" class="card"><view class="h2">销售单已保存</view><view class="mt">{{order.no}}</view><view class="mt">¥{{f.maskMoney(order.amount,privacy)}}</view><button class="btn btn-primary btn-block mt" bindtap="onOrder">查看销售单</button><button class="btn btn-soft btn-block mt" bindtap="onNew">继续开单</button></view>
@@ -8,7 +8,7 @@
   <view class="row gap-sm mb"><input class="input flex-1" value="{{code}}" data-field="code" bindinput="onInput" bindconfirm="onAdd" placeholder="设备编号 / 完整 IMEI" disabled="{{saving || pending || loading}}" /><button class="btn btn-soft btn-sm" bindtap="onAdd" disabled="{{saving || pending || loading}}">添加</button><button class="btn btn-line btn-sm" bindtap="onScan" disabled="{{saving || pending || loading}}">扫码</button></view>
   <button class="btn btn-line btn-block mb" bindtap="onPick" disabled="{{saving || pending || loading}}">从库存选择设备（可多选）</button>
   <section-card title="收银单" subtitle="{{cart.length}} 台" more-url="/packages/staff/sales/list">
-   <view wx:for="{{cart}}" wx:key="id" class="mb"><view class="row"><text class="h3 flex-1">{{item.name}} {{item.storage}}</text><button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onRemove" disabled="{{saving || pending || loading}}">移除</button></view><view class="tiny muted mt-sm">{{item.imeiMasked}}</view><view wx:if="{{item.channel === 'agent'}}" class="small mt-sm">代理分享价 ¥{{f.maskMoney(item.agentPrice,privacy)}} · 按代理订单成交，不可改价</view><view wx:else class="small mt-sm">零售 ¥{{f.maskMoney(item.retail,privacy)}}</view>
+   <view wx:for="{{cart}}" wx:key="id" class="mb"><view class="row"><text class="h3 flex-1">{{item.name}} {{item.storage}}</text><button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onRemove" disabled="{{saving || pending || loading}}">移除</button></view><view class="tiny muted mt-sm">{{item.imeiMasked}}</view><view wx:if="{{item.channel === 'agent'}}" class="small mt-sm">代理分享价 ¥{{f.maskMoney(item.agentPrice,privacy)}}</view><view wx:else class="small mt-sm">零售 ¥{{f.maskMoney(item.retail,privacy)}}</view>
     <view wx:if="{{item.wholesale !== undefined && item.channel !== 'agent'}}" class="row mt-sm"><text class="small">按批发价 ¥{{f.maskMoney(item.wholesale,privacy)}} 成交</text><switch checked="{{item.channel === 'wholesale'}}" data-id="{{item.id}}" bindchange="onChannel" disabled="{{saving || pending || loading}}" /></view>
     <view wx:if="{{canPrice && item.channel !== 'agent'}}" class="mt-sm"><view class="field-label">自定义成交价（选填，保存需原因）</view><input class="input" type="digit" value="{{item.price}}" data-id="{{item.id}}" bindinput="onPrice" placeholder="留空使用渠道价格" disabled="{{saving || pending || loading}}" /></view>
    </view>
@@ -29,3 +29,4 @@
  </block>
  <todo-block items="{{['实际收款码与小票打印']}}" />
 </view><staff-tabbar active="pos" />
+</theme-shell>

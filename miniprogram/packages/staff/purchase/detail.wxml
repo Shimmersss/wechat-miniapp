@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="load">重试</button></view>
   <view wx:if="{{loading}}" class="small muted mb">加载中…</view>
@@ -40,3 +41,4 @@
     <view class="footer-space"></view><view wx:if="{{canAccept && (detail.status === 'arrived' || detail.status === 'accepting' || detail.status === 'exception')}}" class="footer-bar"><button class="btn btn-primary" bindtap="onAccept">逐台到货验收</button></view>
   </block>
 </view>
+</theme-shell>

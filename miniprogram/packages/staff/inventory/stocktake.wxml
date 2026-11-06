@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}</view>
  <section-card wx:if="{{sessions.length}}" title="进行中的盘点">
@@ -26,3 +27,4 @@
   <button wx:if="{{historyMore}}" class="btn btn-line btn-block mt" bindtap="onMore" loading="{{historyLoading}}">加载更多</button>
  </section-card>
 </view>
+</theme-shell>

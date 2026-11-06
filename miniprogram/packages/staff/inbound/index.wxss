@@ -1,4 +1,4 @@
-.mode-tabs { display: flex; padding: 6rpx; gap: 6rpx; background: #E8E8ED; border-radius: var(--radius); margin-bottom: 24rpx; }
+.mode-tabs { display: flex; padding: 6rpx; gap: 6rpx; background: var(--c-well); box-shadow: inset 0 2rpx 4rpx var(--c-hair); border-radius: var(--radius); margin-bottom: 24rpx; }
 .mode-tabs button { margin: 0; padding: 0; flex: 1; font-size: 30rpx; line-height: 76rpx; color: var(--c-ink-2); background: transparent; border-radius: var(--radius-sm); }
 .mode-tabs button.active { color: var(--c-ink); background: var(--c-surface); font-weight: 600; box-shadow: 0 2rpx 8rpx rgba(0,0,0,.08); }
 .mode-tabs button::after { border: none; }
@@ -6,7 +6,7 @@
 .row-label { flex: 0 0 138rpx; color: var(--c-muted); font-size: 26rpx; }
 .type-chip { width: auto; flex: 0 0 auto; margin: 0; font-size: 28rpx; line-height: 60rpx; padding: 0 24rpx; background: var(--c-surface-soft); color: var(--c-ink); border-radius: var(--radius-sm); }
 .type-chip::after { border: none; }
-.type-chip.selected { color: #fff; background: var(--c-ink); }
+.type-chip.selected { color: var(--c-action-ink); background: var(--c-action); }
 .unit-row + .unit-row { border-top: 1rpx solid var(--c-line); padding-top: 28rpx; margin-top: 28rpx; }
 .value-input { text-align: right; min-height: 60rpx; }
 .media-list { display: flex; flex-wrap: wrap; gap: 16rpx; }

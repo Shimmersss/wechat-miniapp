@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view wx:if="{{summary}}" class="card grid-2">
     <view><view class="tiny muted">待转账（已扣冲回）</view><view class="h1 num">¥{{f.money(summary.pendingAmount)}}</view></view>
@@ -12,5 +13,6 @@
     <view wx:if="{{item.settledText}}" class="tiny muted mt-sm">{{item.settledText}} 已转账</view>
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无收益记录" />
-  <view class="notice mt">收益按单记账，公司线下转账后标记“已转账”。退货会冲回该单收益，已转账的在后续转账中抵扣。</view>
+  <view class="notice mt"></view>
 </view>
+</theme-shell>

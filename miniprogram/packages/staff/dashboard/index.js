@@ -29,7 +29,7 @@ createPage({
   data: {
     roleLabel: '',
     canProfit: false,
-    stats: null, loading: false, error: '',
+    stats: null, todoTotal: 0, loading: false, error: '',
     quickActions: []
   },
 
@@ -52,6 +52,13 @@ createPage({
 
   load() {
     this.setData({ loading: true, error: '' });
-    return api.dashboard.overview().then(stats => this.setData({ stats })).catch(e => this.setData({error:e.message})).finally(()=>this.setData({loading:false}));
+    return api.dashboard.overview()
+      .then((stats) => {
+        // 数据卡已迁到报表页，工作台只保留待办，这里顺便算出总项数给标题用
+        const todoTotal = (stats.todos || []).reduce((n, t) => n + (t.count ? 1 : 0), 0);
+        this.setData({ stats, todoTotal });
+      })
+      .catch((e) => this.setData({ error: e.message }))
+      .finally(() => this.setData({ loading: false }));
   }
 });

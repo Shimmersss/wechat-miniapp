@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view wx:if="{{selecting}}" class="notice mb">选择标准型号，使用所属分类的入库模板和该型号的容量、颜色。</view>
   <view wx:else class="row gap-sm mb"><button class="btn btn-soft btn-sm add-category" bindtap="onAddCategory">新增分类</button><button class="btn btn-line btn-sm" bindtap="onRenameCategory">修改分类名</button><button class="btn btn-primary btn-sm add-model" bindtap="onAddModel" disabled="{{loading}}">新增型号</button></view>
@@ -21,3 +22,4 @@
     </block>
   </scroll-view></view>
 </view>
+</theme-shell>

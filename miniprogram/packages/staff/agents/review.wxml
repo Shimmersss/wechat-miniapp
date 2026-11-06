@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view wx:if="{{settings}}" class="card">
     <view class="row"><text class="h3">默认加价上限</text><text class="tiny muted">锁库 {{settings.lockMinutes}} 分钟</text></view>
@@ -24,3 +25,4 @@
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无记录" />
 </view>
+</theme-shell>

@@ -41,6 +41,8 @@ createPage({
     repair: null,
     canAgent: false,
     agentReport: null,
+    // 库存现状（从工作台迁移）：在库/成本/今日入库 + 在途/待复检/维修/出借
+    inventoryNow: null,
     trendMetric: "amount",
     trendMetrics: [
       { value: "amount", label: "销售净额" },
@@ -78,6 +80,7 @@ createPage({
         breakdown,
         repair,
         agentReport,
+        inventoryNow,
       ] = await Promise.all([
         api.stats.overview(params),
         api.stats.visits(params),
@@ -90,6 +93,11 @@ createPage({
         this.data.canAgent
           ? api.stats.agentEarnings(params)
           : Promise.resolve(null),
+        // 库存现状来自工作台接口（报表接口没有库存维度）。
+        // 没有库存查看权限时不请求，避免多余调用与字段泄露。
+        this.data.canInventory
+          ? api.dashboard.overview().then((d) => d.inventory).catch(() => null)
+          : Promise.resolve(null),
       ]);
       if (revision !== this.revision) return;
       const rows = trend.list.map((row) => ({
@@ -101,6 +109,7 @@ createPage({
         visits,
         repair,
         agentReport,
+        inventoryNow,
         trend: rows,
         breakdown: breakdown.list,
         trendMetric:

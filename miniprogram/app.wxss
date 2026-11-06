@@ -9,9 +9,12 @@
  *   3. 每页只有一个 .glass 主块，其余一律 .card 白卡。
  * ============================================================ */
 
+/* page 是特殊根节点，拿不到 .theme-root 上的 CSS 变量，
+ * 所以这里只能用中性值兜底；真实底色由 theme-shell 与
+ * utils/theme.syncNativeChrome() 同步。 */
 page {
-  background: var(--c-bg);
-  color: var(--c-ink);
+  background: #F2F3F5;
+  color: #111215;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
   font-size: 30rpx;
   line-height: 1.5;
@@ -101,6 +104,7 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 /* ---------- L2 毛玻璃：每页只能有一个主块用 ---------- */
 .glass {
   background: var(--c-glass);
+  color: var(--c-on-hero, var(--c-ink));
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   box-shadow: var(--e3), inset 0 0 0 1rpx var(--c-glass-edge);
@@ -136,7 +140,7 @@ button.btn {
   border: 0; width: auto; white-space: nowrap;
 }
 button.btn::after { border: 0; }
-button.btn-primary { background: var(--c-ink); color: #fff; box-shadow: var(--e-ink); }
+button.btn-primary { background: var(--c-action); color: var(--c-action-ink); box-shadow: var(--e-ink); }
 button.btn-dark { background: var(--c-navy-2); color: #fff; }
 button.btn-line { background: var(--c-surface); color: var(--c-ink); box-shadow: var(--e1); }
 button.btn-soft { background: var(--c-well); color: var(--c-ink); }
@@ -152,7 +156,7 @@ button.btn[disabled] { opacity: .4; }
   background: var(--c-surface); color: var(--c-ink-2);
   font-size: 28rpx; font-weight: 600; box-shadow: var(--e1);
 }
-.chip.active { background: var(--c-ink); color: #fff; box-shadow: var(--e-ink); }
+.chip.active { background: var(--c-action); color: var(--c-action-ink); box-shadow: var(--e-ink); }
 
 /* ---------- 表单 ---------- */
 .field { margin-bottom: 28rpx; }

@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container has-staff-tabbar">
   <view class="card row">
     <view>
@@ -21,3 +22,4 @@
   <button class="btn btn-line btn-block" bindtap="onLogout">退出登录</button>
 </view>
 <staff-tabbar active="profile" />
+</theme-shell>

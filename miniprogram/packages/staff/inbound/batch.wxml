@@ -1,1 +1,2 @@
+<!-- 批量入库复用单台入库的模板（index.wxml 已带 theme-shell），这里不要再包一层，否则变量作用域重复 -->
 <include src="./index.wxml" />

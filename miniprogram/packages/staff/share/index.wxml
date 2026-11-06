@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
  <view class="segmented mb"><view wx:for="{{audiences}}" wx:key="value" class="seg {{active === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onAudienceTap">{{item.label}}</view></view>
  <view class="card"><view class="h3">选择现货 · 最多50台</view><input class="field mt" placeholder="型号 / 完整IMEI / 设备编号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="search" /><view class="row gap-sm mt"><button class="btn btn-line" bindtap="onScan">扫码查找</button><button class="btn btn-primary" loading="{{searching}}" bindtap="search">查找现货</button></view><view wx:for="{{results}}" wx:key="id" class="list-item"><view><view>{{item.name}} {{item.storage}}</view><view class="tiny muted">{{item.color}} · {{item.imeiMasked}}</view></view><button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onAdd">加入</button></view></view>
@@ -9,3 +10,4 @@
  <view class="notice">分享价格由服务端决定。撤销、到期、改价或下架后，原链接失效。</view>
  <view class="footer-space"></view><view class="footer-bar"><button class="btn btn-line" disabled="{{!share}}" bindtap="onCopy">复制文案</button><button class="btn btn-line" disabled="{{!share}}" bindtap="onPoster">分享海报</button><button class="btn btn-primary" disabled="{{!share}}" open-type="share">转发</button></view>
 </view>
+</theme-shell>

@@ -1,8 +1,13 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container has-staff-tabbar">
  <view class="chips mb"><view wx:for="{{ranges}}" wx:key="value" class="chip {{range === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onRangeTap">{{item.label}}</view></view>
- <view wx:if="{{canExport}}" class="card"><button class="btn btn-line btn-block" bindtap="onExport" disabled="{{exporting || exportPending}}" loading="{{exporting}}">填写原因并导出销售退款明细</button><view wx:if="{{exportPending}}" class="notice mt">导出结果未知，保留原内容重试。<button class="btn btn-primary btn-block mt" bindtap="onRetryExport" disabled="{{exporting}}">原样重试</button></view><view wx:if="{{exportReport}}" class="mt"><view class="small">已生成 {{exportReport.rows}} 行 · {{exportReport.range === 'day' ? '今日' : exportReport.range === 'week' ? '本周' : '本月'}}明细</view><view class="tiny muted mt-sm">CSV可用Excel打开。链接15分钟内有效，文件含经营数据，请核对接收人。下载时按当前权限裁剪。</view><button class="btn btn-soft btn-block mt" bindtap="onDownloadExport" disabled="{{exporting}}" loading="{{exporting}}">保存并分享CSV文件</button></view></view>
+ <view wx:if="{{canExport}}" class="card"><button class="btn btn-line btn-block" bindtap="onExport" disabled="{{exporting || exportPending}}" loading="{{exporting}}">填写原因并导出销售退款明细</button><view wx:if="{{exportPending}}" class="notice mt">导出结果未知，保留原内容重试。<button class="btn btn-primary btn-block mt" bindtap="onRetryExport" disabled="{{exporting}}">原样重试</button></view><view wx:if="{{exportReport}}" class="mt"><view class="small">已生成 {{exportReport.rows}} 行 · {{exportReport.range === 'day' ? '今日' : exportReport.range === 'week' ? '本周' : '本月'}}明细</view><button class="btn btn-soft btn-block mt" bindtap="onDownloadExport" disabled="{{exporting}}" loading="{{exporting}}">保存并分享CSV文件</button></view></view>
  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view><view wx:if="{{loading}}" class="muted small mb">加载中…</view>
+ <section-card wx:if="{{inventoryNow}}" title="库存现状" subtitle="实时" more-url="/packages/staff/inventory/list">
+  <view class="grid-3"><metric-item label="在库（台）" value="{{inventoryNow.inStock}}" /><metric-item label="在库成本" value="{{inventoryNow.stockCost !== undefined ? '¥' + f.maskMoney(inventoryNow.stockCost, privacy) : '无权限查看'}}" /><metric-item label="今日入库" value="{{inventoryNow.todayInbound}}" /></view>
+  <view class="tiny muted mt">在途 {{inventoryNow.inTransit}} · 待复检 {{inventoryNow.recheck}} · 维修 {{inventoryNow.repairing}} · 出借 {{inventoryNow.loanedOut}}</view>
+ </section-card>
  <section-card wx:if="{{overview}}" title="销售与退款" dark="{{true}}">
   <view class="grid-3"><metric-item dark="{{true}}" label="销售台次" value="{{overview.qty}}" /><metric-item dark="{{true}}" label="销售净额" value="¥{{f.maskMoney(overview.amount,privacy)}}" /><metric-item dark="{{true}}" label="退款金额" value="¥{{f.maskMoney(overview.refundAmount,privacy)}}" /><metric-item dark="{{true}}" label="净毛利" value="{{overview.profit !== undefined ? '¥'+f.maskMoney(overview.profit,privacy) : '无权限查看'}}" /><metric-item dark="{{true}}" label="毛利率" value="{{overview.margin !== undefined ? f.percent(overview.margin,privacy) : '无权限查看'}}" /><metric-item dark="{{true}}" label="动销率" value="{{f.percent(overview.sellThrough,privacy)}}" /></view>
  </section-card>
@@ -21,3 +26,4 @@
   <view class="tiny muted mt">{{agentReport.definition}}</view>
  </section-card>
 </view><staff-tabbar active="stats" />
+</theme-shell>

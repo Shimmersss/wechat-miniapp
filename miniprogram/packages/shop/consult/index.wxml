@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}<button wx:if="{{!options && !saving}}" class="btn btn-line mt" bindtap="load">重新加载</button></view>
  <button wx:if="{{error && !pending && !saving}}" class="btn btn-line mb" bindtap="onBrowseShop">回店铺重新选择</button>
@@ -14,3 +15,4 @@
  </block>
  <button class="btn btn-line mt" bindtap="onHistory">我的咨询、预约与订单</button>
 </view>
+</theme-shell>

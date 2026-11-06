@@ -141,7 +141,8 @@
     "empty-state": "/components/empty-state/index",
     "todo-block": "/components/todo-block/index",
     "product-card": "/components/product-card/index",
-    "staff-tabbar": "/components/staff-tabbar/index"
+    "staff-tabbar": "/components/staff-tabbar/index",
+    "theme-shell": "/components/theme-shell/index"
   },
   "permission": {},
   "requiredPrivateInfos": [],

@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container has-tabbar">
   <brand-header />
 
@@ -18,3 +19,4 @@
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无现货，稍后再来看看" />
   <view wx:if="{{list.length && !hasMore}}" class="tiny muted end">— 每台设备独立检测 · 公开机况 —</view>
 </view>
+</theme-shell>

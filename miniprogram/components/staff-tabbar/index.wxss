@@ -19,8 +19,10 @@
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4rpx; height: 100%;
-  color: var(--c-muted);
+  /* 底栏是主块（--c-glass）：浅色/深色下是半透明玻璃，零售绿下是深绿实心。
+     所以文字色必须跟着 --c-on-hero 走，否则深绿底上会出现深绿字。 */
+  color: var(--c-tab-idle, var(--c-muted));
 }
 .icon { width: 46rpx; height: 46rpx; }
 .text { font-size: 22rpx; line-height: 1.2; font-weight: 600; }
-.active { color: var(--c-ink); }
+.active { color: var(--c-tab-on, var(--c-ink)); }

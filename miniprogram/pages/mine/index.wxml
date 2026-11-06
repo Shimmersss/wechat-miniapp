@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container has-tabbar">
   <view class="profile card">
     <view class="avatar">{{user && user.nickname ? user.nickname[0] : '访'}}</view>
@@ -14,6 +15,16 @@
     <view class="list-item" bindtap="goStaff"><text>{{staff ? '员工经营台' : '员工登录'}}</text><text class="muted">›</text></view>
   </section-card>
 
+  <section-card title="外观">
+    <view class="list-item">
+      <text>主题</text>
+      <view class="theme-seg">
+        <view wx:for="{{themeOptions}}" wx:key="value" class="theme-opt {{themePreference === item.value ? 'on' : ''}}"
+              data-value="{{item.value}}" bindtap="onThemeTap">{{item.label}}</view>
+      </view>
+    </view>
+  </section-card>
+
   <section-card wx:if="{{devMode}}" title="开发调试" subtitle="仅 mock 模式显示">
     <picker range="{{mockRoles}}" range-key="label" value="{{mockRoleIndex}}" bindchange="onMockRoleChange">
       <view class="list-item"><text>切换模拟身份</text><text class="gold">{{mockRoles[mockRoleIndex].label}} ›</text></view>
@@ -24,3 +35,4 @@
   <view class="small muted center">{{brand.name}} · {{brand.slogan}}</view>
   <button wx:if="{{staff}}" class="btn btn-line btn-block mt" bindtap="onLogout">退出员工账号</button>
 </view>
+</theme-shell>

@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view class="row-start gap-sm mb"><button wx:if="{{canManage}}" class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/purchase/edit">＋ 新建采购单</button><button wx:if="{{canViewSuppliers}}" class="btn btn-soft btn-sm" bindtap="onNavigate" data-url="/packages/staff/suppliers/index">供应商</button></view>
   <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="搜索采购单号 / 运单号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-soft btn-sm" bindtap="onSearch">搜索</button></view>
@@ -11,3 +12,4 @@
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的采购单" /><view wx:if="{{loading}}" class="small muted">加载中…</view>
 </view>
+</theme-shell>

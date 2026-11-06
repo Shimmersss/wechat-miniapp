@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view class="notice">锁定中的订单请尽快联系顾客；进入后点“开单”用收银按代理分享价确认收款成交，或关闭意向释放设备。</view>
   <view class="chips mb"><view wx:for="{{filters}}" wx:key="value" class="chip {{status === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilter">{{item.label}}</view></view>
@@ -10,3 +11,4 @@
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无代理订单" />
 </view>
+</theme-shell>

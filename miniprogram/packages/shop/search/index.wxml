@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="search-bar">
     <image class="search-icon" src="/assets/icons/search-gray.svg" />
@@ -51,3 +52,4 @@
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="没有符合条件的现货，换个条件试试" />
   <view wx:if="{{list.length && !hasMore}}" class="tiny muted end">— 已经到底了 —</view>
 </view>
+</theme-shell>

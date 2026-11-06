@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="card filters">
     <picker range="{{actions}}" value="{{actionIndex}}" bindchange="onAction"><view class="picker">{{actions[actionIndex]}}</view></picker>
@@ -6,7 +7,7 @@
       <picker mode="date" value="{{from}}" data-field="from" bindchange="onDate"><view class="picker">{{from || '开始日期'}}</view></picker>
       <picker mode="date" value="{{to}}" data-field="to" bindchange="onDate"><view class="picker">{{to || '结束日期'}}</view></picker>
     </view>
-    <view class="row"><text class="tiny muted">共 {{total}} 条 · 日志只可追加，不能修改或删除</text><text class="small muted" bindtap="onClear">清除筛选</text></view>
+    <view class="row"><text class="tiny muted">共 {{total}} 条</text><text class="small muted" bindtap="onClear">清除筛选</text></view>
   </view>
   <view wx:if="{{error}}" class="notice">{{error}}</view>
 
@@ -22,3 +23,4 @@
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的日志" />
 </view>
+</theme-shell>

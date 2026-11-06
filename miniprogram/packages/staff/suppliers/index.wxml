@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="搜索供应商名称" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-soft btn-sm" bindtap="onSearch">搜索</button></view>
   <view wx:if="{{selecting}}" class="notice">点选有效供应商，将带回采购单。</view>
@@ -23,3 +24,4 @@
     <view class="row gap-sm"><button class="btn btn-line" bindtap="onClose" disabled="{{saving}}">取消</button><button class="btn btn-primary" bindtap="onSave" loading="{{saving}}" disabled="{{saving}}">保存档案</button></view>
   </view>
 </view>
+</theme-shell>

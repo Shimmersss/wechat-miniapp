@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}</view>
  <block wx:if="{{result}}">
@@ -32,3 +33,4 @@
   <view wx:if="{{!result.missing.length && !result.extra.length && !result.changed.length}}" class="notice">账实相符，没有差异。</view>
  </block>
 </view>
+</theme-shell>

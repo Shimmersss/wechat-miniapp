@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container inbound">
   <view class="mode-tabs"><button class="{{!batch ? 'active' : ''}}" data-mode="single" bindtap="onSwitchMode" disabled="{{submitting}}">单台入库</button><button class="{{batch ? 'active' : ''}}" data-mode="batch" bindtap="onSwitchMode" disabled="{{submitting}}">批量入库</button></view>
   <view class="card">
@@ -31,8 +32,9 @@
   <view wx:if="{{imageFields.length}}" class="card"><template-fields fields="{{imageFields}}" values="{{attributes}}" bindchange="onAttributeChange" bindbusy="onFieldBusy" disabled="{{submitting}}" /></view>
   <view class="card"><view class="h2 mb">入库价格</view><view class="grid-3"><view><view class="field-label required">单台成本价</view><input class="input" type="digit" value="{{form.cost}}" data-field="cost" bindinput="onInput" disabled="{{submitting}}" /></view><view><view class="field-label required">单台批发价</view><input class="input" type="digit" value="{{form.wholesale}}" data-field="wholesale" bindinput="onInput" disabled="{{submitting}}" /></view><view><view class="field-label required">单台零售价</view><input class="input" type="digit" value="{{form.retail}}" data-field="retail" bindinput="onInput" disabled="{{submitting}}" /></view></view>
     <view class="chips mt"><view wx:for="{{costPresets}}" wx:key="*this" class="chip" data-cost="{{item}}" bindtap="onCostPreset">成本 ¥{{item}}</view></view>
-    <view class="grid-2 mt"><view><view class="field-label required">代理结算底价</view><input class="input" type="digit" value="{{form.agentBase}}" data-field="agentBase" bindinput="onInput" disabled="{{submitting}}" /></view><view><view class="field-label">目标利润（定价辅助）</view><input class="input" type="digit" value="{{form.targetProfit}}" data-field="targetProfit" bindinput="onInput" disabled="{{submitting}}" /></view></view><view class="tiny muted mt">建议价由服务端返回，手动填写的三价不会被覆盖。</view>
+    <view class="grid-2 mt"><view><view class="field-label required">代理结算底价</view><input class="input" type="digit" value="{{form.agentBase}}" data-field="agentBase" bindinput="onInput" disabled="{{submitting}}" /></view><view><view class="field-label">目标利润（定价辅助）</view><input class="input" type="digit" value="{{form.targetProfit}}" data-field="targetProfit" bindinput="onInput" disabled="{{submitting}}" /></view></view><view class="tiny muted mt"></view>
   </view>
   <view class="card row"><text class="small flex-1">已逐台核对实机、串码、机况与收货凭证</text><switch checked="{{form.inspectionConfirmed}}" data-field="inspectionConfirmed" bindchange="onInput" disabled="{{submitting}}" /></view>
   <view class="footer-space"></view><view class="footer-bar"><button class="btn btn-primary submit-inbound" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0}}">{{batch ? '批量入库（' + rows.length + '台）' : '确认单台入库'}}</button></view>
 </view>
+</theme-shell>

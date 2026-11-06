@@ -1,4 +1,5 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
+<theme-shell>
 <view class="container">
   <view wx:if="{{error}}" class="notice">{{error}}</view>
   <view wx:if="{{overview}}" class="card dark">
@@ -38,5 +39,5 @@
     </view>
     <empty-state wx:if="{{!loading && !units.length}}" text="门店暂未开放可转发的设备" />
   </section-card>
-  <view class="notice">顾客只看到你的分享价；不能修改总部库存、成本与底价。成交一单记一笔收益，公司线下转账。</view>
 </view>
+</theme-shell>

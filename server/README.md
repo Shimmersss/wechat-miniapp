@@ -18,9 +18,19 @@
 
 ## 本机运行
 
-已有环境：Node.js 26、Homebrew MySQL 9.6。服务代码要求 Node.js 22+。当前项目专属 MySQL 已初始化，监听 `127.0.0.1:3307`；原有 3306 服务不受影响。
+本机（Ubuntu Kylin 22.04）实际环境：Node.js 22.23.4（`~/.local/opt/nodejs/`），MySQL 8.4.13 跑在官方 Docker 镜像里，容器名 `xiamu-wechat-mysql`，监听 `127.0.0.1:3307`。服务代码要求 Node.js 22+。
 
-项目根目录执行：
+**本机请用项目根的 `scripts/local-dev.sh`，不要用下面这套手工命令：**
+
+```sh
+./scripts/local-dev.sh start    # 启动 Docker MySQL + systemd API，并等健康检查
+./scripts/local-dev.sh restart  # 改服务端代码后重启 API
+./scripts/local-dev.sh status / logs / stop
+```
+
+`server/src` 没有热重载，改完必须 restart。健康检查：`curl http://127.0.0.1:3000/api/v1/health`，正常返回 `{"code":0,"data":{"status":"ready"},"message":"ok"}`。
+
+下面这套是**其它环境（macOS、未配置 systemd 的新机器）**的启动方式，本机执行会与 systemd 实例抢 3000 端口：
 
 ```sh
 # 仅当项目专属 MySQL 尚未运行时启动；持续以前台进程运行
@@ -32,11 +42,7 @@ npm --prefix server run db:grants
 npm --prefix server start
 ```
 
-API 默认 `http://127.0.0.1:3000/api/v1`。健康检查：
-
-```sh
-curl http://127.0.0.1:3000/api/v1/health
-```
+本机原脚本 `db:start` 依赖 macOS Homebrew，在 Ubuntu 上不可用；数据库启动入口是 `local-dev.sh` 管理的容器。
 
 首次在新机器建立本机环境：先 `npm --prefix server ci`，运行 `db:start`，再在另一终端运行 `node server/scripts/local-database.js`。初始化器只处理本项目专属 socket，拒绝覆盖已存在的 `server/.env`；不会重置其他数据库密码。
 
@@ -62,12 +68,16 @@ curl http://127.0.0.1:3000/api/v1/health
 ```sh
 # 一次性准备专用验证数据库；不清空正式数据库
 npm --prefix server run test:db
-npm --prefix server test
+
+# 后端集成测试（本机显式命令；macOS 上 `npm --prefix server test` 等价）
+cd server && node --env-file=.env --test --test-concurrency=2 test/*.test.js
 
 # 小程序和 mock 回归
-node --test tests/*.test.js
+cd .. && node --test tests/*.test.js
 npm --prefix server audit
 ```
+
+2026-11-04 本机复跑：后端 **67/67**、小程序/mock **25/25**，均无失败。
 
 服务端集成测试使用专属 `xiamu_verification`，通过真实本机 HTTP、真实 MySQL、真实磁盘文件验证。只有微信/SMS 外部调用使用测试替身，因此不代表外部账号已经联调成功。测试不接受生产库名称，也不自动 DROP；验证数据保留供复查。
 

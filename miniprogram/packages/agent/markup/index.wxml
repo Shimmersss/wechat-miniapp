@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="notice">分享价 = 代理底价 + 你的加价。加价为固定金额，不能超过上限；已发出的分享按当时价格，改价后请重新转发。</view>
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
@@ -15,3 +16,4 @@
   </view>
   <empty-state wx:if="{{!loading && !units.length}}" text="门店暂未开放可转发的设备" />
 </view>
+</theme-shell>

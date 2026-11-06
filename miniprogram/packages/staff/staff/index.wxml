@@ -1,3 +1,4 @@
+<theme-shell>
 <view class="container">
   <view class="actions mb">
     <view class="action" bindtap="onCreate"><view class="action-icon"><image src="/assets/icons/plus.svg" /></view><text>新增员工</text></view>
@@ -33,3 +34,4 @@
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无员工" />
 </view>
+</theme-shell>

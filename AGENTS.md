@@ -12,17 +12,24 @@
 ## 运行
 
 1. 微信开发者工具 → 导入项目 → 选择本仓库根目录（`project.config.json` 已指定 `miniprogramRoot: miniprogram/`）。
-2. AppID 已在 `project.config.json` 中配置；真机预览、登录与分享能力仍须确认对应微信账号权限及平台配置。
+2. **AppID 有两个，按用途切换**，不要搞混：
+   - 调试/真机预览用 `wx6bb6b0674bdb37c0`（本机开发者微信有权限的那个）
+   - 提交到仓库用 `wx1fb1655002985aeb`
+   切换命令：`./scripts/appid.sh debug` / `./scripts/appid.sh repo`，`./scripts/appid.sh` 查看当前值。
+   **提交前必须执行 `repo`**，否则会把本地调试 AppID 推上去。
 3. 开发版默认 `useMock: true`（`miniprogram/config/index.js`），所有请求走 `miniprogram/mock/index.js`，无需后端。
 4. 切换身份调试：“我的”页 →“开发调试 / 切换模拟身份”；员工登录页在 mock 模式下可选择以哪个员工角色登录。
+5. 本机需要 `project.config.json` 的 `watchOptions.ignore` 排除 `.local/`、`server/node_modules/`、`.git/`：桌面程序占满了 inotify 额度，不排除会卡在初始化文件监听。
 
 ## 真实后端（独立于微信上传目录）
 
 - `server/`：Fastify + MySQL，运行与凭据说明见 `server/README.md`。本机项目专属数据库使用 `127.0.0.1:3307`，不要重置现有 3306 服务。
-- 项目根目录运行 `npm --prefix server start`；数据库未运行时先在另一终端运行 `npm --prefix server run db:start`。
+- **本机（Ubuntu）用 `scripts/local-dev.sh`**：`start` / `stop` / `restart` / `status` / `logs` / `open`。服务由 systemd 用户服务 `xiamu-api.service`、`xiamu-mysql.service` 管理，MySQL 跑在 Docker 容器 `xiamu-wechat-mysql` 里。
+- **不要在本机运行 `npm --prefix server start` 或 `npm --prefix server run db:start`**：前者会与 systemd 实例抢 3000 端口，后者依赖 macOS Homebrew。仅当不使用 systemd 的其它环境（macOS/新机器）才用这两条命令。
+- API 没有热重载：改 `server/src` 或 `server/.env` 后必须 `scripts/local-dev.sh restart`。
 - 迁移执行 `npm --prefix server run migrate`；API 只加载 `server/.env`，迁移专用凭据放 `server/.env.migration`，二者都禁止进入 `miniprogram/` 或版本库。
 - 本机新增表的迁移完成后执行 `npm --prefix server run db:grants`，为项目应用/报表/备份账号补充表级权限；此命令仅用于项目专属本机实例，不用于生产部署。
-- 服务端验证：`npm --prefix server run test:db` 准备专用验证库，然后 `npm --prefix server test`；小程序回归 `node --test tests/*.test.js`。
+- 服务端验证：`npm --prefix server run test:db` 准备专用验证库，然后在 `server/` 下 `node --env-file=.env --test --test-concurrency=2 test/*.test.js`；小程序回归 `node --test tests/*.test.js`。
 - `.local/mysql/` 和 `.local/files/` 是持久数据，不是构建缓存。真实业务切换必须以对应接口、事务和权限验证为依据，不得让未实现接口回退假成功。
 
 ## 目录结构
@@ -93,34 +100,43 @@ miniprogram/
 
 ## 待实现功能清单（按框架文档“十二、实施顺序”）
 
+状态按 2026-11-04 代码实测标注：**页面与 mock 已接通**记 `[x]`；仅剩外部实机条件（真机、蓝牙、正式微信/SMS/小程序码）或缺口的记 `[ ]` 并注明。勾选依据是页面控制器中的实际调用，不是文档里的历史记录。
+
 ### 阶段 A：营业与库存可信
-- [ ] 员工登录：短信验证码、微信绑定、登录失败提示（`pages/login`）
+- [x] 员工登录：短信验证码、微信绑定、登录失败提示（`pages/login`，`utils/auth.js`）；正式短信/微信交换待外部配置
 - [x] 型号模板：每个分类一套模板（字段编辑、版本发布），型号单独配置容量/颜色，作为入库型号选择器回传 `modelId`（`staff/templates/*`）；入库/采购/验收统一读 `GET /models/:id/form`
-- [ ] 采购单：供应商选择、明细行增删、运单绑定与扫码（首期不查轨迹）（`staff/purchase/*`、`staff/suppliers`）
-- [ ] 到货验收：逐台验收表单、异常分支、数量比对（`staff/acceptance`）
-- [ ] 单台入库：按模板字段动态渲染（`staff/inbound/index`）
-- [ ] 批量入库：连续扫码逐台行编辑（`staff/inbound/batch`）
-- [ ] 库存：搜索/扫码查找、筛选、改价弹层、库存流水、分享开关（含批量代理转发）、手动/扫码出库、状态操作按钮（按 `UNIT_TRANSITIONS`）、盘点单（开单快照、边扫边勾、差异只记录不改库存，`staff/inventory/stocktake*`）（`staff/inventory/*`）
-- [ ] 标签打印：蓝牙打印机（`staff/inventory/label`）
-- [ ] 收银与销售：顾客信息、优惠改价留痕、退款权限、收款凭证（开单可选上传/详情补传）、代理来源已完成；剩实际收款码与小票打印（发票首期不做）（`staff/pos`、`staff/sales/*`）
+- [x] 采购单：供应商选择、明细行增删、运单绑定与扫码（首期不查轨迹）（`staff/purchase/*`、`staff/suppliers`）
+- [x] 到货验收：逐台验收表单、异常分支、数量比对（`staff/acceptance`）
+- [x] 单台入库：按模板字段动态渲染（`staff/inbound/index`）
+- [x] 批量入库：连续扫码逐台行编辑（`staff/inbound/batch`，与单台共用 `inbound/form.js`）
+- [x] 库存：搜索/扫码查找、筛选、改价弹层、库存流水、分享开关（含批量代理转发）、手动/扫码出库、复检、盘点单（开单快照、边扫边勾、差异只记录不改库存，`staff/inventory/stocktake*`）、详情借还入口（`staff/inventory/*`）
+- [ ] 标签打印：标签数据接口与页面已完成，**蓝牙打印机对接未做**（`staff/inventory/label.js` 仍是 `TODO(codex)`，点击提示“打印机对接待实现”）
+- [x] 收银与销售：顾客信息、优惠改价留痕、退款权限、收款凭证（开单可选上传/详情补传）、代理来源（`staff/pos`、`staff/sales/*`）
+- [ ] 收银小票/收款码打印（发票首期不做，已定案）
 - [x] 经营统计：趋势图、维度拆分、库龄预警、代理收益对账（`staff/stats`）
 - [x] 员工与权限：新增员工、角色权限点勾选、字段可见性、审计筛选（`staff/staff/*`、`staff/audit`）
 - [x] 顾客端：搜索页（历史、成色/价格/电池/新旧筛选）、分类按型号精确筛选、详情检测报告与相似在售、咨询预约（`pages/*`、`packages/shop/*`）
 
 ### 阶段 B：业务扩展
-- [ ] 维修：开单照片、报价权限、配件领用、节点时间线（`staff/repair/*`）
+- [x] 维修：开单照片、报价权限、配件领用、节点时间线、收退款、取机（`staff/repair/*`）
 - [x] 出借/借入：类型选择器、扫码/库存选设备、逾期提醒（首期不收押金/逾期费/赔偿）、逐台归还与复检后完结（`staff/loans/*`）
-- [ ] 分渠道分享：选设备、合集分享（`staff/share`）、Canvas 海报（`shop/poster`）
+- [x] 分渠道分享：选设备、合集分享（`staff/share`）、Canvas 海报绘制与保存（`shop/poster`）
+- [ ] 正式小程序码与真机扫码/转发：缺 `WX_APP_ID`/`WX_APP_SECRET` 时后端返回 `qrcode: null` + `unconfigured`，页面明确禁用可扫码海报
+- [ ] 销售列表按销售员筛选（`staff/sales/list` 待办项，接口已支持 `sellerId`）
 
 ### 阶段 C：代理增长（必须在库存锁定、订单快照、退款冲回完成后上线）
 - [x] 代理申请协议、地区选择（`agent/apply`）
 - [x] 代理订单、收益汇总（`agent/orders`、`agent/commission`）；顾客代理链接下单锁库（`shop/consult` mode=order）
-- [ ] 邀请海报（`agent/invite`，邀请码与直属代理列表已完成）
+- [x] 邀请码、直属代理列表、`open-type="share"` 邀请卡片（`agent/invite`）
+- [ ] 邀请海报成图：依赖上面的正式小程序码，未配置时不生成假二维码
 - [x] 代理审核通过/拒绝（设固定金额加价上限）、代理订单、收益逐单标记已转账（`staff/agents/*`）
 
 ### 还需要的外部条件（非前端可完成）
-- 后端服务（按 `api/modules` 的接口注释实现；MySQL/Redis 不开公网，数据库账号分离见框架文档 2.2）
-- 正式 AppID、request 合法域名、`getwxacodeunlimit` 小程序码（服务端生成）
+- ~~后端服务~~ 已实现：`server/` 为真实 Fastify + MySQL，19 个迁移，67 项集成测试通过；生产部署与备份恢复演练仍未做。
+- 正式微信凭据：`WX_APP_ID`、`WX_APP_SECRET`（`server/.env`），缺配置时静默登录与小程序码返回明确错误，不伪造。
+- 腾讯云短信：`SMS_APP_ID`、`SMS_SIGN`、`SMS_TEMPLATE_ID`，缺配置时发送验证码返回 503。
+- request 合法域名与 HTTPS 后端地址；`miniprogram/config/index.js` 的 `trial`/`release` 仍是 `example.com` 占位。
+- `getwxacodeunlimit` 小程序码（服务端 `server/src/wechat-code.js` 已实现，需正式凭据 + 已发布页面）。
 
 ## 完成标准
 

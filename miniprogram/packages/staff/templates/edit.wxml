@@ -12,6 +12,7 @@ function visibilityLabel(values) {
 }
 module.exports = { contains: contains, typeLabel: typeLabel, visibilityLabel: visibilityLabel };
 </wxs>
+<theme-shell>
 <view class="container">
   <view wx:if="{{error}}" class="notice mb">{{error}}<button wx:if="{{!detail}}" class="btn btn-line btn-sm" bindtap="onRetry">重试</button></view>
   <block wx:if="{{detail}}">
@@ -54,3 +55,4 @@ module.exports = { contains: contains, typeLabel: typeLabel, visibilityLabel: vi
     </scroll-view>
   </view>
 </view>
+</theme-shell>
