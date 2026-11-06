@@ -11,6 +11,7 @@
 *.key
 
 # WeChat DevTools local settings
+# 真实 AppID 只写在这里（scripts/appid.sh 设置），project.config.json 固定为占位 touristappid
 project.private.config.json
 miniprogram_npm/
 

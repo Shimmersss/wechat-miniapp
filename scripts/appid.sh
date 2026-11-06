@@ -1,65 +1,32 @@
 #!/usr/bin/env bash
-# AppID 切换：调试用真实 AppID，提交仓库用占位 AppID。
+# AppID 只放本机：仓库里的 project.config.json 固定为占位 touristappid，
+# 真实 AppID 写在 project.private.config.json（已 .gitignore，开发者工具会优先使用它）。
 #
-#   ./scripts/appid.sh           查看当前用的是哪个
-#   ./scripts/appid.sh debug     切到调试 AppID（真机调试/预览用）
-#   ./scripts/appid.sh repo      切到仓库 AppID（提交前用）
-#
-# 只改 project.config.json 的 appid 一行，其余内容原样保留。
+#   ./scripts/appid.sh             查看当前生效的 AppID
+#   ./scripts/appid.sh wx…         设置本机 AppID（真机调试/预览用自己有开发者权限的那个）
+#   ./scripts/appid.sh clear       去掉本机 AppID，回到占位（游客模式）
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONF="$ROOT/project.config.json"
+PRIVATE="$ROOT/project.private.config.json"
 
-# 调试用（你本机真机调试、预览要用的 AppID）
-DEBUG_APPID="wx6bb6b0674bdb37c0"
-# 仓库用（提交到 GitHub 的 AppID，历史一直是这个）
-REPO_APPID="wx1fb1655002985aeb"
-
-[[ -f "$CONF" ]] || { echo "找不到 project.config.json：$CONF" >&2; exit 1; }
-
-current() {
-  grep -oE '"appid"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONF" | grep -oE 'wx[0-9a-zA-Z]+' | head -1
+node - "$PRIVATE" "${1:-show}" <<'EOF'
+const fs = require('fs');
+const [file, arg] = process.argv.slice(2);
+const conf = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
+const save = () => fs.writeFileSync(file, JSON.stringify(conf, null, 2) + '\n');
+if (arg === 'show') {
+  console.log(conf.appid ? `本机 AppID：${conf.appid}` : '本机未设置 AppID，开发者工具使用占位 touristappid');
+} else if (arg === 'clear') {
+  delete conf.appid;
+  save();
+  console.log('已去掉本机 AppID');
+} else if (/^wx[0-9a-f]{16}$/.test(arg)) {
+  conf.appid = arg;
+  save();
+  console.log(`已设置本机 AppID：${arg}（重新编译或重启开发者工具后生效）`);
+} else {
+  console.error('用法: scripts/appid.sh [show|clear|wx开头的 AppID]');
+  process.exit(1);
 }
-
-set_appid() {
-  local target="$1"
-  local now
-  now="$(current)"
-  if [[ "$now" == "$target" ]]; then
-    echo "已经是 $target，无需修改"
-    return 0
-  fi
-  # 用 perl 精确替换 appid 的值，保留原格式（缩进、换行风格）
-  perl -pi -e "s/(\"appid\"\s*:\s*\")[^\"]*(\")/\${1}$target\${2}/" "$CONF"
-  echo "已切换：$now → $target"
-}
-
-case "${1:-show}" in
-  debug)
-    set_appid "$DEBUG_APPID"
-    echo "提示：重新编译或重启开发者工具后生效。"
-    ;;
-  repo)
-    set_appid "$REPO_APPID"
-    echo "提示：现在可以提交了（git status 里 project.config.json 应只剩其它改动）。"
-    ;;
-  show|"")
-    now="$(current)"
-    echo "当前 AppID：$now"
-    if [[ "$now" == "$DEBUG_APPID" ]]; then
-      echo "  → 调试模式（真机调试 / 预览用）"
-    elif [[ "$now" == "$REPO_APPID" ]]; then
-      echo "  → 仓库模式（准备提交）"
-    else
-      echo "  → 未知，既不是调试 ID 也不是仓库 ID"
-    fi
-    echo
-    echo "调试：./scripts/appid.sh debug"
-    echo "提交：./scripts/appid.sh repo"
-    ;;
-  *)
-    echo "用法: $0 [show|debug|repo]" >&2
-    exit 1
-    ;;
-esac
+EOF

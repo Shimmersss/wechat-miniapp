@@ -12,11 +12,9 @@
 ## 运行
 
 1. 微信开发者工具 → 导入项目 → 选择本仓库根目录（`project.config.json` 已指定 `miniprogramRoot: miniprogram/`）。
-2. **AppID 有两个，按用途切换**，不要搞混：
-   - 调试/真机预览用 `wx6bb6b0674bdb37c0`（本机开发者微信有权限的那个）
-   - 提交到仓库用 `wx1fb1655002985aeb`
-   切换命令：`./scripts/appid.sh debug` / `./scripts/appid.sh repo`，`./scripts/appid.sh` 查看当前值。
-   **提交前必须执行 `repo`**，否则会把本地调试 AppID 推上去。
+2. **AppID 不进版本库**：`project.config.json` 固定为占位 `touristappid`，真实 AppID 写在已忽略的 `project.private.config.json`（开发者工具优先读它）。
+   本机设置：`./scripts/appid.sh wx…`（用自己微信有开发者权限的那个），`./scripts/appid.sh` 查看，`./scripts/appid.sh clear` 去掉。
+   不要把真实 AppID 写进任何被跟踪的文件，`tests/appid.test.js` 会拦截。
 3. 开发版默认 `useMock: true`（`miniprogram/config/index.js`），所有请求走 `miniprogram/mock/index.js`，无需后端。
 4. 切换身份调试：“我的”页 →“开发调试 / 切换模拟身份”；员工登录页在 mock 模式下可选择以哪个员工角色登录。
 5. 本机需要 `project.config.json` 的 `watchOptions.ignore` 排除 `.local/`、`server/node_modules/`、`.git/`：桌面程序占满了 inotify 额度，不排除会卡在初始化文件监听。
