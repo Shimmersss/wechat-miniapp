@@ -4,6 +4,11 @@
 .dark-hint { color: var(--c-muted); }
 .quick { row-gap: 32rpx; }
 .quick-item { display: flex; flex-direction: column; align-items: center; gap: 10rpx; }
-.quick-icon { width: 96rpx; height: 96rpx; border-radius: 28rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; }
+.quick-icon {
+  width: 96rpx; height: 96rpx; border-radius: 28rpx;
+  background: var(--c-well);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--well-shadow, inset 0 2rpx 4rpx var(--c-hair));
+}
 .quick-img { width: 48rpx; height: 48rpx; }
 .eye-icon { width: 36rpx; height: 36rpx; }

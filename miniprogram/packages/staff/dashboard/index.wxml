@@ -9,14 +9,6 @@
   </brand-header>
 
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
-  <section-card wx:if="{{stats}}" title="待处理" subtitle="共 {{todoTotal}} 项" more-url="/packages/staff/stats/index">
-    <view wx:for="{{stats.todos}}" wx:key="key" class="list-item" bindtap="onNavigate" data-url="{{item.url}}">
-      <text>{{item.text}}</text>
-      <text class="{{item.count ? 'price' : 'muted'}}">{{item.count}} ›</text>
-    </view>
-    <view class="tiny muted mt">销售、访问、维修、库存等数据已移到「报表」页，按日/周/月查看。</view>
-  </section-card>
-
   <section-card title="快捷操作">
     <view class="grid-4 quick">
       <view wx:for="{{quickActions}}" wx:key="url" class="quick-item" bindtap="onNavigate" data-url="{{item.url}}">
@@ -24,6 +16,14 @@
         <view class="tiny">{{item.text}}</view>
       </view>
     </view>
+  </section-card>
+
+  <section-card wx:if="{{stats}}" title="待处理" subtitle="共 {{todoTotal}} 项" more-url="/packages/staff/stats/index">
+    <view wx:for="{{stats.todos}}" wx:key="key" class="list-item" bindtap="onNavigate" data-url="{{item.url}}">
+      <text>{{item.text}}</text>
+      <text class="{{item.count ? 'price' : 'muted'}}">{{item.count}} ›</text>
+    </view>
+    <view class="tiny muted mt">销售、访问、维修、库存等数据已移到「报表」页，按日/周/月查看。</view>
   </section-card>
 
 </view>

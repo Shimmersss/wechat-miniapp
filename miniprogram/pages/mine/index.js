@@ -18,11 +18,11 @@ createPage({
     mockRoleIndex: 0,
     // 主题切换：system 跟随系统，light / dark 写死
     themeOptions: [
-      { value: 'system', label: '跟随系统' },
       { value: 'light', label: '浅色' },
-      { value: 'dark', label: '深色' }
+      { value: 'dark', label: '深色' },
+      { value: 'retail', label: '零售绿' }
     ],
-    themePreference: 'system'
+    themePreference: 'light'
   },
 
   onShow() {

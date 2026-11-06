@@ -1,4 +1,4 @@
-.mode-tabs { display: flex; padding: 6rpx; gap: 6rpx; background: #E8E8ED; border-radius: var(--radius); margin-bottom: 24rpx; }
+.mode-tabs { display: flex; padding: 6rpx; gap: 6rpx; background: var(--c-well); box-shadow: inset 0 2rpx 4rpx var(--c-hair); border-radius: var(--radius); margin-bottom: 24rpx; }
 .mode-tabs button { margin: 0; padding: 0; flex: 1; font-size: 30rpx; line-height: 76rpx; color: var(--c-ink-2); background: transparent; border-radius: var(--radius-sm); }
 .mode-tabs button.active { color: var(--c-ink); background: var(--c-surface); font-weight: 600; box-shadow: 0 2rpx 8rpx rgba(0,0,0,.08); }
 .mode-tabs button::after { border: none; }

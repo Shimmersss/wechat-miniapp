@@ -8,7 +8,7 @@
  *
  * 对外接口：
  *   get()          当前生效的 'light' | 'dark'
- *   getPreference() 用户偏好 'system' | 'light' | 'dark'
+ *   getPreference() 用户偏好 'light' | 'dark' | 'retail'
  *   set(pref)      切换，广播 'theme:changed'
  *   toggle()       在 light / dark 之间直接切
  *   onChange(fn)   订阅，返回取消函数
@@ -16,35 +16,24 @@
 const events = require('./events');
 
 const KEY = 'xm_theme';          // 用户偏好
-const DEFAULT = 'system';        // 默认跟随系统
+const DEFAULT = 'light';         // 默认浅色（不再提供「跟随系统」）
 
-let systemDark = false;
+/** 用户偏好：light / dark / retail（零售绿） */
+const NAMED = ['light', 'dark', 'retail'];
 
-/** 读系统是否处于深色 */
-function readSystemDark() {
-  try {
-    const info = wx.getAppBaseInfo ? wx.getAppBaseInfo() : wx.getSystemInfoSync();
-    // theme 字段：'dark' | 'light'，部分低版本取不到
-    return info && info.theme === 'dark';
-  } catch (e) {
-    return false;
-  }
-}
-
-/** 用户偏好：system / light / dark */
 function getPreference() {
   try {
     const v = wx.getStorageSync(KEY);
-    return v === 'light' || v === 'dark' || v === 'system' ? v : DEFAULT;
+    // 旧版本存过 'system'，升级后统一回落到浅色，避免出现无法识别的值
+    return NAMED.includes(v) ? v : DEFAULT;
   } catch (e) {
     return DEFAULT;
   }
 }
 
-/** 解析成实际生效的主题 */
+/** 解析成实际生效的主题（三者都是显式选择，不再跟随系统） */
 function resolve(pref) {
-  if (pref === 'light' || pref === 'dark') return pref;
-  return systemDark ? 'dark' : 'light';
+  return NAMED.includes(pref) ? pref : DEFAULT;
 }
 
 /** 当前生效主题 */
@@ -54,15 +43,17 @@ function get() {
 
 /** 供 theme-shell 生成类名 */
 function classes(theme) {
-  return theme === 'dark' ? 'theme-root theme-dark' : 'theme-root';
+  if (theme === 'dark') return 'theme-root theme-dark';
+  if (theme === 'retail') return 'theme-root theme-retail';
+  return 'theme-root';
 }
 
 /**
  * 设置用户偏好。改变时广播，所有已挂载的 theme-shell 会自己重绘。
- * @param {'system'|'light'|'dark'} pref
+ * @param {'light'|'dark'|'retail'} pref
  */
 function set(pref) {
-  const next = pref === 'light' || pref === 'dark' ? pref : 'system';
+  const next = NAMED.includes(pref) ? pref : DEFAULT;
   const before = get();
   try {
     wx.setStorageSync(KEY, next);
@@ -93,8 +84,9 @@ function onChange(fn) {
  */
 function syncNativeChrome(theme) {
   const dark = theme === 'dark';
-  const bg = dark ? '#0B0C0F' : '#F2F3F5';
-  const fg = dark ? '#F5F6F8' : '#111215';
+  const retail = theme === 'retail';
+  const bg = dark ? '#0B0C0F' : retail ? '#F7F8F7' : '#F2F3F5';
+  const fg = dark ? '#F5F6F8' : retail ? '#1C2B20' : '#111215';
 
   try {
     wx.setBackgroundColor({ backgroundColor: bg, backgroundColorTop: bg, backgroundColorBottom: bg });
@@ -118,22 +110,10 @@ function syncNativeChrome(theme) {
   } catch (e) { /* 非 tabBar 页会报错，忽略 */ }
 }
 
-/** 初始化：读系统主题并监听变化。由 app.js 在 onLaunch 调用一次。 */
+/** 初始化：同步原生外壳配色。由 app.js 在 onLaunch 调用一次。
+ * 三个主题都是用户显式选择，不跟随系统明暗，所以不需要监听 onThemeChange。 */
 function init() {
-  systemDark = readSystemDark();
   syncNativeChrome(get());
-
-  // 跟随系统时，系统切换了要跟着变
-  if (wx.onThemeChange) {
-    wx.onThemeChange(({ theme }) => {
-      const wasDark = systemDark;
-      systemDark = theme === 'dark';
-      if (wasDark !== systemDark && getPreference() === 'system') {
-        syncNativeChrome(get());
-        events.emit('theme:changed', { theme: get(), preference: 'system' });
-      }
-    });
-  }
   return get();
 }
 

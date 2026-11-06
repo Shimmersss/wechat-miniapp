@@ -1,6 +1,6 @@
 .chips.nowrap { flex-wrap: nowrap; } .chip { flex-shrink: 0; }
 .age-warning { box-shadow: inset 0 0 0 2rpx var(--c-orange-soft); }
-.summary { background: var(--c-glass); color: var(--c-ink);
+.summary { background: var(--c-glass); color: var(--c-on-hero, var(--c-ink));
   backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
   box-shadow: var(--e3), inset 0 0 0 1rpx var(--c-glass-edge); border-radius: var(--radius-xl); }
 .summary-label { font-size: 24rpx; color: var(--c-muted); }
@@ -8,7 +8,7 @@
 .summary-num { font-size: 72rpx; font-weight: 600; letter-spacing: -2rpx; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .summary-unit { font-size: 28rpx; color: var(--c-muted); }
 .summary-money { font-size: 36rpx; font-weight: 600; letter-spacing: -0.5rpx; margin-top: 4rpx; font-variant-numeric: tabular-nums; }
-.actions { display: flex; background: var(--c-surface); border-radius: var(--radius-lg); padding: 28rpx 4rpx; }
+.actions { display: flex; gap: 8rpx; background: var(--c-surface); border-radius: var(--radius-lg); padding: 28rpx 4rpx; box-shadow: var(--e1); }
 .action { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-ink); white-space: nowrap; }
 .action-icon { width: 88rpx; height: 88rpx; border-radius: 28rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; }
 .action-icon image { width: 48rpx; height: 48rpx; }

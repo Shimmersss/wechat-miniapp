@@ -11,11 +11,11 @@
 }
 .value.hl { color: var(--c-ink); }
 .hint { font-size: 22rpx; color: var(--c-muted); }
-.dark .label, .dark .hint { color: var(--c-muted); }
-.dark .value, .dark .value.hl { color: var(--c-ink); }
+.dark .label, .dark .hint { color: var(--c-on-hero-2, var(--c-muted)); }
+.dark .value, .dark .value.hl { color: var(--c-on-hero, var(--c-ink)); }
 /* 无权限 / 隐藏：小一号、常规字重、灰色 */
 .value.na {
   font-size: 24rpx; font-weight: 500; letter-spacing: 0;
   line-height: 56rpx; color: var(--c-muted);
 }
-.dark .value.na { color: var(--c-muted); }
+.dark .value.na { color: var(--c-on-hero-2, var(--c-muted)); }

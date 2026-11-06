@@ -86,6 +86,14 @@
   --c-glass-edge: rgba(255, 255, 255, 0.85);
   --c-hair: rgba(17, 18, 21, 0.07);
 
+  /* 主块（.glass）里的文字色：浅色主题主块是白玻璃 → 用墨色 */
+  --c-on-hero: #111215;
+  --c-on-hero-2: #4B4F57;
+
+  /* 底栏文字：未选中要看得清（不能只靠 opacity 压暗） */
+  --c-tab-idle: #6B7079;
+  --c-tab-on: #111215;
+
   /* 底栏/浮层专用（深色下需要更高的不透明度才看得清） */
   --c-bar-bg: rgba(255, 255, 255, 0.72);
   --c-sheet-bg: #FFFFFF;
@@ -185,6 +193,13 @@
   --c-glass-edge: rgba(255, 255, 255, 0.14);
   --c-hair: rgba(255, 255, 255, 0.07);
 
+  /* 深色主块是暗玻璃 → 文字反白 */
+  --c-on-hero: #F5F6F8;
+  --c-on-hero-2: #C2C6CE;
+
+  --c-tab-idle: #9AA0AB;
+  --c-tab-on: #F5F6F8;
+
   --c-bar-bg: rgba(20, 22, 27, 0.82);
   --c-sheet-bg: #17191E;
   --c-mask: rgba(0, 0, 0, 0.62);
@@ -217,4 +232,156 @@
  * 这里不能引用变量（page 上没有），由 app.js 用 wx.setBackgroundColor 同步。 */
 page {
   background: #F2F3F5;
+}
+
+/* ============ 主题：零售绿（retail） ============
+ * 在「雾白层叠」的分层体系内，把方案 A 的视觉特征搬回来：
+ *   - 墨色 → 深绿 #1C2B20：品牌区、主按钮、选中态
+ *   - 图标底从「凹槽」改成「白卡 + 投影」：这是方案 A 的标志性做法，
+ *     彩色图标衬白底方卡，比凹槽更亮、更跳，和深绿形成对比
+ *   - 页面底更白一点（#F7F8F7），让白卡靠投影而不是靠底色差区分
+ * 层次逻辑不变：底 → 白卡 → 毛玻璃主块，只是色相换成绿。
+ * 主块（.glass / dark 属性）在本主题里渲染成深绿实心，而不是半透明玻璃——
+ * 这是方案 A 的做法，也是它比雾白版更「实」的原因。 */
+.theme-retail {
+  --c-bg: #F7F8F7;
+  --c-surface: #FFFFFF;
+  --c-surface-soft: #F2F4F2;
+  --c-well: #FFFFFF;          /* 图标底=白卡，靠投影浮起 */
+  --c-well-deep: #EDEFED;
+
+  --c-ink: #1C2B20;           /* 深绿充当墨色 */
+  --c-ink-2: #44514A;
+  --c-muted: #8A948E;
+  --c-ink-4: #B9C0BB;
+  --c-line: rgba(28, 43, 32, 0.08);
+
+  --c-on-ink: #FFFFFF;
+  --c-action: #1C2B20;
+  --c-action-ink: #FFFFFF;
+
+  --c-gold: #1C2B20;
+  --c-gold-light: #C6CDC8;
+  --c-gold-soft: #F2F4F2;
+  --c-navy: #1C2B20;
+  --c-navy-2: #2A3B2E;
+
+  --c-price: #D63A2F;         /* 方案 A 的红更暖 */
+  --c-red: #D63A2F;
+  --c-red-soft: #FFEDEA;
+  --c-green: #2E7D4F;
+  --c-green-soft: #E9F5EE;
+  --c-orange: #B25000;
+  --c-orange-soft: #FFF3E3;
+  --c-blue: #0066CC;
+  --c-blue-soft: #E8F1FB;
+
+  /* 环境光：绿调，比雾白版更淡（页面已经很白，光晕只做点缀） */
+  --c-aura-1: #D6EAD9;
+  --c-aura-2: #EAF0E4;
+  --c-aura-3: #DFEDE4;
+
+  /* 白卡投影略重，因为底色更接近白，需要更强的浮起感 */
+  --e1: 0 2rpx 6rpx rgba(28, 43, 32, 0.05), 0 12rpx 32rpx rgba(28, 43, 32, 0.07);
+  --e2: 0 4rpx 8rpx rgba(28, 43, 32, 0.06), 0 24rpx 56rpx rgba(28, 43, 32, 0.1);
+  --e3: 0 8rpx 20rpx rgba(28, 43, 32, 0.1), 0 32rpx 72rpx rgba(28, 43, 32, 0.16);
+  --e-ink: 0 8rpx 20rpx rgba(28, 43, 32, 0.24);
+
+  /* 主块：深绿实心（不用毛玻璃），这是方案 A 的观感 */
+  --c-glass: linear-gradient(150deg, #2A3B2E 0%, #1C2B20 100%);
+  --c-glass-flat: #1C2B20;
+  --c-glass-edge: rgba(255, 255, 255, 0.08);
+  --c-hair: rgba(28, 43, 32, 0.06);
+
+  --c-bar-bg: rgba(255, 255, 255, 0.82);
+  --c-sheet-bg: #FFFFFF;
+  --c-mask: rgba(28, 43, 32, 0.4);
+
+  --gap: 24rpx;
+  --gutter: 28rpx;
+
+  --frost-ink: var(--c-ink);
+  --frost-ink-2: var(--c-ink-2);
+  --frost-ink-3: var(--c-muted);
+  --frost-ink-4: var(--c-ink-4);
+  --frost-bg: var(--c-bg);
+  --frost-card: var(--c-surface);
+  --frost-well: var(--c-well);
+  --frost-red: var(--c-red);
+  --frost-red-soft: var(--c-red-soft);
+  --frost-green: var(--c-green);
+  --frost-aura-1: var(--c-aura-1);
+  --frost-aura-2: var(--c-aura-2);
+  --frost-aura-3: var(--c-aura-3);
+  --frost-skin-1: #F8DCC6;
+  --frost-skin-2: #E8BE9E;
+  --frost-glass: var(--c-glass);
+  --frost-glass-flat: var(--c-glass-flat);
+  --frost-glass-edge: var(--c-glass-edge);
+  --frost-hair: var(--c-hair);
+  --frost-e1: var(--e1);
+  --frost-e2: var(--e2);
+  --frost-e3: var(--e3);
+  --frost-ink-shadow: var(--e-ink);
+
+  background: var(--c-bg);
+  color: var(--c-ink);
+  min-height: 100vh;
+}
+
+/* 零售绿的主块是深绿实心，主块内文字必须反白。
+ * 用变量表达，组件里就不用为每个主题写一遍覆盖。 */
+.theme-retail {
+  --c-on-hero: #FFFFFF;
+  --c-on-hero-2: rgba(255, 255, 255, 0.66);
+
+  --c-tab-idle: rgba(255, 255, 255, 0.78);
+  --c-tab-on: #FFFFFF;
+
+  /* 品牌头变成深绿卡片（方案 A 的顶部大色块） */
+  --brand-bg: var(--c-navy);
+  --brand-pad: 32rpx 30rpx;
+  --brand-radius: var(--radius-xl);
+  --brand-mb: var(--gap);
+  --brand-shadow: var(--e3);
+  --brand-logo-bg: rgba(255, 255, 255, 0.14);
+  --brand-logo-ink: #FFFFFF;
+  --brand-logo-shadow: none;
+  --brand-name: #FFFFFF;
+  --brand-slogan: rgba(255, 255, 255, 0.6);
+}
+
+/* 零售绿的图标底：白卡 + 投影（方案 A 的标志性做法）。
+ * .well 在本主题里需要浮起来而不是凹进去，所以这里单独覆盖内阴影为外投影。 */
+.theme-retail {
+  /* 图标底浮起而不是凹进：方案 A 的彩色图标衬白卡 */
+  --well-shadow: 0 2rpx 6rpx rgba(28, 43, 32, 0.06), 0 8rpx 20rpx rgba(28, 43, 32, 0.08);
+}
+.theme-retail .well,
+.theme-retail .tile .ico,
+.theme-retail .quick-icon,
+.theme-retail .action-icon,
+.theme-retail .biz-item .bi {
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 6rpx rgba(28, 43, 32, 0.06), 0 8rpx 20rpx rgba(28, 43, 32, 0.08);
+}
+/* 数据格（.cell .well）在白卡里不适合再浮一层，保持浅底无投影 */
+.theme-retail .card .well {
+  background: var(--c-surface-soft);
+  box-shadow: none;
+}
+
+/* ============ 深色主题下的图标提亮 ============
+ * 图标是 <image> 引用的 SVG，吃不到 CSS 变量。深色底上原本的饱和彩色
+ * 会显得发闷（暗色细节糊在一起），这里用滤镜统一提亮 + 提饱和，
+ * 不需要为 55 个图标各生成一套深色变体，包体积也不翻倍。 */
+.theme-dark image {
+  filter: brightness(1.25) saturate(1.3);
+}
+/* 底栏图标已经换成了 -light 描边版本（见 custom-tab-bar / staff-tabbar），
+ * 不要再叠加滤镜，否则会过曝成一片白。
+ * 不用属性选择器（WXSS 对 [src$=] 支持不可靠），走类名。 */
+.theme-dark .tabbar .icon,
+.theme-dark .icon-light {
+  filter: none;
 }

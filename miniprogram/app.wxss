@@ -104,6 +104,7 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 /* ---------- L2 毛玻璃：每页只能有一个主块用 ---------- */
 .glass {
   background: var(--c-glass);
+  color: var(--c-on-hero, var(--c-ink));
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   box-shadow: var(--e3), inset 0 0 0 1rpx var(--c-glass-edge);
