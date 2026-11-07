@@ -1,6 +1,6 @@
 /**
  * 运行环境配置。
- * - 开发版默认走本地 mock（mock/index.js），后端就绪后把 useMock 改为 false 并填 baseUrl。
+ * - 开发版连测试服务器；要用本地 mock（mock/index.js）时临时把 useMock 改为 true，不要提交。
  * - 切勿在小程序代码里放任何服务端密钥（数据库账号、第三方 API Key 等），小程序包可被反编译。
  */
 const ENV = (() => {
@@ -35,6 +35,7 @@ module.exports = {
     user: 'xm_user',
     channel: 'xm_channel',
     visitorId: 'xm_vid',
-    searchHistory: 'xm_search_history'
+    searchHistory: 'xm_search_history',
+    workbenchTools: 'xm_workbench_tools'
   }
 };
