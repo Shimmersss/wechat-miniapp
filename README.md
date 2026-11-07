@@ -32,6 +32,7 @@
 - **本机环境、排障、备份**：[`docs/开发环境交接文档.md`](docs/开发环境交接文档.md)、[`docs/LOCAL-UBUNTU.md`](docs/LOCAL-UBUNTU.md)
 - **方案 G 视觉演示（雾白层叠）**：[`docs/方案G视觉演示交接文档.md`](docs/方案G视觉演示交接文档.md)
 - **验收走查表与已知缺口**：[`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md)
+- **角色业务测试用例与预置设备**：[`docs/role-tests/`](docs/role-tests/README.md)
 - **实施记录 / 进度**：[`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md)、[`docs/PROGRESS.md`](docs/PROGRESS.md)
 - **后端接口、账号、配置**：[`server/README.md`](server/README.md)
 - **需求权威依据**：[`夏目数码_小程序与ERP整体框架_V0.3.md`](夏目数码_小程序与ERP整体框架_V0.3.md)

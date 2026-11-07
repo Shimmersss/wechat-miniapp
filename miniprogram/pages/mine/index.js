@@ -74,6 +74,13 @@ createPage({
     });
   },
 
+  /** 仅 mock 模式：加载 docs/role-tests 用的预置设备与单据，重新编译后需再点一次 */
+  onLoadTestSeed() {
+    if (!config.useMock) return;
+    const result = require('../../mock/index').loadTestSeed();
+    this.$toast(result.loaded ? `已加载，共 ${result.units} 台设备` : '测试设备已在库中');
+  },
+
   onLogout() {
     auth.logout().then(() => auth.silentLogin()).then(() => this.refresh());
   }

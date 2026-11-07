@@ -1,9 +1,11 @@
 /* 方案 G「雾白层叠」演示页公共样式。颜色全部取自 styles/theme.wxss 的 --frost-* 令牌。
    层次：.aura 光晕（最底）→ .card 白卡 → .glass 毛玻璃（最高）；卡内用 .well 凹槽 */
-page { background: var(--frost-bg); color: var(--frost-ink); }
+/* page 是特殊根节点，拿不到 .theme-root/.theme-dark 上的 CSS 变量，
+   这里只能用兜底值；真正的底色由 .frost 自己铺。 */
+page { background: #F2F3F5; color: #111215; }
 /* 不能用 overflow:hidden：会裁掉超屏内容且让页面无法滚动。横向溢出单独收，纵向必须放开。
    底栏占位由 .frost 的 padding-bottom 提供（.ph 在滚动容器外，靠它不生效）。 */
-.frost { position: relative; overflow-x: hidden; padding-bottom: calc(200rpx + env(safe-area-inset-bottom)); }
+.frost { position: relative; overflow-x: hidden; background: var(--frost-bg); color: var(--frost-ink); min-height: 100vh; padding-bottom: calc(200rpx + env(safe-area-inset-bottom)); }
 .aura {
   position: absolute; left: -80rpx; right: -80rpx; top: -120rpx; height: 1040rpx; z-index: 0; pointer-events: none;
   background:
@@ -58,3 +60,35 @@ page { background: var(--frost-bg); color: var(--frost-ink); }
 
 .notice { padding: 24rpx 30rpx; font-size: 24rpx; color: var(--frost-red); }
 .endnote { text-align: center; font-size: 22rpx; color: var(--frost-ink-4); padding: 36rpx 0 8rpx; }
+
+/* ===== 主块（.glass）内的文字必须反白 =====
+ * .glass 的背景是 --frost-glass：浅色下是白玻璃（用深字没问题），
+ * 深色 / 零售绿下是深色实心 —— 里面的 --frost-ink-* 全是深色字，
+ * 会变成「深底深字」。这里按主块作用域统一改成反白。 */
+.glass .pill,
+.glass .ml,
+.glass .mv-none,
+.glass .tl,
+.glass .bslo,
+.glass .prole,
+.glass .ql,
+.glass .stock-pill {
+  color: var(--c-on-hero-2, rgba(255, 255, 255, 0.72));
+}
+.glass .more,
+.glass .unit {
+  color: var(--c-on-hero-2, rgba(255, 255, 255, 0.72));
+}
+/* 主块里的深色小药丸（如「数据总览」）在深底下要提亮边框 */
+.glass .pill {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.3);
+}
+/* 主块内的小药丸（.glass 里的标签）：用半透明白，
+ * 这样主块是深绿/深灰时浮得起来，是白玻璃时也不会变成一块实心绿。 */
+.glass { --pill-bg: rgba(255, 255, 255, 0.16); }
+/* 主块里的语义色（红/绿）：由主题令牌决定，
+ * 浅色用原色、深色和零售绿用提亮版，不用写后代选择器。 */
+.glass .tv-red, .glass .red { color: var(--c-hero-red, #D63A2F); }
+.glass .tv-green, .glass .green { color: var(--c-hero-green, #2E7D4F); }

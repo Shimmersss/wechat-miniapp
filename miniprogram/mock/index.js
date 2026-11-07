@@ -18,6 +18,7 @@ const createRepair=require('./repair');
 const createLoans=require('./loans');
 const createAgents=require('./agents');
 const createStaffAdmin=require('./staff-admin');
+const loadSeed=require('./test-seed');
 const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM } = require('../constants/roles');
 const { REPAIR_FLOW } = require('../constants/status');
 
@@ -41,8 +42,14 @@ function registerFile({ filePath, scope }) {
   return view;
 }
 
+/** 预置测试数据时临时指定身份，不写入 storage */
+let roleOverride = null;
 function currentRole() {
-  return wx.getStorageSync(ROLE_KEY) || 'customer';
+  return roleOverride || wx.getStorageSync(ROLE_KEY) || 'customer';
+}
+function asRole(role, fn) {
+  roleOverride = role;
+  try { return fn(); } finally { roleOverride = null; }
 }
 
 function makeUser(role) {
@@ -294,4 +301,18 @@ function handle({ url, method, data, header }) {
   });
 }
 
-module.exports = { handle, ROLE_KEY, registerFile };
+/** 同步调用路由，供预置测试数据使用；失败直接抛错，不吞掉 */
+function callAs(role, method, path, data = {}, header = {}) {
+  const route = compiled.find((r) => r.method === method && r.re.test(path));
+  if (!route) throw new Error(`[mock] 未实现: ${method} ${path}`);
+  const match = path.match(route.re), params = {};
+  route.keys.forEach((k, i) => { params[k] = decodeURIComponent(match[i + 1]); });
+  return asRole(role, () => route.handler(data, header, params));
+}
+
+/** 加载角色测试预置数据（docs/role-tests）；重复调用不会重复写入 */
+function loadTestSeed() {
+  return loadSeed(db, { callAs, fileAs: (role, filePath, scope) => asRole(role, () => registerFile({ filePath, scope })) });
+}
+
+module.exports = { handle, ROLE_KEY, registerFile, loadTestSeed };

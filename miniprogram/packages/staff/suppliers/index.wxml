@@ -2,7 +2,7 @@
 <view class="container">
   <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="搜索供应商名称" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-soft btn-sm" bindtap="onSearch">搜索</button></view>
   <view wx:if="{{selecting}}" class="notice">点选有效供应商，将带回采购单。</view>
-  <button wx:if="{{canManage}}" class="btn btn-primary btn-block mb" bindtap="onAdd">＋ 新增供应商</button>
+  <button wx:if="{{canManage}}" class="btn btn-primary btn-block mb-strong" bindtap="onAdd">＋ 新增供应商</button>
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="onSearch">重试</button></view>
   <view wx:for="{{list}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="onSelect">
     <view class="row"><text class="h3 flex-1">{{item.name}}</text><status-pill text="{{item.active ? (selecting ? '选择' : '启用') : '已停用'}}" tone="{{item.active ? 'green' : 'gray'}}" /></view>

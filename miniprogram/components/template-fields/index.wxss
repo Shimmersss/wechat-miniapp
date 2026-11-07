@@ -21,7 +21,7 @@
   box-shadow: inset 0 1rpx 2rpx var(--c-hair);
 }
 .option::after, .photo button::after, .upload::after { border: none; }
-.option.selected { color: var(--c-action-ink); background: var(--c-action); box-shadow: var(--e-ink); }
+.option.selected { color: var(--c-on-selected); background: var(--c-selected); box-shadow: var(--e-ink); }
 
 .value-input {
   width: 100%; min-height: 60rpx; font-size: 28rpx;

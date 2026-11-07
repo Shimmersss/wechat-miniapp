@@ -6,18 +6,28 @@ const auth = require('../../../../utils/auth');
 const { can } = require('../../../../utils/permission');
 const { PERM } = require('../../../../constants/roles');
 const { ROUTES, go } = require('../../../../utils/router');
+const theme = require('../../../../utils/theme');
 
 const TABS = [
-  { key: 'home', text: '首页', icon: 'tab-home', url: ROUTES.DEMO_HOME },
-  { key: 'biz', text: '经营', icon: 'tab-ledger', url: ROUTES.DEMO_BIZ },
+  { key: 'home', text: '首页', icon: 'home', url: ROUTES.DEMO_HOME },
+  { key: 'biz', text: '经营', icon: 'agent', url: ROUTES.DEMO_BIZ },
   { key: 'plus' },
-  { key: 'stock', text: '库存', icon: 'tab-grid', url: ROUTES.DEMO_STOCK },
-  { key: 'mine', text: '我的', icon: 'tab-my', url: ROUTES.DEMO_MINE }
+  { key: 'stock', text: '库存', icon: 'grid', url: ROUTES.DEMO_STOCK },
+  { key: 'mine', text: '我的', icon: 'user', url: ROUTES.DEMO_MINE }
 ];
 
 Component({
   properties: { active: { type: String, value: '' } },
-  data: { tabs: TABS },
+  data: { tabs: TABS, dark: false },
+  lifetimes: {
+    attached() {
+      // 深色主题下选中态图标要用浅色变体，否则深色描边糊在深底上看不见
+      const sync = () => this.setData({ dark: theme.get() === 'dark' });
+      sync();
+      this._off = theme.onChange(sync);
+    },
+    detached() { if (this._off) this._off(); }
+  },
   methods: {
     onTab(e) {
       const { key, url } = e.currentTarget.dataset;

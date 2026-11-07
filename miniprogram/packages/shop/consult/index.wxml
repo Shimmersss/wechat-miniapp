@@ -1,7 +1,7 @@
 <theme-shell>
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}<button wx:if="{{!options && !saving}}" class="btn btn-line mt" bindtap="load">重新加载</button></view>
- <button wx:if="{{error && !pending && !saving}}" class="btn btn-line mb" bindtap="onBrowseShop">回店铺重新选择</button>
+ <button wx:if="{{error && !pending && !saving}}" class="btn btn-line btn-block mt mb" bindtap="onBrowseShop">回店铺重新选择</button>
  <view wx:if="{{result}}" class="card"><view class="h2">{{result.kind === 'appointment' ? '预约意向已提交' : result.kind === 'order' ? '下单成功，已为你锁定' : '咨询已提交'}}</view><view wx:if="{{result.kind === 'order'}}" class="row mt"><text class="small muted">成交价</text><price-tag value="{{result.agentOrder.sharePrice}}" /></view><view class="muted mt">{{result.kind === 'order' ? '门店会尽快联系你确认并收款；锁定到期未成交将自动释放。' : '门店确认后可在记录中查看进度。'}}</view><button class="btn btn-primary mt" bindtap="onDetail">查看进度</button></view>
  <block wx:else>
   <view class="chips mb"><view wx:if="{{agent}}" class="chip {{mode === 'order' ? 'active' : ''}}" data-value="order" bindtap="onMode">立即下单</view><view class="chip {{mode === 'consult' ? 'active' : ''}}" data-value="consult" bindtap="onMode">商品咨询</view><view class="chip {{mode === 'appointment' ? 'active' : ''}}" data-value="appointment" bindtap="onMode">预约到店</view></view>

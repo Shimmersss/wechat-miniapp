@@ -19,7 +19,7 @@
   color: var(--c-muted);
 }
 .theme-opt.on {
-  background: var(--c-action);
-  color: var(--c-action-ink);
+  background: var(--c-selected);
+  color: var(--c-on-selected);
   box-shadow: var(--e-ink);
 }
