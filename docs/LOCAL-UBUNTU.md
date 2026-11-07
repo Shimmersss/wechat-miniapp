@@ -35,9 +35,9 @@
 
 微信工具导入仓库根目录，使用已有 AppID，源码目录由 `miniprogramRoot` 指向 `miniprogram/`。
 
-小程序仍保留仓库默认的 `useMock: true`，用于页面与角色操作演示。可在“我的 → 开发调试 / 切换模拟身份”或员工登录页切换身份；重新编译会重置内存中的模拟业务数据。API 健康检查成功不代表小程序页面已使用 MySQL。
+小程序开发版默认连测试服务器（`useMock: false`），本机 API 只有把 `baseUrl` 临时改到本机时才会被页面使用。要做页面与角色操作演示，临时把 `useMock` 改为 `true`，不要提交；此时可在“我的 → 开发调试 / 切换模拟身份”或员工登录页切换身份，重新编译会重置内存中的模拟业务数据。API 健康检查成功不代表小程序页面已使用 MySQL。
 
-正式联调仍需管理员配置微信 AppSecret、腾讯云短信凭据、对应 AppID 的开发者权限。上线还需 HTTPS 域名与微信合法域名配置。目前没有上传、提审或发布小程序，没有设置生产域名，也没有添加免验证登录入口。切换 `useMock` 前，先按 `docs/ACCEPTANCE.md` 核对功能和账号配置。
+正式联调仍需管理员配置微信 AppSecret、腾讯云短信凭据、对应 AppID 的开发者权限。上线还需 HTTPS 域名与微信合法域名配置。目前没有上传、提审或发布小程序，也没有设置生产域名。测试服务器用开发固定验证码 `OTP_DEV_CODE` 登录，只在非 `production` 环境生效，上线前必须删除。
 
 `project.config.json` 的 `watchOptions.ignore` 排除了 `.local/`、后端依赖和 `.git/`，避免微信工具监听 MySQL 临时文件与大量后端依赖。后端及密钥均在小程序上传目录之外。
 
@@ -86,4 +86,4 @@ node --env-file=.env --test --test-concurrency=2 test/*.test.js
 
 后端测试使用独立的 `xiamu_verification`，不会清空业务库。外部微信和短信在测试中使用替身，因此测试通过不等于正式外部登录已联调。
 
-本次部署验证：小程序/mock 测试 25/25 通过，真实 HTTP/MySQL 后端测试 67/67 通过，API 与数据库停止后重新启动健康检查正常；微信模拟器已实际显示 3 台商品，首页、分类、成为代理、我的四个 tab 切换正常，本轮运行未捕获到 JS 异常。验证记录为 `.local/deployment-verification.json`，首页截图为 `.local/home-simulator.png`。
+2026-11-04 部署验证：小程序/mock 测试 25/25 通过，真实 HTTP/MySQL 后端测试 67/67 通过，API 与数据库停止后重新启动健康检查正常；微信模拟器已实际显示 3 台商品，首页、分类、成为代理、我的四个 tab 切换正常，本轮运行未捕获到 JS 异常。验证记录为 `.local/deployment-verification.json`，首页截图为 `.local/home-simulator.png`。

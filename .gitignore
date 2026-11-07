@@ -40,3 +40,6 @@ problem/
 # 测试报告里的截图（体积大，报告 markdown 仍然入库）
 docs/role-tests/results/**/*.png
 docs/test-cases/results/**/*.png
+
+# 含真实凭据的交接文档，只留本地，绝不入库
+docs/HANDOFF-*.md
