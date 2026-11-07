@@ -84,15 +84,24 @@
       rgba(255, 255, 255, 0.62) 100%);
   --c-glass-flat: rgba(255, 255, 255, 0.66);
   --c-glass-edge: rgba(255, 255, 255, 0.85);
+  /* 导航条、底栏这类「贴边浮层」用的半透明底。
+     它和主块不同：主块是内容区的大色块，浮层只是为了压住下面的滚动内容。 */
+  --c-overlay: rgba(255, 255, 255, 0.82);
   --c-hair: rgba(17, 18, 21, 0.07);
 
   /* 主块（.glass）里的文字色：浅色主题主块是白玻璃 → 用墨色 */
   --c-on-hero: #111215;
   --c-on-hero-2: #4B4F57;
+  /* 主块内的语义色：浅色主块是白玻璃，用原色 */
+  --c-hero-red: #D63A2F;
+  --c-hero-green: #2E7D4F;
 
   /* 底栏文字：未选中要看得清（不能只靠 opacity 压暗） */
   --c-tab-idle: #6B7079;
   --c-tab-on: #111215;
+
+  --c-selected: #111215;
+  --c-on-selected: #FFFFFF;
 
   /* 底栏/浮层专用（深色下需要更高的不透明度才看得清） */
   --c-bar-bg: rgba(255, 255, 255, 0.72);
@@ -141,7 +150,9 @@
 .theme-dark {
   --c-bg: #0B0C0F;
   --c-surface: #17191E;
-  --c-surface-soft: #212429;
+  /* 卡内次级底色：与卡片拉开 20 个色阶，否则筛选块、代码块
+     在白卡上都看不出边界（原来 #212429 只差 10）。 */
+  --c-surface-soft: #2B3038;
   --c-well: #212429;
   --c-well-deep: #282C33;
 
@@ -184,21 +195,35 @@
   --e3: 0 4rpx 14rpx rgba(0, 0, 0, 0.5), 0 44rpx 96rpx rgba(0, 0, 0, 0.66);
   --e-ink: 0 12rpx 28rpx rgba(0, 0, 0, 0.6);
 
-  /* 毛玻璃：用亮灰玻璃而不是白玻璃，并抬高内高光边 */
+  /* 毛玻璃：必须比页面底（#0B0C0F）更亮，否则主块会「凹进」页面。
+     原来的 rgba(62,68,80,.78)→rgba(34,37,44,.72) 叠在近黑底上只剩 (11,12,14)，
+     比页面背景 (22,15,33) 还暗，卡片边界消失。
+     现在整体抬高约 20 个色阶，并保留由亮到暗的渐变方向。 */
   --c-glass: linear-gradient(160deg,
-      rgba(62, 68, 80, 0.78) 0%,
-      rgba(34, 37, 44, 0.72) 55%,
-      rgba(46, 50, 58, 0.75) 100%);
-  --c-glass-flat: rgba(30, 33, 39, 0.82);
-  --c-glass-edge: rgba(255, 255, 255, 0.14);
+      rgba(86, 94, 110, 0.86) 0%,
+      rgba(52, 57, 68, 0.82) 55%,
+      rgba(64, 70, 82, 0.84) 100%);
+  --c-glass-flat: rgba(52, 57, 68, 0.9);
+  --c-glass-edge: rgba(255, 255, 255, 0.18);
+  --c-overlay: rgba(24, 26, 32, 0.86);
   --c-hair: rgba(255, 255, 255, 0.07);
 
   /* 深色主块是暗玻璃 → 文字反白 */
   --c-on-hero: #F5F6F8;
   --c-on-hero-2: #C2C6CE;
+  /* 深色主块是暗玻璃，红绿要提亮才看得清 */
+  --c-hero-red: #FF8A80;
+  --c-hero-green: #7BE0A0;
 
   --c-tab-idle: #9AA0AB;
   --c-tab-on: #F5F6F8;
+
+  /* 选中态（标签、分段、开关）：和浅色/零售绿一样用「墨色反色」，
+     而不是品牌蓝紫。深色下墨色反色就是近白，选中块是白的、文字是深的，
+     语义与另两个主题一致（选中 = 用最重的墨色标记）。
+     主按钮仍用 --c-action（品牌蓝紫），两者分开。 */
+  --c-selected: #F5F6F8;
+  --c-on-selected: #0B0C0F;
 
   --c-bar-bg: rgba(20, 22, 27, 0.82);
   --c-sheet-bg: #17191E;
@@ -206,6 +231,32 @@
 
   background: var(--c-bg);
   color: var(--c-ink);
+  /* demo 分包用的 --frost-* 别名：深色主题原本一个都没有，
+   * 导致 demo 页在深色下全部回落到浅色值（白底、黑字、看不清）。
+   * 这里把别名补齐，值都指向 --c-*，自然跟随深色令牌。 */
+  --frost-ink: var(--c-ink);
+  --frost-ink-2: var(--c-ink-2);
+  --frost-ink-3: var(--c-muted);
+  --frost-ink-4: var(--c-ink-4);
+  --frost-bg: var(--c-bg);
+  --frost-card: var(--c-surface);
+  --frost-well: var(--c-well);
+  --frost-red: var(--c-red);
+  --frost-red-soft: var(--c-red-soft);
+  --frost-green: var(--c-green);
+  --frost-aura-1: var(--c-aura-1);
+  --frost-aura-2: var(--c-aura-2);
+  --frost-aura-3: var(--c-aura-3);
+  --frost-skin-1: #F8DCC6;
+  --frost-skin-2: #E8BE9E;
+  --frost-glass: var(--c-glass);
+  --frost-glass-flat: var(--c-glass-flat);
+  --frost-glass-edge: var(--c-glass-edge);
+  --frost-hair: var(--c-hair);
+  --frost-e1: var(--e1);
+  --frost-e2: var(--e2);
+  --frost-e3: var(--e3);
+  --frost-ink-shadow: var(--e-ink);
 }
 
 /* 老安卓 / 低版本微信不支持 backdrop-filter：
@@ -290,6 +341,9 @@ page {
   /* 主块：深绿实心（不用毛玻璃），这是方案 A 的观感 */
   --c-glass: linear-gradient(150deg, #2A3B2E 0%, #1C2B20 100%);
   --c-glass-flat: #1C2B20;
+  /* 零售绿的主块是深绿实心，但导航条不能跟着变深绿——
+     顶部一整条深绿会让人以为是另一个页面。导航条用半透明白。 */
+  --c-overlay: rgba(247, 248, 247, 0.88);
   --c-glass-edge: rgba(255, 255, 255, 0.08);
   --c-hair: rgba(28, 43, 32, 0.06);
 
@@ -334,9 +388,15 @@ page {
 .theme-retail {
   --c-on-hero: #FFFFFF;
   --c-on-hero-2: rgba(255, 255, 255, 0.66);
+  /* 零售绿主块是深绿实心，红绿同样要提亮 */
+  --c-hero-red: #FF8A80;
+  --c-hero-green: #7BE0A0;
 
   --c-tab-idle: rgba(255, 255, 255, 0.78);
   --c-tab-on: #FFFFFF;
+
+  --c-selected: #1C2B20;
+  --c-on-selected: #FFFFFF;
 
   /* 品牌头变成深绿卡片（方案 A 的顶部大色块） */
   --brand-bg: var(--c-navy);
@@ -365,17 +425,67 @@ page {
   background: #FFFFFF;
   box-shadow: 0 2rpx 6rpx rgba(28, 43, 32, 0.06), 0 8rpx 20rpx rgba(28, 43, 32, 0.08);
 }
-/* 数据格（.cell .well）在白卡里不适合再浮一层，保持浅底无投影 */
-.theme-retail .card .well {
+/* 卡内元素（数据格、输入框）：白卡上的白底会失去边界，
+ * 统一退回浅灰底 + 细边。方案 A 的输入框也是浅灰的。 */
+.theme-retail.theme-retail .card .well,
+.theme-retail.theme-retail .input,
+.theme-retail.theme-retail .textarea,
+.theme-retail.theme-retail .picker {
   background: var(--c-surface-soft);
-  box-shadow: none;
+  box-shadow: inset 0 2rpx 4rpx var(--c-hair), inset 0 0 0 1rpx var(--c-line);
+}
+
+/* 次要按钮（.btn-line / .btn-soft）：零售绿下 --c-surface 是纯白，
+ * 落在白卡上等于没有按钮，只剩文字。改成浅灰底 + 细描边。 */
+/* 双重类名提高特异性：theme.wxss 在 app.wxss 之前加载，
+ * 单类选择器会被 app.wxss 的 button.btn-line 覆盖掉。 */
+.theme-retail.theme-retail button.btn-line,
+.theme-retail.theme-retail button.btn-soft {
+  background: var(--c-surface-soft);
+  color: var(--c-ink);
+  box-shadow: inset 0 0 0 1rpx var(--c-line);
+}
+/* 白卡上的 .well（数据格）同理 */
+.theme-retail .card button.btn-line,
+.theme-retail .card button.btn-soft {
+  background: var(--c-surface-soft);
+}
+
+/* 白卡上的「格子」（型号 / 规格 / 选项）：零售绿的 --c-well 是纯白，
+ * 落在白卡上等于没有底，只剩字。统一退回浅灰 + 细边。 */
+.theme-retail.theme-retail .model,
+.theme-retail.theme-retail .spec,
+.theme-retail.theme-retail .option,
+.theme-retail.theme-retail .cell,
+.theme-retail.theme-retail .quick-ico,
+.theme-retail.theme-retail .quick-icon {
+  background: var(--c-surface-soft);
+  box-shadow: inset 0 0 0 1rpx var(--c-line);
 }
 
 /* ============ 深色主题下的图标提亮 ============
  * 图标是 <image> 引用的 SVG，吃不到 CSS 变量。深色底上原本的饱和彩色
  * 会显得发闷（暗色细节糊在一起），这里用滤镜统一提亮 + 提饱和，
  * 不需要为 55 个图标各生成一套深色变体，包体积也不翻倍。 */
-.theme-dark image {
+/* 只给「图标」提亮，不能给照片加滤镜。
+   原来写的是 `.theme-dark image`，把商品实拍图也提亮 25%，
+   白色机身的图直接过曝成一片白。改成白名单：
+   图标都是有固定小尺寸的 <image>，挂在带 icon / ico / quick-img
+   这类类名的容器里；商品图、详情图、凭证照片一律不加。 */
+.theme-dark .action-icon,
+.theme-dark .entry-icon,
+.theme-dark .tag-icon,
+.theme-dark .quick-img,
+.theme-dark .ico-img,
+.theme-dark .search-icon,
+.theme-dark .eye-icon,
+.theme-dark .icon-action image,
+.theme-dark .tab-icon,
+.theme-dark .quick-icon image,
+.theme-dark .ico image,
+.theme-dark .staff-tabbar .icon,
+.theme-dark .nav-icon,
+.theme-dark .metric-icon {
   filter: brightness(1.25) saturate(1.3);
 }
 /* 底栏图标已经换成了 -light 描边版本（见 custom-tab-bar / staff-tabbar），

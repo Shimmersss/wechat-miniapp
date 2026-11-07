@@ -2,16 +2,25 @@
 
 .hero { padding: 34rpx 32rpx 32rpx; }
 .hero-top { display: flex; align-items: center; justify-content: space-between; }
-.pill { display: flex; align-items: center; font-size: 21rpx; font-weight: 700; color: var(--frost-ink-2);
-  padding: 8rpx 20rpx; border-radius: 999rpx; background: var(--frost-glass-flat); box-shadow: inset 0 0 0 1rpx var(--frost-hair); }
+.pill { display: flex; align-items: center; font-size: 21rpx; font-weight: 700; color: var(--c-on-hero-2, var(--frost-ink-2));
+  padding: 8rpx 20rpx; border-radius: 999rpx; background: var(--pill-bg, var(--frost-card)); box-shadow: inset 0 0 0 1rpx var(--frost-hair); }
 .pill-icon { width: 24rpx; height: 24rpx; margin-right: 10rpx; }
 .more { font-size: 23rpx; color: var(--frost-ink-3); font-weight: 700; }
 .metrics { display: flex; margin-top: 32rpx; }
 .m { flex: 1; min-width: 0; }
 .m + .m { padding-left: 28rpx; border-left: 1rpx solid var(--frost-hair); }
-.mv { font-size: 58rpx; font-weight: 800; letter-spacing: -2rpx; line-height: 1.1; }
-.mv-none { font-size: 26rpx; letter-spacing: 0; color: var(--frost-ink-3); line-height: 72rpx; }
-.ml { font-size: 22rpx; color: var(--frost-ink-3); margin-top: 10rpx; }
+/* 大金额（如 ¥377,135.06）在 58rpx 下会撑出屏幕被截断，
+   加 nowrap + 等比缩字，保证完整显示。 */
+.mv { font-size: 58rpx; font-weight: 800; letter-spacing: -2rpx; line-height: 1.1;
+  white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* 金额较长时等比缩字，避免撑出屏幕被截断。
+   用 clamp 做不到按位数自适应，这里按经验分档： */
+.mv.is-long { font-size: 44rpx; letter-spacing: -1.4rpx; }
+.mv.is-xlong { font-size: 36rpx; letter-spacing: -1rpx; }
+.mv-none { font-size: 26rpx; letter-spacing: 0; color: var(--c-on-hero-2, var(--frost-ink-3)); line-height: 72rpx; }
+/* 主块内的说明文字：零售绿/深色下主块是深色底，
+   --frost-ink-3 是深色字，会看不见，改用反白次级色。 */
+.ml { font-size: 22rpx; color: var(--c-on-hero-2, var(--frost-ink-3)); margin-top: 10rpx; }
 .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16rpx; margin-top: 36rpx; }
 .quick { display: flex; align-items: center; padding: 18rpx 14rpx; border-radius: 28rpx; background: var(--frost-card);
   box-shadow: var(--frost-e1); font-size: 23rpx; font-weight: 700; min-width: 0; }

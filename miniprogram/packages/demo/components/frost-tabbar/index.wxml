@@ -5,7 +5,7 @@
       <view class="plus"><image class="plus-icon" src="/packages/demo/icons/plus-white.svg" /></view>
     </view>
     <view wx:else class="tab {{item.key === active ? 'on' : ''}}" data-key="{{item.key}}" data-url="{{item.url}}" bindtap="onTab">
-      <image class="tab-icon" src="/packages/demo/icons/{{item.icon}}-{{item.key === active ? 'ink' : 'gray'}}.svg" />
+      <image class="tab-icon" src="/packages/demo/icons/{{item.icon}}{{item.key === active ? '' : '-gray'}}.svg" />
       <text class="tab-text">{{item.text}}</text>
     </view>
   </block>

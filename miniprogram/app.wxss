@@ -77,6 +77,12 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
 .gap-sm { gap: 16rpx; }
 .mt-sm { margin-top: 12rpx; } .mt { margin-top: var(--gap); } .mb { margin-bottom: var(--gap); }
+/* 块级按钮与下一张卡片之间：--gap(24rpx) 视觉上偏挤，
+   单独给按钮一个更大的下边距，避免「按钮贴着卡片」。 */
+button.btn-block.mb { margin-bottom: 40rpx; }
+button.btn.mb { margin-bottom: 40rpx; }
+/* 按钮后面紧跟卡片时用它，比 --gap 更松一档 */
+.mb-strong { margin-bottom: 44rpx; }
 .divider { height: 1rpx; background: var(--c-line); margin: 24rpx 0; }
 
 /* ---------- 文本 ---------- */
@@ -147,7 +153,23 @@ button.btn-soft { background: var(--c-well); color: var(--c-ink); }
 button.btn-danger { background: var(--c-red); color: #fff; }
 button.btn-block { display: block; width: 100%; }
 button.btn-sm { height: 64rpx; line-height: 64rpx; padding: 0 26rpx; font-size: 26rpx; }
-button.btn[disabled] { opacity: .4; }
+/* 禁用态：不要用 opacity 整体压暗——深色主题下按钮底色本来就暗，
+   再叠 opacity 会和文字一起糊成一块「纯色方框」。
+   改成显式的禁用配色：底色不动、文字降一档、去掉投影。 */
+button.btn[disabled] {
+  opacity: 1;
+  background: var(--c-well);
+  color: var(--c-muted);
+  box-shadow: none;
+}
+button.btn-line[disabled],
+button.btn-primary[disabled],
+button.btn-soft[disabled],
+button.btn-dark[disabled] {
+  background: var(--c-well);
+  color: var(--c-muted);
+  box-shadow: none;
+}
 
 /* ---------- 筛选 chip ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
@@ -156,7 +178,7 @@ button.btn[disabled] { opacity: .4; }
   background: var(--c-surface); color: var(--c-ink-2);
   font-size: 28rpx; font-weight: 600; box-shadow: var(--e1);
 }
-.chip.active { background: var(--c-action); color: var(--c-action-ink); box-shadow: var(--e-ink); }
+.chip.active { background: var(--c-selected); color: var(--c-on-selected); box-shadow: var(--e-ink); }
 
 /* ---------- 表单 ---------- */
 .field { margin-bottom: 28rpx; }
@@ -183,19 +205,24 @@ button.btn[disabled] { opacity: .4; }
 .list-item:last-child { border-bottom: 0; }
 
 /* ---------- 底部固定操作区 ---------- */
+/* 底部操作条：悬浮圆角胶囊，和 staff-tabbar 保持同一套语言。
+ * 原来写的是 left:0/right:0/bottom:0 的通栏，背景铺满整条屏幕宽度，
+ * 在页面里看就是「按钮下面一条直角色块」，非常突兀。 */
 .footer-bar {
-  position: fixed; left: 0; right: 0; bottom: 0;
+  position: fixed; left: var(--gutter); right: var(--gutter);
+  bottom: calc(20rpx + env(safe-area-inset-bottom));
   display: flex; align-items: center; gap: 16rpx;
-  padding: 20rpx var(--gutter);
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: var(--c-glass-flat);
+  padding: 16rpx 18rpx;
+  border-radius: 40rpx;
+  background: var(--c-overlay, var(--c-glass-flat));
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  box-shadow: 0 -8rpx 32rpx rgba(17, 18, 21, 0.06);
+  box-shadow: var(--e2), inset 0 0 0 1rpx var(--c-glass-edge);
   z-index: 10;
 }
 .footer-bar button.btn { flex: 1; padding: 0 16rpx; }
-.footer-space { height: calc(160rpx + env(safe-area-inset-bottom)); }
+/* 与 .footer-bar 的实际高度对齐：16*2 + 88(按钮) + 20(底部) + 安全区 */
+.footer-space { height: calc(144rpx + env(safe-area-inset-bottom)); }
 
 /* ---------- 环境光：页面顶部柔光，给毛玻璃提供虚化素材 ----------
  * 挂在页面最外层容器上；不要放进 scroll-view，否则会跟着滚走。 */

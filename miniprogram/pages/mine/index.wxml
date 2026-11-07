@@ -29,6 +29,7 @@
     <picker range="{{mockRoles}}" range-key="label" value="{{mockRoleIndex}}" bindchange="onMockRoleChange">
       <view class="list-item"><text>切换模拟身份</text><text class="gold">{{mockRoles[mockRoleIndex].label}} ›</text></view>
     </picker>
+    <view class="list-item" bindtap="onLoadTestSeed"><text>加载测试设备</text><text class="gold">加载 ›</text></view>
     <view class="list-item" bindtap="goDemo"><text>方案 G 视觉演示（雾白层叠）</text><text class="gold">打开 ›</text></view>
   </section-card>
 

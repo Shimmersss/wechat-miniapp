@@ -32,3 +32,11 @@ coverage/
 # 设计稿截图是构建产物，用 design-demos/shoot.sh 可随时重新生成
 design-demos/**/preview.png
 design-demos/compare.png
+
+# UI 巡检截图（本地调试产物，体积大且可重新生成）
+docs/ui-screenshots/
+problem/
+
+# 测试报告里的截图（体积大，报告 markdown 仍然入库）
+docs/role-tests/results/**/*.png
+docs/test-cases/results/**/*.png

@@ -23,7 +23,7 @@
           <view class="ml">今日入库</view>
         </view>
         <view class="m">
-          <view wx:if="{{stats && stats.inventory.stockCost !== undefined}}" class="mv num">{{f.maskMoney(stats.inventory.stockCost, privacy)}}</view>
+          <view wx:if="{{stats && stats.inventory.stockCost !== undefined}}" class="mv num {{f.maskMoney(stats.inventory.stockCost, privacy).length > 8 ? 'is-xlong' : f.maskMoney(stats.inventory.stockCost, privacy).length > 6 ? 'is-long' : ''}}">{{f.maskMoney(stats.inventory.stockCost, privacy)}}</view>
           <view wx:else class="mv mv-none">无权限查看</view>
           <view class="ml">在库成本</view>
         </view>

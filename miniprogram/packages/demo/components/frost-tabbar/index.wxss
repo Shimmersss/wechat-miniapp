@@ -2,18 +2,36 @@
 .dock {
   position: fixed; left: 28rpx; right: 28rpx; bottom: calc(24rpx + env(safe-area-inset-bottom)); z-index: 50;
   height: 128rpx; border-radius: 52rpx; display: flex; align-items: center;
-  background: var(--frost-glass-flat);
+  background: var(--c-overlay, var(--frost-glass-flat));
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
   box-shadow: var(--frost-e3), inset 0 0 0 1rpx var(--frost-glass-edge);
 }
 .tab { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.tab-icon { width: 42rpx; height: 42rpx; }
-.tab-text { margin-top: 6rpx; font-size: 21rpx; font-weight: 600; color: var(--frost-ink-3); }
-.tab.on .tab-text { color: var(--frost-ink); font-weight: 800; }
+/* demo 只有一套彩色图标，没有深色变体。
+ * 深色主题下用滤镜统一提亮，否则图标糊在深灰底上看不见；
+ * 选中态再加一档，让「选中」看得出来。 */
+.tab-icon { width: 42rpx; height: 42rpx; transition: filter .15s; }
+/* 底栏是浅色浮层（--c-overlay），文字必须用深色。
+ * 不能用 --c-tab-idle：零售绿下它是半透明白，白字落白底看不见。 */
+.tab-text { margin-top: 6rpx; font-size: 21rpx; font-weight: 600; color: var(--c-muted); }
+.tab.on .tab-text { color: var(--c-ink); font-weight: 800; }
 .mid { flex: 1; display: flex; justify-content: center; }
 .plus {
-  width: 92rpx; height: 92rpx; border-radius: 32rpx; background: var(--frost-ink);
-  display: flex; align-items: center; justify-content: center; box-shadow: var(--frost-ink-shadow);
+  width: 92rpx; height: 92rpx; border-radius: 32rpx;
+  /* 不能用 --frost-ink：深色主题下它是近白，整块会变成白色方块，
+     里面的白色加号就看不见了。固定用品牌色，三主题都成立。 */
+  background: var(--c-action, #111215);
+  color: var(--c-action-ink, #FFFFFF);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.28);
 }
 .plus-icon { width: 40rpx; height: 40rpx; }
+
+/* 底栏图标：用主程序那套彩色图标。
+ * 未选中用 -gray（灰阶），选中用彩色原图。
+ * 深色主题下彩色图标里的深色描边会糊在深底上，加滤镜提亮。 */
+.tab-icon { opacity: .8; }
+.tab.on .tab-icon { opacity: 1; }
+.theme-dark .tab-icon { filter: brightness(1.3) saturate(1.25); opacity: .72; }
+.theme-dark .tab.on .tab-icon { filter: brightness(1.5) saturate(1.35); opacity: 1; }
