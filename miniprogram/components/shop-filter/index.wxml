@@ -1,0 +1,111 @@
+<view class="bar">
+  <view class="sorts">
+    <view class="sort {{!value.sort ? 'on' : ''}}" data-sort="" bindtap="onSort">综合排序</view>
+    <view class="sort {{value.sort ? 'on' : ''}}" data-sort="price" bindtap="onSort">
+      价格<view class="arrows"><view class="up {{value.sort === 'price_asc' ? 'lit' : ''}}"></view><view class="down {{value.sort === 'price_desc' ? 'lit' : ''}}"></view></view>
+    </view>
+    <view class="sort {{value.modelId ? 'on' : ''}}" bindtap="onOpenModel"><text class="sort-text">{{value.modelName || '型号'}}</text></view>
+    <view class="sort {{count ? 'on' : ''}}" data-panel="drawer" bindtap="onPanel">筛选<text wx:if="{{count}}" class="count">{{count}}</text></view>
+  </view>
+  <view class="chips">
+    <view class="chip {{open === 'grade' || value.grade ? 'on' : ''}}" data-panel="grade" bindtap="onPanel"><text>{{value.grade || '成色'}}</text><view class="caret {{open === 'grade' ? 'flip' : ''}}"></view></view>
+    <view class="chip {{open === 'price' || value.priceMin !== '' || value.priceMax !== '' ? 'on' : ''}}" data-panel="price" bindtap="onPanel"><text>价格区间</text><view class="caret {{open === 'price' ? 'flip' : ''}}"></view></view>
+    <view class="chip {{open === 'battery' || value.batteryMin ? 'on' : ''}}" data-panel="battery" bindtap="onPanel"><text>{{value.batteryMin ? value.batteryMin + '%以上' : '电池健康'}}</text><view class="caret {{open === 'battery' ? 'flip' : ''}}"></view></view>
+  </view>
+</view>
+
+<!-- 下拉面板 -->
+<block wx:if="{{open === 'grade' || open === 'price' || open === 'battery'}}">
+  <view class="mask" catchtouchmove="noop" bindtap="close"></view>
+  <view class="panel" catchtouchmove="noop">
+    <view wx:if="{{open === 'grade'}}" class="options">
+      <view wx:for="{{gradeOptions}}" wx:key="*this" class="option {{draft.grade === item ? 'on' : ''}}" data-field="grade" data-value="{{item}}" bindtap="onPick">{{item}}</view>
+    </view>
+    <block wx:if="{{open === 'price'}}">
+      <view class="price-row">
+        <input class="price-input" type="digit" placeholder="最低价" placeholder-class="ph" value="{{draft.priceMin}}" data-field="priceMin" bindinput="onPriceInput" />
+        <view class="dash"></view>
+        <input class="price-input" type="digit" placeholder="最高价" placeholder-class="ph" value="{{draft.priceMax}}" data-field="priceMax" bindinput="onPriceInput" />
+      </view>
+      <view class="options">
+        <view wx:for="{{priceRanges}}" wx:key="label" class="option {{draft.priceMin === item.min && draft.priceMax === item.max ? 'on' : ''}}" data-min="{{item.min}}" data-max="{{item.max}}" bindtap="onPriceRange">{{item.label}}</view>
+      </view>
+    </block>
+    <view wx:if="{{open === 'battery'}}" class="options">
+      <view wx:for="{{batteryOptions}}" wx:key="value" class="option {{draft.batteryMin === item.value ? 'on' : ''}}" data-field="batteryMin" data-value="{{item.value}}" bindtap="onPick">{{item.label}}</view>
+    </view>
+    <view class="actions">
+      <view class="action ghost" bindtap="onReset">重置</view>
+      <view class="action primary" bindtap="onConfirm">确定{{previewTotal !== null ? '（' + previewTotal + ' 台）' : ''}}</view>
+    </view>
+  </view>
+</block>
+
+<!-- 筛选抽屉 -->
+<block wx:if="{{open === 'drawer'}}">
+  <view class="mask full" catchtouchmove="noop" bindtap="close"></view>
+  <view class="drawer">
+    <scroll-view scroll-y class="drawer-body">
+      <view class="line" bindtap="onOpenModel">
+        <text class="group-title">型号筛选</text>
+        <view class="line-value"><text class="ellipsis">{{draft.modelName || '请选择型号'}}</text><view class="caret point"></view></view>
+      </view>
+      <view class="group-title">新旧</view>
+      <view class="options">
+        <view wx:for="{{conditionOptions}}" wx:key="value" class="option {{draft.condition === item.value ? 'on' : ''}}" data-field="condition" data-value="{{item.value}}" bindtap="onPick">{{item.label}}</view>
+      </view>
+      <view class="group-title">成色</view>
+      <view class="options">
+        <view wx:for="{{gradeOptions}}" wx:key="*this" class="option {{draft.grade === item ? 'on' : ''}}" data-field="grade" data-value="{{item}}" bindtap="onPick">{{item}}</view>
+      </view>
+      <view class="group-title">价格区间</view>
+      <view class="price-row">
+        <input class="price-input" type="digit" placeholder="最低价" placeholder-class="ph" value="{{draft.priceMin}}" data-field="priceMin" bindinput="onPriceInput" />
+        <view class="dash"></view>
+        <input class="price-input" type="digit" placeholder="最高价" placeholder-class="ph" value="{{draft.priceMax}}" data-field="priceMax" bindinput="onPriceInput" />
+      </view>
+      <view class="options">
+        <view wx:for="{{priceRanges}}" wx:key="label" class="option {{draft.priceMin === item.min && draft.priceMax === item.max ? 'on' : ''}}" data-min="{{item.min}}" data-max="{{item.max}}" bindtap="onPriceRange">{{item.label}}</view>
+      </view>
+      <view class="group-title">电池健康</view>
+      <view class="options">
+        <view wx:for="{{batteryOptions}}" wx:key="value" class="option {{draft.batteryMin === item.value ? 'on' : ''}}" data-field="batteryMin" data-value="{{item.value}}" bindtap="onPick">{{item.label}}</view>
+      </view>
+    </scroll-view>
+    <view class="actions fixed">
+      <view class="action ghost" bindtap="onReset">重置</view>
+      <view class="action primary" bindtap="onConfirm">确定{{previewTotal !== null ? '（' + previewTotal + ' 台）' : ''}}</view>
+    </view>
+  </view>
+</block>
+
+<!-- 选择型号 -->
+<block wx:if="{{modelOpen}}">
+  <view class="mask full top" catchtouchmove="noop" bindtap="onCloseModel"></view>
+  <view class="sheet">
+    <view class="sheet-head"><text class="sheet-title">选择型号</text><view class="sheet-close" bindtap="onCloseModel"></view></view>
+    <scroll-view scroll-x class="cat-scroll" enable-flex>
+      <view class="cats">
+        <view wx:for="{{categories}}" wx:key="value" class="cat {{categoryIndex === index ? 'on' : ''}}" data-index="{{index}}" bindtap="onCategory">{{item.label}}</view>
+      </view>
+    </scroll-view>
+    <view class="sheet-body">
+      <scroll-view scroll-y class="side">
+        <view wx:for="{{categories[categoryIndex].brands}}" wx:key="value" class="side-item {{brandIndex === index ? 'on' : ''}}" data-index="{{index}}" bindtap="onBrand">{{item.label}}</view>
+      </scroll-view>
+      <scroll-view scroll-y class="models">
+        <block wx:for="{{categories[categoryIndex].brands[brandIndex].series}}" wx:for-item="series" wx:key="label">
+          <view class="series">{{series.label}}</view>
+          <view class="model-grid">
+            <view wx:for="{{series.models}}" wx:for-item="model" wx:key="name" class="model {{model.id && modelDraft.id === model.id ? 'on' : ''}}" data-id="{{model.id}}" data-name="{{model.name}}" bindtap="onModel">{{model.name}}</view>
+          </view>
+        </block>
+        <view wx:if="{{!categories[categoryIndex].brands.length}}" class="models-empty">该分类暂无型号</view>
+      </scroll-view>
+    </view>
+    <view class="actions fixed">
+      <view class="action ghost" bindtap="onResetModel">重置</view>
+      <view class="action primary" bindtap="onConfirmModel">确定</view>
+    </view>
+  </view>
+</block>
