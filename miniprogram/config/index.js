@@ -12,7 +12,10 @@ const ENV = (() => {
 })();
 
 const ENV_CONFIG = {
-  develop: { baseUrl: 'http://localhost:3000/api/v1', useMock: true },
+  // 开发版直连测试服务器（HTTP + IP，靠开发者工具的 urlCheck:false 放行）。
+  // 想回到本地 mock 调试，把 useMock 改回 true 即可。
+  develop: { baseUrl: 'http://43.142.25.151:3000/api/v1', useMock: false },
+  // TODO(上线前)：换成正式域名 + HTTPS，并把域名加进微信后台「服务器域名」白名单。
   trial: { baseUrl: 'https://api-staging.example.com/api/v1', useMock: false },
   release: { baseUrl: 'https://api.example.com/api/v1', useMock: false }
 };
