@@ -110,6 +110,7 @@ miniprogram/
 - 顾客端 tabBar 为自定义组件 `custom-tab-bar/`（原生 tabBar 字号不可调），选中项由 `createPage` 的 `onShow` 同步；新增 tab 页需同时改 `app.json` 与组件里的 `TABS`。
 - 单位用 `rpx`；组件样式隔离，组件内不要依赖 `app.wxss` 的类。
 - 自定义组件的布尔属性写成 `dark="{{true}}"`，不要写无值属性。
+- `.container` 自带层叠上下文，光晕垫在内容之下，不要给子元素统一写 `position: relative`，否则里面的 fixed 元素会失效。多列网格用 `minmax(0, 1fr)`，防止长文本撑破。
 - `.footer-bar` 是悬浮胶囊底栏，内容区用 `.footer-space` 留位；`.notice` 是中性灰提示条，不用来表达错误或告警。
 - 主包上限 2MB：大图放 CDN 或分包，`assets/images` 只放占位小图（当前为压缩后的 600px JPG）。
 

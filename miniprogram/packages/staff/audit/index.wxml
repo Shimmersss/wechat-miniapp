@@ -1,7 +1,7 @@
 <theme-shell>
 <view class="container">
   <view class="card filters">
-    <picker range="{{actions}}" value="{{actionIndex}}" bindchange="onAction"><view class="picker">{{actions[actionIndex]}}</view></picker>
+    <picker range="{{actionLabels}}" value="{{actionIndex}}" bindchange="onAction"><view class="picker">{{actionLabels[actionIndex]}}</view></picker>
     <picker range="{{actors}}" range-key="name" value="{{actorIndex}}" bindchange="onActor"><view class="picker">{{actors[actorIndex].name}}</view></picker>
     <view class="grid-2">
       <picker mode="date" value="{{from}}" data-field="from" bindchange="onDate"><view class="picker">{{from || '开始日期'}}</view></picker>
@@ -12,7 +12,7 @@
   <view wx:if="{{error}}" class="notice">{{error}}</view>
 
   <view wx:for="{{list}}" wx:key="id" class="card log" data-id="{{item.id}}" bindtap="onExpand">
-    <view class="row"><text class="h3 ellipsis flex-1">{{item.action}}</text><text class="tiny muted">{{item.timeText}}</text></view>
+    <view class="row"><text class="h3 ellipsis flex-1">{{item.actionText}}</text><text class="tiny muted">{{item.timeText}}</text></view>
     <view class="small muted mt-sm ellipsis">{{item.actorName}}{{item.actorRole ? '（' + item.actorRole + '）' : ''}} · {{item.objectId}}</view>
     <view wx:if="{{item.reason}}" class="small mt-sm">原因：{{item.reason}}</view>
     <view wx:if="{{expanded === item.id}}" class="detail">

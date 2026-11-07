@@ -39,6 +39,15 @@ function label(map, key) {
   return (map && map[key] && map[key].label) || key || '--';
 }
 
+/** 接口时间转本地 YYYY-MM-DD HH:mm；解析不了时原样返回 */
+function time(value) {
+  if (!value) return '';
+  var d = getDate(value);
+  if (isNaN(d.getTime())) return value;
+  var two = function (n) { return n < 10 ? '0' + n : '' + n; };
+  return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + ' ' + two(d.getHours()) + ':' + two(d.getMinutes());
+}
+
 function tone(map, key) {
   return (map && map[key] && map[key].tone) || 'gray';
 }
@@ -49,5 +58,6 @@ module.exports = {
   percent: percent,
   maskImei: maskImei,
   label: label,
-  tone: tone
+  tone: tone,
+  time: time
 };

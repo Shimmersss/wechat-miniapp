@@ -13,6 +13,5 @@
     <view wx:if="{{item.settledText}}" class="tiny muted mt-sm">{{item.settledText}} 已转账</view>
   </view>
   <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无收益记录" />
-  <view class="notice mt"></view>
 </view>
 </theme-shell>

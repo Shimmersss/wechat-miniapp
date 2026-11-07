@@ -1,5 +1,4 @@
-/* 搜索框和筛选栏吸顶：上下边距算进 --search-h，筛选栏才能贴着搜索框停住。
- * 选择器带 .home 是为了盖过 app.wxss 里 .container > view 的 position: relative。 */
+/* 搜索框和筛选栏吸顶：上下边距算进 --search-h，筛选栏才能贴着搜索框停住。 */
 .home { --search-h: 112rpx; padding-top: 0; }
 .home .search-sticky {
   position: sticky; top: 0; z-index: 30;

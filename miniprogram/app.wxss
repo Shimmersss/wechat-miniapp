@@ -27,14 +27,17 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 /* .container 是全站页面根容器，顺便挂上顶部环境光：
  * 毛玻璃需要「下面有东西可虚化」才看得出效果，纯白底上玻璃等于没做。
  * 光晕用 ::before 绝对定位在容器最底层，不占布局高度。 */
+/* z-index: 0 建立层叠上下文，光晕用 -1 垫在所有内容之下。
+ * 不要改回给子元素写 position: relative：那会让放在 .container 里的
+ * .footer-bar 等 fixed 元素失效，也漏掉 picker 这类没列到的子元素。 */
 .container {
-  position: relative;
+  position: relative; z-index: 0;
   padding: var(--gutter); padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom));
 }
 .container::before {
   content: "";
   position: absolute; left: -80rpx; right: -80rpx; top: -80rpx; height: 900rpx;
-  z-index: 0; pointer-events: none;
+  z-index: -1; pointer-events: none;
   background:
     radial-gradient(380rpx 320rpx at 14% 22%, var(--c-aura-1), transparent 70%),
     radial-gradient(420rpx 340rpx at 90% 16%, var(--c-aura-2), transparent 70%),
@@ -43,22 +46,6 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
   -webkit-mask-image: linear-gradient(to bottom, var(--c-ink) 52%, transparent);
   mask-image: linear-gradient(to bottom, var(--c-ink) 52%, transparent);
 }
-/* 内容必须压在光晕之上，否则会被那层半透明盖住而发虚。
- * 注意：不能只写 `.container > view`，自定义组件（section-card / empty-state 等）
- * 渲染出来的不是 view 标签，选择器命中不到，内容就会被光晕糊住；
- * 也不能用通配符 `> *`（WXSS 编译不支持）。
- * 这里直接按项目里实际出现的子元素类型逐个列出。 */
-.container > view,
-.container > scroll-view,
-.container > button,
-.container > swiper,
-.container > image,
-.container > section-card,
-.container > brand-header,
-.container > empty-state,
-.container > product-card,
-.container > todo-block,
-.container > staff-tabbar { position: relative; z-index: 1; }
 /* staff-tabbar 组件自带 .ph 占位（184rpx + 安全区），这里只补一点呼吸，不能叠加两份 */
 .container.has-staff-tabbar { padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom)); }
 
@@ -72,15 +59,17 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 .row-start { display: flex; align-items: center; }
 .col { display: flex; flex-direction: column; }
 .flex-1 { flex: 1; min-width: 0; }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
 .gap-sm { gap: 16rpx; }
 .mt-sm { margin-top: 12rpx; } .mt { margin-top: var(--gap); } .mb { margin-bottom: var(--gap); }
 /* 块级按钮与下一张卡片之间：--gap(24rpx) 视觉上偏挤，
    单独给按钮一个更大的下边距，避免「按钮贴着卡片」。 */
 button.btn-block.mb { margin-bottom: 40rpx; }
 button.btn.mb { margin-bottom: 40rpx; }
+button.btn.mt { margin-top: var(--gap); }
+button.btn.mt-sm { margin-top: 12rpx; }
 /* 按钮后面紧跟卡片时用它，比 --gap 更松一档 */
 .mb-strong { margin-bottom: 44rpx; }
 .divider { height: 1rpx; background: var(--c-line); margin: 24rpx 0; }
