@@ -1,4 +1,5 @@
-.notice.error { background: var(--c-red-soft); color: var(--c-red); }
+/* 错误提示也走中性样式，不再用红色 */
+.notice.error { background: var(--c-surface-soft); color: var(--c-ink-2); }
 .center { text-align: center; padding: 56rpx 32rpx; }
 .rule { color: var(--c-ink-2); line-height: 1.8; }
 .agree { display: flex; align-items: center; margin-top: 24rpx; padding-top: 24rpx; border-top: 1rpx solid var(--c-line); }

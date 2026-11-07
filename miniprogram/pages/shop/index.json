@@ -2,5 +2,8 @@
   "navigationStyle": "default",
   "navigationBarTitleText": "夏目数码",
   "enablePullDownRefresh": true,
-  "onReachBottomDistance": 100
+  "onReachBottomDistance": 100,
+  "usingComponents": {
+    "shop-filter": "/components/shop-filter/index"
+  }
 }

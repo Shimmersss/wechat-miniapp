@@ -9,7 +9,7 @@ module.exports = {
   /** 首页：banner、当前在售现货数、品牌筛选项 */
   home: () => http.get('/shop/home'),
   /**
-   * 商品列表 { keyword, brand, category, modelId, condition(used|new), grade, priceMin, priceMax, batteryMin, page, pageSize } → { list, total }
+   * 商品列表 { keyword, brand, category, modelId, condition(used|new), grade, priceMin, priceMax, batteryMin, sort(price_asc|price_desc), page, pageSize } → { list, total }
    * 成色/电池/价格按当前渠道公开可见的取值由服务端筛选；价格为当前渠道价（零售/同行/分享快照）
    */
   units: (params) => http.get('/shop/units', params),

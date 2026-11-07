@@ -23,6 +23,8 @@
 .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24rpx; }
 .title-wrap { display: flex; align-items: baseline; gap: 16rpx; }
 .title { font-size: 34rpx; font-weight: 800; letter-spacing: -0.6rpx; }
-.subtitle { font-size: 24rpx; color: var(--c-on-hero-2, var(--c-muted)); }
-.extra { display: flex; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-on-hero-2, var(--c-muted)); }
+.subtitle { font-size: 24rpx; color: var(--c-muted); }
+.extra { display: flex; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-muted); }
+/* --c-on-hero-2 只配主块的底色；零售绿下它是浅色，用在白卡上会看不见 */
+.dark .subtitle, .dark .extra { color: var(--c-on-hero-2, var(--c-muted)); }
 .arrow { font-size: 40rpx; color: var(--c-ink-4); line-height: 1; }

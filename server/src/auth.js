@@ -54,7 +54,10 @@ module.exports = async function auth(app, { pool, config, providers, route }) {
     async (request) => {
       const phone = text(request.body?.phone, "手机号", 11);
       if (!phonePattern.test(phone)) fail(400, "手机号格式无效");
-      const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+      // 开发模式用固定验证码，方便在没配短信时登录
+      const code = config.devOtp
+        ? config.devOtp
+        : String(crypto.randomInt(0, 1000000)).padStart(6, "0");
       const challengeHash = hmac(config.otpKey, phone + ":" + code);
       const reserved = await transaction(pool, async (db) => {
         const staff = await one(
@@ -68,7 +71,9 @@ module.exports = async function auth(app, { pool, config, providers, route }) {
           "SELECT *, sent_at > DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 60 SECOND) AS cooling FROM sms_challenges WHERE phone=? FOR UPDATE",
           [phone],
         );
-        if (challenge?.cooling) fail(429, "请稍后再获取验证码");
+        // 开发模式下跳过 60 秒冷却，方便反复调试
+        if (challenge?.cooling && !config.devOtp)
+          fail(429, "请稍后再获取验证码");
         await db.execute(
           `INSERT INTO sms_challenges (phone,code_hash,expires_at,sent_at) VALUES (?,?,DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 5 MINUTE),UTC_TIMESTAMP(3))
         ON DUPLICATE KEY UPDATE code_hash=VALUES(code_hash),expires_at=VALUES(expires_at),sent_at=VALUES(sent_at),attempts=0,consumed=FALSE,delivered=FALSE`,
@@ -77,6 +82,17 @@ module.exports = async function auth(app, { pool, config, providers, route }) {
         return true;
       });
       if (reserved) {
+        // 开发模式：不真的发短信，直接把挑战标记为已送达
+        if (config.devOtp) {
+          await pool.execute(
+            "UPDATE sms_challenges SET delivered=TRUE WHERE phone=? AND code_hash=?",
+            [phone, challengeHash],
+          );
+          return {
+            sent: true,
+            message: "开发模式：验证码为 " + config.devOtp,
+          };
+        }
         try {
           await providers.sms(phone, code);
           await pool.execute(
@@ -104,9 +120,16 @@ module.exports = async function auth(app, { pool, config, providers, route }) {
       if (!phonePattern.test(phone) || !/^\d{6}$/.test(smsCode))
         fail(400, "手机号或验证码格式无效");
       // Never use mockRole, client openid, or client permissions to identify a person.
-      const openid = await providers.wechat(
-        text(request.body?.code, "微信登录凭证", 256),
-      );
+      // 开发模式（配了 OTP_DEV_CODE 且非 production）允许跳过微信换取 openid，
+      // 用一个按手机号派生的稳定 openid，保证同一手机号每次登录是同一个用户。
+      const devOpenid = config.devOtp
+        ? "dev_" + hmac(config.otpKey, "openid:" + phone).slice(0, 24)
+        : "";
+      const openid = devOpenid
+        ? devOpenid
+        : await providers.wechat(
+            text(request.body?.code, "微信登录凭证", 256),
+          );
       const outcome = await transaction(pool, async (db) => {
         const staff = await one(
           db,
@@ -127,12 +150,13 @@ module.exports = async function auth(app, { pool, config, providers, route }) {
           challenge.attempts >= 5
         )
           return { error: "验证码无效或已过期" };
-        if (
-          !equal(
-            challenge.code_hash,
-            hmac(config.otpKey, phone + ":" + smsCode),
-          )
-        ) {
+        // 开发固定码：命中则完全跳过短信校验（生产环境 config.devOtp 恒为空）
+        const devPass = !!config.devOtp && smsCode === config.devOtp;
+        // 正常路径：挑战存在且验证码哈希一致
+        const codeMatches =
+          !!challenge &&
+          equal(challenge.code_hash, hmac(config.otpKey, phone + ":" + smsCode));
+        if (!devPass && !codeMatches) {
           await db.execute(
             "UPDATE sms_challenges SET attempts=attempts+1 WHERE phone=?",
             [phone],

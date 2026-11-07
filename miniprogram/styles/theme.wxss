@@ -57,6 +57,12 @@
   --c-blue: #2F6BEA;
   --c-blue-soft: #EEF3FF;
 
+  /* 工作台主块：三套主题都是深底白字，只换色相 */
+  --hero-bg: linear-gradient(135deg, #2C3A63 0%, #161A2B 100%);
+  --hero-ink: #FFFFFF;
+  --hero-ink-2: rgba(255, 255, 255, 0.72);
+  --hero-chip: rgba(255, 255, 255, 0.16);
+
   /* 环境光 */
   --c-aura-1: #C9DBFF;
   --c-aura-2: #FFD6C2;
@@ -148,6 +154,7 @@
  * 用比页面底更亮的灰黑来表达「抬高」，凹槽反而比卡片更亮一点点，
  * 靠投影 + 内高光边维持层次，和浅色版的物理直觉保持一致。 */
 .theme-dark {
+  --hero-bg: linear-gradient(135deg, #3B4288 0%, #1D1F3D 100%);
   --c-bg: #0B0C0F;
   --c-surface: #17191E;
   /* 卡内次级底色：与卡片拉开 20 个色阶，否则筛选块、代码块
@@ -328,6 +335,8 @@ page {
   --c-blue-soft: #E8F1FB;
 
   /* 环境光：绿调，比雾白版更淡（页面已经很白，光晕只做点缀） */
+  --hero-bg: linear-gradient(135deg, #35523F 0%, #1C2B20 100%);
+
   --c-aura-1: #D6EAD9;
   --c-aura-2: #EAF0E4;
   --c-aura-3: #DFEDE4;

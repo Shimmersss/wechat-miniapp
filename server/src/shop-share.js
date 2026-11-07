@@ -343,23 +343,37 @@ module.exports = async function (app, { pool, config, route, providers }) {
           : "customer",
       facts = factFilters(q),
       clause = " WHERE " + where.join(" AND "),
-      order = " ORDER BY u.created_at DESC,u.id",
+      sort = q.sort || "",
       view = (u) =>
         service.publicView(pool, u, {
           channel,
           price: service.snapshotPrice(ctx, u),
         });
-    if (facts && ctx) {
-      // 分享链接最多50台，按快照价与公开取值在应用内筛选后分页
+    if (sort && !["price_asc", "price_desc"].includes(sort))
+      fail(400, "排序方式无效");
+    const price = channel === "peer" ? "u.wholesale" : "u.retail",
+      order = sort
+        ? ` ORDER BY ${price} ${sort === "price_asc" ? "ASC" : "DESC"},u.id`
+        : " ORDER BY u.created_at DESC,u.id";
+    if ((facts || sort) && ctx) {
+      // 分享链接最多50台，价格以快照为准，在应用内筛选、排序后分页
       const [rows] = await pool.query(unitSelect + clause + order, args);
-      const matched = rows.filter((u) =>
-        facts(
-          service.publicFacts(u, {
-            channel,
-            price: service.snapshotPrice(ctx, u),
-          }),
-        ),
-      );
+      const priced = rows.map((u) => ({
+        u,
+        fact: service.publicFacts(u, {
+          channel,
+          price: service.snapshotPrice(ctx, u),
+        }),
+      }));
+      if (sort)
+        priced.sort((a, b) =>
+          sort === "price_asc"
+            ? a.fact.price - b.fact.price
+            : b.fact.price - a.fact.price,
+        );
+      const matched = priced
+        .filter((row) => !facts || facts(row.fact))
+        .map((row) => row.u);
       return list(
         await Promise.all(
           matched.slice(p.offset, p.offset + p.pageSize).map(view),
@@ -373,8 +387,9 @@ module.exports = async function (app, { pool, config, route, providers }) {
       // 成色与电池只按该渠道模板公开（非内部）的字段取值，口径与 publicFacts 一致，未公开的设备不会被筛中。
       const audience = channel === "peer" ? "peer" : "customer",
         visible =
-          "EXISTS (SELECT 1 FROM JSON_TABLE(u.template_snapshot,'$.fields[*]' COLUMNS(k VARCHAR(80) PATH '$.key',vis JSON PATH '$.visibility')) t WHERE t.k=? AND JSON_CONTAINS(t.vis,JSON_QUOTE(?)) AND NOT JSON_CONTAINS(t.vis,JSON_QUOTE('internal')))",
-        price = channel === "peer" ? "u.wholesale" : "u.retail";
+          // 不能写成 EXISTS + JSON_TABLE：优化器把它改写成半连接后先取 JSON_TABLE，
+          // 此时还没读到 u，表函数为空，筛选永远查不到（MySQL 8.4 实测）。
+          "JSON_CONTAINS(u.template_snapshot,JSON_OBJECT('key',?,'visibility',JSON_ARRAY(?)),'$.fields') AND NOT JSON_CONTAINS(u.template_snapshot,JSON_OBJECT('key',?,'visibility',JSON_ARRAY('internal')),'$.fields')";
       if (facts.min !== null) {
         where.push(price + ">=?");
         args.push(facts.min);
@@ -387,7 +402,7 @@ module.exports = async function (app, { pool, config, route, providers }) {
         where.push(
           visible + " AND JSON_UNQUOTE(JSON_EXTRACT(u.attributes,'$.grade'))=?",
         );
-        args.push("grade", audience, facts.grade);
+        args.push("grade", audience, "grade", facts.grade);
       }
       if (facts.battery !== null) {
         const value =
@@ -400,7 +415,7 @@ module.exports = async function (app, { pool, config, route, providers }) {
             value +
             " AS DECIMAL(20,6))>=?",
         );
-        args.push("battery", audience, facts.battery);
+        args.push("battery", audience, "battery", facts.battery);
       }
     }
     const filtered = " WHERE " + where.join(" AND ");

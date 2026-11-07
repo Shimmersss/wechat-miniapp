@@ -1,1 +1,2 @@
-.notice.error { background: var(--c-red-soft); color: var(--c-red); }
+/* 错误提示也走中性样式，不再用红色 */
+.notice.error { background: var(--c-surface-soft); color: var(--c-ink-2); }

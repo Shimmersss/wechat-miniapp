@@ -43,6 +43,28 @@ function config(env = process.env) {
           : env.WX_CODE_CHECK_PATH === "true",
     },
     share: { hours: Number(env.SHARE_HOURS || 72) },
+    /**
+     * 对象存储（腾讯云 COS）。
+     * 四项都填了才启用；缺任意一项就回退本地磁盘，
+     * 这样开发机和线上可以共用同一套代码。
+     */
+    /**
+     * 开发用固定验证码。只在 NODE_ENV !== "production" 且显式设置时生效。
+     * 目的是在没配短信和微信凭据的情况下也能登录调试。
+     * 生产环境即使误设也拒绝启用，见 auth.js 的判断。
+     */
+    devOtp:
+      env.OTP_DEV_CODE && env.NODE_ENV !== "production"
+        ? String(env.OTP_DEV_CODE)
+        : "",
+    cos: {
+      bucket: env.COS_BUCKET || "",
+      region: env.COS_REGION || "",
+      secretId: env.COS_SECRET_ID || "",
+      secretKey: env.COS_SECRET_KEY || "",
+      // internal 凭证的签名 URL 有效期（秒），默认 5 分钟，和本地签名一致
+      signExpires: Number(env.COS_SIGN_EXPIRES || 300),
+    },
     // TODO(confirm): 代理链接下单后的锁库时长（分钟），框架文档 7.3 只要求“锁定有时效”。
     agent: { lockMinutes: Number(env.AGENT_LOCK_MINUTES || 30) },
     // TODO(confirm): appointment availability/hours are configurable; every submission requires store confirmation.

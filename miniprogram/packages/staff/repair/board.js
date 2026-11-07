@@ -66,12 +66,12 @@ createPage({
     this.setData({ engineerIndex: Number(e.detail.value) });
     return this.load(true);
   },
-  onOverdue(e) {
-    this.setData({ overdue: e.detail.value });
+  onOverdue() {
+    this.setData({ overdue: !this.data.overdue });
     return this.load(true);
   },
-  onWaiting(e) {
-    this.setData({ waitingParts: e.detail.value });
+  onWaiting() {
+    this.setData({ waitingParts: !this.data.waitingParts });
     return this.load(true);
   },
   async load(reset = true) {
