@@ -22,13 +22,19 @@
 ## 真实后端（独立于微信上传目录）
 
 - `server/`：Fastify + MySQL，运行与凭据说明见 `server/README.md`。本机项目专属数据库使用 `127.0.0.1:3307`，不要重置现有 3306 服务。
-- **本机（Ubuntu）用 `scripts/local-dev.sh`**：`start` / `stop` / `restart` / `status` / `logs` / `open`。服务由 systemd 用户服务 `xiamu-api.service`、`xiamu-mysql.service` 管理，MySQL 跑在 Docker 容器 `xiamu-wechat-mysql` 里。
-- **不要在本机运行 `npm --prefix server start` 或 `npm --prefix server run db:start`**：前者会与 systemd 实例抢 3000 端口，后者依赖 macOS Homebrew。仅当不使用 systemd 的其它环境（macOS/新机器）才用这两条命令。
-- API 没有热重载：改 `server/src` 或 `server/.env` 后必须 `scripts/local-dev.sh restart`。
+- **Mac**：`npm --prefix server run db:start` 启动 Homebrew MySQL，`npm --prefix server start` 启动 API。
+- **Ubuntu**：用 `scripts/local-dev.sh`（`start` / `stop` / `restart` / `status` / `logs` / `open`），服务由 systemd 用户服务 `xiamu-api.service`、`xiamu-mysql.service` 管理，MySQL 跑在 Docker 容器 `xiamu-wechat-mysql` 里。这台机器上不要再手动 `npm --prefix server start`，会和 systemd 实例抢 3000 端口；`db:start` 依赖 Homebrew，在 Ubuntu 上不可用。
+- API 没有热重载：改 `server/src` 或 `server/.env` 后要重启 API。
 - 迁移执行 `npm --prefix server run migrate`；API 只加载 `server/.env`，迁移专用凭据放 `server/.env.migration`，二者都禁止进入 `miniprogram/` 或版本库。
 - 本机新增表的迁移完成后执行 `npm --prefix server run db:grants`，为项目应用/报表/备份账号补充表级权限；此命令仅用于项目专属本机实例，不用于生产部署。
 - 服务端验证：`npm --prefix server run test:db` 准备专用验证库，然后在 `server/` 下 `node --env-file=.env --test --test-concurrency=2 test/*.test.js`；小程序回归 `node --test tests/*.test.js`。
 - `.local/mysql/` 和 `.local/files/` 是持久数据，不是构建缓存。真实业务切换必须以对应接口、事务和权限验证为依据，不得让未实现接口回退假成功。
+
+## CloudBase 迁移入口
+
+- 2026-11-09 定案：后端迁到 CloudBase 国内站，路线为“云函数 + PostgreSQL 共享实例”，方案见 `docs/WECHAT-CLOUDBASE-MIGRATION.md`。环境 ID、AppID、API Key 仅放本机忽略的 `docs/HANDOFF-*.md`。
+- 共享 PG 不能 TCP 直连，只能经网关；小程序不直连 PG，所有读写经云函数，多表事务写成 PG 存储过程。
+- 根目录 Dockerfile、`server/src/cloudbase-*.js` 等是已放弃的云托管 + MySQL 方案产物，不要部署。迁移完成前现有 `server/` 继续服务旧测试服务器。
 
 ## 测试服务器
 
@@ -66,7 +72,7 @@ miniprogram/
                                  empty-state, product-card, staff-tabbar, todo-block,
                                  template-fields, theme-shell
   custom-tab-bar/                顾客端自定义 tabBar（图标 + 较大字号）
-  assets/icons/                  线性 SVG 图标（深色 / -gray / -white 三套）
+  assets/icons/                  多彩 SVG 图标（深色 / -gray / -white / -light 等变体）
   pages/                         主包：顾客端 tabBar 四页 + 员工登录
   components/shop-filter         首页排序筛选栏（下拉面板、型号弹层、筛选抽屉）
   assets/brands/<key>.png        首页品牌配图，替换同名文件即可，说明见 constants/shop-brands.js
@@ -148,7 +154,7 @@ miniprogram/
 - [x] 代理审核通过/拒绝（设固定金额加价上限）、代理订单、收益逐单标记已转账（`staff/agents/*`）
 
 ### 还需要的外部条件（非前端可完成）
-- ~~后端服务~~ 已实现：`server/` 为真实 Fastify + MySQL，22 个迁移，80 项集成测试用例；测试服务器已部署并有数据库定时备份，生产部署、备份异地存储与恢复演练仍未做。
+- ~~后端服务~~ 已实现：`server/` 为真实 Fastify + MySQL，有集成测试；测试服务器已部署并有数据库定时备份。正式环境改走微信云开发（见“CloudBase 迁移入口”），生产部署、备份与恢复演练随迁移完成。
 - 正式微信凭据：`WX_APP_ID`、`WX_APP_SECRET`（`server/.env`），缺配置时静默登录与小程序码返回明确错误，不伪造。
 - 腾讯云短信：`SMS_APP_ID`、`SMS_SIGN`、`SMS_TEMPLATE_ID`，缺配置时发送验证码返回 503（设置 `OTP_DEV_CODE` 的非生产环境除外）。
 - request 合法域名与 HTTPS 后端地址；`miniprogram/config/index.js` 的 `trial`/`release` 仍是 `example.com` 占位。
