@@ -114,6 +114,32 @@ test("真实公开商品与分享：服务端渠道定价/白名单字段/单机
   assert.equal(r.data.units[0].price, 1200.25);
   safe(r.data.units[0]);
   const headers = { "X-Channel": customer.shareId };
+  // 价格排序：按当前渠道价下推到数据库，分享内按快照价，非法取值拒绝
+  const sorted = async (sort, extra) =>
+    (
+      await f.api(
+        "GET",
+        "/shop/units?pageSize=100&sort=" + sort,
+        undefined,
+        null,
+        extra,
+      )
+    ).data.list.map((u) => u.price);
+  const ascending = await sorted("price_asc");
+  assert.deepEqual(
+    ascending,
+    ascending.slice().sort((x, y) => x - y),
+  );
+  const descending = await sorted("price_desc");
+  assert.deepEqual(
+    descending,
+    descending.slice().sort((x, y) => y - x),
+  );
+  assert.equal((await sorted("price_asc", headers)).length, 1);
+  assert.equal(
+    (await f.api("GET", "/shop/units?sort=cheap", undefined, null)).status,
+    400,
+  );
   r = await f.api(
     "GET",
     "/shop/units?modelId=" + model.id,

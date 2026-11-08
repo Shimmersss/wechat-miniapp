@@ -1,4 +1,5 @@
-.notice.error { background: var(--c-red-soft); color: var(--c-red); }
+/* 错误提示也走中性样式，不再用红色 */
+.notice.error { background: var(--c-surface-soft); color: var(--c-ink-2); }
 .actions { display: flex; background: var(--c-surface); border-radius: var(--radius-lg); padding: 28rpx 4rpx; }
 .action { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12rpx; font-size: 24rpx; color: var(--c-ink); }
 .action-icon { width: 88rpx; height: 88rpx; border-radius: 28rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; }

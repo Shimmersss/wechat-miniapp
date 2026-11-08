@@ -1,1 +1,5 @@
 .trend-row { margin: 20rpx 0; } .trend-track { height: 14rpx; background: var(--c-surface-soft); border-radius: var(--radius-pill); margin-top: 10rpx; overflow: hidden; } .trend-bar { height: 14rpx; background: var(--c-gold); border-radius: var(--radius-pill); } .trend-bar.negative { background: var(--c-red); }
+.stat-note { padding: 0 8rpx; line-height: 1.6; }
+/* 在库成本金额最长，这一列要留够宽度，避免被省略 */
+.stock-grid { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.7fr) minmax(0, 0.7fr); }
+.pending-amount { flex: none; margin-left: 16rpx; white-space: nowrap; }

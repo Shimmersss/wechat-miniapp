@@ -36,7 +36,7 @@
    <view class="row gap-sm mt"><button class="btn btn-line" bindtap="onCloseRecheck" disabled="{{mutating || busy}}">关闭</button><button class="btn btn-primary" bindtap="onSaveRecheck" disabled="{{mutating || busy || recheckEditor.conflict}}" loading="{{mutating}}">保存复检</button></view>
   </view>
   <section-card title="库存流水">
-   <view wx:for="{{ledger}}" wx:key="id" class="mb"><view class="small">{{f.label(statusMap,item.from)}} → {{f.label(statusMap,item.to)}}</view><view class="tiny muted">{{item.time}} · {{item.operator}} · {{docLabels[item.docType] || item.docType}}</view><view class="tiny muted">{{item.doc}} {{item.reason}}</view></view>
+   <view wx:for="{{ledger}}" wx:key="id" class="mb"><view class="small">{{f.label(statusMap,item.from)}} → {{f.label(statusMap,item.to)}}</view><view class="tiny muted">{{f.time(item.time)}} · {{item.operator}} · {{docLabels[item.docType] || item.docType}}</view><view class="tiny muted">{{item.doc}} {{item.reason}}</view></view>
    <view wx:if="{{ledgerError}}" class="notice">{{ledgerError}}<button class="btn btn-line btn-sm" bindtap="onRetryLedger">重试</button></view>
    <button wx:if="{{ledgerMore}}" class="btn btn-line btn-block" bindtap="onMoreLedger" loading="{{ledgerLoading}}" disabled="{{ledgerLoading}}">加载更多</button><view wx:if="{{!ledger.length && !ledgerLoading}}" class="muted small">暂无流水</view>
   </section-card>
@@ -44,7 +44,7 @@
   <button wx:if="{{canRepair}}" class="btn btn-line btn-block mb" bindtap="onRepair">本店设备送修</button>
   <view wx:if="{{canLoan && detail.loan}}" class="card" bindtap="onOpenLoan"><view class="row"><view><view class="h3">{{loanTypeLabels[detail.loan.type]}} {{detail.loan.no}}</view><view class="tiny muted mt-sm">{{detail.status === 'recheck' ? '已归还，复检通过后到单据里完结' : '归还在单据里逐台登记'}}</view></view><image class="loan-chevron" src="/assets/icons/chevron-gray.svg" /></view></view>
   <button wx:if="{{canLoanOut}}" class="btn btn-line btn-block mb" bindtap="onLoanOut" disabled="{{mutating}}">出借给同行</button>
-  <view class="row gap-sm mb"><button wx:if="{{canLabel}}" class="btn btn-line" bindtap="onLabel">标签</button><button wx:if="{{canShare && detail.status === 'in_stock'}}" class="btn btn-line" bindtap="onShare">分享</button></view>
+  <view class="row gap-sm mb"><button wx:if="{{canLabel}}" class="btn btn-line flex-1" bindtap="onLabel">标签</button><button wx:if="{{canShare && detail.status === 'in_stock'}}" class="btn btn-line flex-1" bindtap="onShare">分享</button></view>
  </block>
  <block wx:if="{{priceEditor}}"><view class="price-mask"></view><scroll-view scroll-y class="price-panel"><view class="h2 mb">修改单机价格</view><view wx:for="{{priceEditor.keys}}" wx:key="*this" class="field"><view class="field-label">{{priceLabels[item]}}（元）</view><input class="input" type="digit" value="{{priceEditor.values[item]}}" data-field="{{item}}" bindinput="onPriceInput" disabled="{{mutating || priceConflict}}" /></view><view wx:if="{{priceConflict}}" class="notice">价格已变化。关闭并刷新后重新核对。<button class="btn btn-soft" bindtap="onRefreshPrice">刷新价格</button></view><view class="row gap-sm"><button class="btn btn-line" bindtap="onClosePrice" disabled="{{mutating}}">取消</button><button class="btn btn-primary" bindtap="onSavePrice" loading="{{mutating}}" disabled="{{mutating || priceConflict}}">填写原因并保存</button></view></scroll-view></block>
 </view>

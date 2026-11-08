@@ -3,7 +3,7 @@
   <view class="card row">
     <view>
       <view class="h2">{{user.nickname}}</view>
-      <view class="tiny muted">工号 {{user.staffNo || '--'}}</view>
+      <view wx:if="{{user.staffNo}}" class="tiny muted">工号 {{user.staffNo}}</view>
     </view>
     <status-pill text="{{roleLabel}}" tone="gold" />
   </view>

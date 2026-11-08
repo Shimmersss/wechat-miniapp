@@ -17,6 +17,7 @@ const {
 } = require("./core");
 const permissions = [PERM.INBOUND, PERM.ACCEPTANCE, PERM.PURCHASE_MANAGE];
 const { canReadInternal } = require("./repair-files");
+const { createStore } = require("./file-store");
 function signFile(config, fileId, sessionHash) {
   const expires = Math.floor(Date.now() / 1000) + 300;
   const signature = hmac(config.fileKey, `${fileId}:${expires}:${sessionHash}`);
@@ -24,8 +25,17 @@ function signFile(config, fileId, sessionHash) {
 }
 module.exports = async function files(app, { pool, config, route }) {
   const root = config.fileRoot;
-  for (const name of ["staging", "public", "internal"])
-    await fsp.mkdir(path.join(root, name), { recursive: true, mode: 0o700 });
+  // 存储后端：配了 COS 走 COS，否则本地磁盘
+  const store = createStore(config);
+  await store.init();
+  // 本地实现需要临时目录；COS 也用它落地上传的分片
+  await fsp.mkdir(path.join(root, "staging"), { recursive: true, mode: 0o700 });
+  /**
+   * 文件视图。url 是「能直接拿去 <image src> 的地址」：
+   * - 本地存储：public 走后端公开路由，internal 走后端签名 URL
+   * - COS：两种情况都走后端路由（后端再 302 到 COS 签名地址），
+   *   这样桶保持私有，权限判断仍然在后端
+   */
   function view(file, request) {
     return {
       fileId: file.id,
@@ -115,9 +125,9 @@ module.exports = async function files(app, { pool, config, route }) {
         if (scope === "internal" && type.mime === "video/mp4")
           fail(400, "收货凭证请上传图片");
         storedName = fileId + "." + type.ext;
-        const target = path.join(root, scope, storedName);
-        await fsp.rename(tempPath, target);
-        tempPath = target;
+        // 交给存储层：本地 rename / COS 上传后删临时文件
+        await store.put(scope, storedName, tempPath);
+        tempPath = null;
         const file = {
           id: fileId,
           scope,
@@ -205,11 +215,21 @@ module.exports = async function files(app, { pool, config, route }) {
         file.scope === "internal"
           ? "private, no-store"
           : "public, max-age=86400",
-      )
-      .type(file.mime);
-    return reply.send(
-      fs.createReadStream(path.join(root, file.scope, file.stored_name)),
-    );
+      );
+
+    // COS：权限已经在上面的逻辑里判完，这里 302 到 COS 的临时签名地址，
+    // 让文件流量走 COS 而不占服务器带宽（300G/月限制）。
+    if (store.kind === "cos") {
+      const url = await store.signedUrl(
+        file.scope,
+        file.stored_name,
+        config.cos.signExpires,
+      );
+      return reply.redirect(url, 302);
+    }
+
+    reply.type(file.mime);
+    return reply.send(await store.open(file.scope, file.stored_name));
   });
 };
 module.exports.signFile = signFile;

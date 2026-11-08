@@ -15,7 +15,7 @@ const TABS = [
 ];
 
 Component({
-  data: { tabs: TABS, selected: 0, dark: false },
+  data: { tabs: TABS, selected: 0, dark: false, hidden: false },
 
   lifetimes: {
     attached() {
@@ -35,6 +35,10 @@ Component({
       if (index >= 0 && index !== this.data.selected) patch.selected = index;
       if (dark !== this.data.dark) patch.dark = dark;
       if (Object.keys(patch).length) this.setData(patch);
+    },
+    /** 首页筛选面板展开时收起底栏：tabBar 在页面之上，页面内的遮罩盖不住它 */
+    setHidden(hidden) {
+      if (hidden !== this.data.hidden) this.setData({ hidden });
     },
     onTap(e) {
       const index = e.currentTarget.dataset.index;

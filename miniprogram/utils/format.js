@@ -33,7 +33,7 @@ function pad(n) {
 /** @param {number|string|Date} t  @param {string} fmt 支持 YYYY MM DD HH mm */
 function date(t, fmt = 'YYYY-MM-DD HH:mm') {
   if (!t) return '';
-  const d = t instanceof Date ? t : new Date(typeof t === 'string' ? t.replace(/-/g, '/') : t);
+  const d = t instanceof Date ? t : new Date(typeof t === 'string' && !t.includes('T') ? t.replace(/-/g, '/') : t);
   if (Number.isNaN(d.getTime())) return '';
   return fmt
     .replace('YYYY', d.getFullYear())

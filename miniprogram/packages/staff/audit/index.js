@@ -8,13 +8,17 @@ const { date } = require('../../../utils/format');
  * 改前改后内容由服务端按查看人的字段权限脱敏。
  */
 const pretty = (v) => (v === null || v === undefined ? '' : JSON.stringify(v, null, 1).replace(/[{}"]/g, '').replace(/\n\s*\n/g, '\n').trim());
+/** 维修日志的动作存的是内部代码，显示时换成中文；筛选仍提交原值 */
+const REPAIR_ACTIONS = { update: '更新资料', quote: '报价', confirm: '报价确认', issue: '领用配件', return_parts: '退回配件', payment: '登记收支', transition: '变更节点' };
+const actionText = (action) => String(action || '').replace(/^维修处理:(\w+)$/, (m, key) => `维修${REPAIR_ACTIONS[key] || '处理'}`);
+
 createPage({
   requireStaff: true,
   permission: PERM.AUDIT_VIEW,
-  data: { list: [], page: 1, total: 0, hasMore: true, loading: false, error: '', actions: ['全部动作'], actors: [{ id: '', name: '全部人员' }], actionIndex: 0, actorIndex: 0, from: '', to: '', expanded: '' },
+  data: { list: [], page: 1, total: 0, hasMore: true, loading: false, error: '', actions: ['全部动作'], actionLabels: ['全部动作'], actors: [{ id: '', name: '全部人员' }], actionIndex: 0, actorIndex: 0, from: '', to: '', expanded: '' },
   onLoad(query = {}) {
     this.objectId = query.objectId || '';
-    api.audit.filters().then((f) => this.setData({ actions: ['全部动作', ...f.actions], actors: [{ id: '', name: '全部人员' }, ...f.actors] })).catch(() => {});
+    api.audit.filters().then((f) => this.setData({ actions: ['全部动作', ...f.actions], actionLabels: ['全部动作', ...f.actions.map(actionText)], actors: [{ id: '', name: '全部人员' }, ...f.actors] })).catch(() => {});
     return this.load(true);
   },
   onPullDownRefresh() { this.load(true).finally(() => wx.stopPullDownRefresh()); },
@@ -29,7 +33,7 @@ createPage({
         objectId: this.objectId || undefined, from: this.data.from || undefined, to: this.data.to || undefined, page, pageSize: 30
       });
       if (revision !== this.revision) return;
-      const rows = res.list.map((a) => ({ ...a, timeText: a.createdAt ? date(new Date(a.createdAt), 'MM-DD HH:mm') : a.timeText || '', beforeText: pretty(a.before), afterText: pretty(a.after) }));
+      const rows = res.list.map((a) => ({ ...a, actionText: actionText(a.action), timeText: a.createdAt ? date(new Date(a.createdAt), 'MM-DD HH:mm') : a.timeText || '', beforeText: pretty(a.before), afterText: pretty(a.after) }));
       const list = reset ? rows : this.data.list.concat(rows);
       this.setData({ list, page, total: res.total, hasMore: list.length < res.total });
     } catch (e) { if (revision === this.revision) this.setData({ error: e.message }); }

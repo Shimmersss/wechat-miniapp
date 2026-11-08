@@ -1,22 +1,27 @@
 <theme-shell>
-<view class="container has-tabbar">
-  <brand-header />
-
-  <view class="search-bar" bindtap="onSearchTap"><image class="search-icon" src="/assets/icons/search-gray.svg" />搜索品牌 / 型号 / 内存</view>
-
-  <scroll-view scroll-x class="brand-scroll" enable-flex>
-    <view class="chips nowrap">
-      <view wx:for="{{brands}}" wx:key="value" class="chip {{activeBrand === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onBrandTap">{{item.label}}</view>
-    </view>
-  </scroll-view>
+<view class="container has-tabbar home">
+  <view class="search-sticky">
+    <view class="search-bar" bindtap="onSearchTap"><image class="search-icon" src="/assets/icons/search-gray.svg" />搜索品牌 / 型号 / 内存</view>
+  </view>
 
   <view wx:if="{{scoped}}" class="notice">当前查看分享内商品<button class="btn btn-line btn-sm" bindtap="onBrowseAll">浏览全部现货</button></view>
+
+  <view wx:else class="brand-grid">
+    <view wx:for="{{tiles}}" wx:key="key" class="brand-tile {{filters.brand === item.value ? 'active' : ''}}" hover-class="brand-press" data-value="{{item.value}}" bindtap="onBrandTap">
+      <image class="brand-img" src="{{item.image}}" mode="aspectFit" />
+      <text class="brand-name">{{item.label}}</text>
+    </view>
+  </view>
+
+  <view id="filter-anchor"></view>
+  <shop-filter id="filter" class="filter-sticky {{filterRaised ? 'raised' : ''}}" value="{{filters}}" bind:change="onFilterChange" bind:overlay="onFilterOverlay" />
+
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="refresh">重试</button></view>
   <view class="grid-2">
     <product-card wx:for="{{list}}" wx:key="id" unit="{{item}}" bind:select="onUnitSelect" />
   </view>
 
-  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无现货，稍后再来看看" />
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的现货，换个条件试试" />
   <view wx:if="{{list.length && !hasMore}}" class="tiny muted end">— 每台设备独立检测 · 公开机况 —</view>
 </view>
 </theme-shell>

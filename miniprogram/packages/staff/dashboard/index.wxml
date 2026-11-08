@@ -1,31 +1,104 @@
-<wxs module="f" src="../../../utils/filters.wxs" />
 <theme-shell>
-<view class="container has-staff-tabbar">
-  <brand-header>
-    <view slot="right" class="row-start gap-sm">
-      <status-pill text="{{roleLabel}}" tone="gold" />
-      <view class="eye" bindtap="togglePrivacy"><image class="eye-icon" src="/assets/icons/{{privacy ? 'eye-off' : 'eye'}}.svg" /></view>
-    </view>
-  </brand-header>
-
-  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
-  <section-card title="快捷操作">
-    <view class="grid-4 quick">
-      <view wx:for="{{quickActions}}" wx:key="url" class="quick-item" bindtap="onNavigate" data-url="{{item.url}}">
-        <view class="quick-icon"><image class="quick-img" src="/assets/icons/{{item.icon}}.svg" /></view>
-        <view class="tiny">{{item.text}}</view>
+<view class="container {{editing ? '' : 'has-staff-tabbar'}}">
+  <view class="hero">
+    <image class="hero-deco" src="/packages/staff/dashboard/tools/hero-deco.svg" mode="aspectFill" />
+    <view class="hero-top">
+      <view class="hero-brand"><view class="hero-logo">夏</view><text class="hero-name">{{brand.name}}</text></view>
+      <view class="hero-actions">
+        <text class="hero-role">{{roleLabel}}</text>
+        <view class="eye" bindtap="togglePrivacy"><image class="eye-icon" src="/assets/icons/{{privacy ? 'eye-off-white' : 'eye-white'}}.svg" /></view>
       </view>
     </view>
-  </section-card>
+    <view class="hero-greet">{{greeting}}，{{displayName}}</view>
+    <view class="hero-sub">{{dateText}}<text wx:if="{{stats}}"> · {{todoTotal ? '有 ' + todoTotal + ' 类事项待处理' : '暂无待处理事项'}}</text></view>
+  </view>
 
-  <section-card wx:if="{{stats}}" title="待处理" subtitle="共 {{todoTotal}} 项" more-url="/packages/staff/stats/index">
-    <view wx:for="{{stats.todos}}" wx:key="key" class="list-item" bindtap="onNavigate" data-url="{{item.url}}">
-      <text>{{item.text}}</text>
-      <text class="{{item.count ? 'price' : 'muted'}}">{{item.count}} ›</text>
+  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
+
+  <block wx:if="{{!editing}}">
+    <section-card title="常用工具">
+      <view slot="extra" class="edit-entry" catchtap="onStartEdit">编辑</view>
+      <view class="tool-grid">
+        <view wx:for="{{pinned}}" wx:key="key" class="tool" hover-class="tool-press" bindtap="onNavigate" data-url="{{item.url}}">
+          <view class="tool-icon">
+            <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+            <text wx:if="{{badges[item.key]}}" class="tool-badge">{{badges[item.key]}}</text>
+          </view>
+          <text class="tool-name">{{item.text}}</text>
+        </view>
+        <view wx:if="{{more.length}}" class="tool" hover-class="tool-press" bindtap="onToggleMore">
+          <view class="tool-icon"><image class="tool-img" src="/packages/staff/dashboard/tools/more.svg" /></view>
+          <text class="tool-name">{{moreOpen ? '收起' : '更多'}}</text>
+        </view>
+      </view>
+      <view wx:if="{{moreOpen}}" class="more-block">
+        <view class="more-title">更多工具</view>
+        <view class="tool-grid">
+          <view wx:for="{{more}}" wx:key="key" class="tool" hover-class="tool-press" bindtap="onNavigate" data-url="{{item.url}}">
+            <view class="tool-icon">
+              <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+              <text wx:if="{{badges[item.key]}}" class="tool-badge">{{badges[item.key]}}</text>
+            </view>
+            <text class="tool-name">{{item.text}}</text>
+          </view>
+        </view>
+      </view>
+    </section-card>
+
+    <section-card wx:if="{{stats}}" title="待处理" subtitle="{{todoTotal ? todoTotal + ' 类' : ''}}">
+      <view wx:for="{{todos}}" wx:key="key" class="todo" hover-class="todo-press" bindtap="onNavigate" data-url="{{item.url}}">
+        <image class="todo-icon" src="/packages/staff/dashboard/tools/{{item.tool}}.svg" />
+        <text class="todo-text">{{item.text}}</text>
+        <text class="todo-count">{{item.count}}</text>
+      </view>
+      <view wx:if="{{!todos.length}}" class="todo-empty">
+        <image class="todo-empty-icon" src="/packages/staff/dashboard/tools/done.svg" />
+        <text>事情都处理完了</text>
+      </view>
+    </section-card>
+
+    <view class="report-link" hover-class="todo-press" bindtap="onNavigate" data-url="/packages/staff/stats/index">
+      <image class="todo-icon" src="/packages/staff/dashboard/tools/report.svg" />
+      <text class="todo-text">查看经营报表</text>
+      <text class="muted">›</text>
     </view>
-    <view class="tiny muted mt">销售、访问、维修、库存等数据已移到「报表」页，按日/周/月查看。</view>
-  </section-card>
+  </block>
 
+  <block wx:else>
+    <section-card title="常用工具" subtitle="按住图标拖动排序">
+      <view class="edit-area" style="height: {{editRows * 200}}rpx">
+        <view wx:for="{{editItems}}" wx:key="key" class="tool edit-tool {{dragKey === item.key ? 'dragging' : ''}}"
+              style="transform: translate3d({{(dragKey === item.key ? dragCol : item.col) * 100}}%, {{(dragKey === item.key ? dragRow : item.row) * 100}}%, 0); {{dragKey === item.key ? 'left:' + dragX + 'px; top:' + dragY + 'px;' : ''}}"
+              data-key="{{item.key}}" bindtouchstart="onDragStart" catchtouchmove="onDragMove" bindtouchend="onDragEnd" bindtouchcancel="onDragEnd">
+          <view class="tool-icon">
+            <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+            <view class="tool-mark remove" data-key="{{item.key}}" catchtap="onRemoveTool"></view>
+          </view>
+          <text class="tool-name">{{item.text}}</text>
+        </view>
+      </view>
+      <view wx:if="{{!editItems.length}}" class="edit-empty">从下方添加常用工具</view>
+    </section-card>
+
+    <section-card wx:if="{{editMore.length}}" title="更多工具" subtitle="点击加入常用">
+      <view class="tool-grid">
+        <view wx:for="{{editMore}}" wx:key="key" class="tool" hover-class="tool-press" data-key="{{item.key}}" bindtap="onAddTool">
+          <view class="tool-icon">
+            <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+            <view class="tool-mark add"></view>
+          </view>
+          <text class="tool-name">{{item.text}}</text>
+        </view>
+      </view>
+    </section-card>
+
+    <view class="reset" bindtap="onResetEdit">恢复默认布局</view>
+    <view class="footer-space"></view>
+  </block>
 </view>
-<staff-tabbar active="dashboard" />
+<view wx:if="{{editing}}" class="footer-bar">
+  <button class="btn btn-soft" bindtap="onCancelEdit">取消</button>
+  <button class="btn btn-primary" bindtap="onSaveEdit">完成</button>
+</view>
+<staff-tabbar wx:else active="dashboard" />
 </theme-shell>

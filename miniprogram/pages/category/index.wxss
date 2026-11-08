@@ -9,7 +9,7 @@
 .side-item { padding: 34rpx 0; text-align: center; font-size: 28rpx; color: var(--c-muted); }
 .side-item.active { background: var(--c-surface); color: var(--c-ink); font-weight: 600; }
 .main {
-  flex: 1;
+  flex: 1; min-width: 0;
   padding: 24rpx;
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
@@ -17,7 +17,7 @@
 }
 .brand-title { font-size: 34rpx; font-weight: 800; letter-spacing: -0.6rpx; margin: 24rpx 0 12rpx; }
 .series-title { font-size: 26rpx; color: var(--c-muted); margin: 16rpx 0 12rpx; }
-.model-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16rpx; }
+.model-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16rpx; }
 /* 型号格子用凹槽底 */
 .model {
   background: var(--c-well);
