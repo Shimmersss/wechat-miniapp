@@ -43,3 +43,6 @@ docs/test-cases/results/**/*.png
 
 # 含真实凭据的交接文档，只留本地，绝不入库
 docs/HANDOFF-*.md
+
+# 开发流程文档（本机自用，不入库）
+docs/workflow/
