@@ -169,15 +169,9 @@
 
 ## 六、旧方案产物的处理
 
-工作区里有一批为“云托管 + MySQL/COS”准备的文件，**都没有提交，也不用于选定路线**：
+2026-11-09 已删除为“云托管 + MySQL/COS”准备、从未提交的文件（Dockerfile、`.dockerignore`、`scripts/cloudbase-package.mjs`、`server/.env.cloudbase.example`、`server/scripts/cloudbase-check.js`、`server/src/cloudbase-*.js` 及其测试），并还原了 `server/src/app.js`、`server/src/index.js` 的配套改动。
 
-- 根目录 `Dockerfile`、`.dockerignore`
-- `scripts/cloudbase-package.mjs`
-- `server/.env.cloudbase.example`、`server/scripts/cloudbase-check.js`
-- `server/src/cloudbase-config.js`、`server/src/cloudbase-entry.js`、`server/test/cloudbase-config.test.js`
-- `server/src/app.js`（`trustProxy` 可配）与 `server/src/index.js`（导出 `main`）的未提交改动
-
-TODO(confirm)：是否删除这些文件。迁移完成前现有 `server/`（Fastify + MySQL）继续服务旧测试服务器，不删除。
+迁移完成前现有 `server/`（Fastify + MySQL）继续服务旧测试服务器，不删除。
 
 ## 七、待确认事项
 
