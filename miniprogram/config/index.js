@@ -12,9 +12,10 @@ const ENV = (() => {
 })();
 
 const ENV_CONFIG = {
-  // 开发版直连测试服务器（HTTP + IP，靠开发者工具的 urlCheck:false 放行）。
+  // 开发版走云开发（useCloud：wx.cloud.callFunction，默认环境，不写环境 ID）。
+  // 未迁移的接口会明确报“尚未迁移到云开发”，不回退旧服务器；要连旧测试服务器把 useCloud 改为 false。
   // 想回到本地 mock 调试，把 useMock 改回 true 即可。
-  develop: { baseUrl: 'http://43.142.25.151:3000/api/v1', useMock: false },
+  develop: { baseUrl: 'http://43.142.25.151:3000/api/v1', useMock: false, useCloud: true },
   // TODO(上线前)：换成正式域名 + HTTPS，并把域名加进微信后台「服务器域名」白名单。
   trial: { baseUrl: 'https://api-staging.example.com/api/v1', useMock: false },
   release: { baseUrl: 'https://api.example.com/api/v1', useMock: false }

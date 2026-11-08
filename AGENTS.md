@@ -34,6 +34,7 @@
 
 - 2026-11-09 定案：后端迁到 CloudBase 国内站，路线为“云函数 + PostgreSQL 共享实例”，方案见 `docs/WECHAT-CLOUDBASE-MIGRATION.md`。环境 ID、AppID、API Key 仅放本机忽略的 `docs/HANDOFF-*.md`。
 - 共享 PG 不能 TCP 直连，只能经网关；小程序不直连 PG，所有读写经云函数，多表事务写成 PG 存储过程。
+- PG 迁移放 `cloudbase/migrations/<14位版本>_<名称>.sql`；云函数放 `cloudfunctions/<名称>/`，共享代码改 `cloudfunctions/common/`（`shared/` 是生成产物，不要手改）；部署用 `node scripts/deploy-cloudfunctions.js`。开发版 `useCloud: true` 时请求走云函数，未迁移的路径会明确报错。
 - 根目录 Dockerfile、`server/src/cloudbase-*.js` 等是已放弃的云托管 + MySQL 方案产物，不要部署。迁移完成前现有 `server/` 继续服务旧测试服务器。
 
 ## 测试服务器

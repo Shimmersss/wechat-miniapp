@@ -66,6 +66,10 @@ function request(options) {
     return done(mock.handle({ url, method, data, header: buildHeaders(header) }).then(unwrap));
   }
 
+  if (config.useCloud) {
+    return done(callCloud({ url, method, data, headers: buildHeaders(header) }));
+  }
+
   return done(
     new Promise((resolve, reject) => {
       wx.request({
@@ -91,6 +95,50 @@ function request(options) {
   );
 }
 
+// 已迁移到云开发的接口：路径第一段 → 云函数名。未登记的路径直接报错，不回退旧服务器
+const CLOUD_FUNCTIONS = { auth: 'auth', shop: 'shop' };
+let cloudReady = false;
+
+/**
+ * 云开发传输层：把 HTTP 式请求转成 wx.cloud.callFunction，返回同样的信封。
+ * 身份由平台注入的 OPENID 决定；headers 只携带会话令牌、渠道、访客 ID，云函数不信任其中的角色信息。
+ */
+function callCloud({ url, method, data, headers }) {
+  const [path, query] = url.split('?');
+  const name = CLOUD_FUNCTIONS[path.split('/')[1]];
+  if (!name) return Promise.reject(new ApiError(501, '该功能尚未迁移到云开发'));
+  if (!cloudReady) {
+    // 不传 env：使用小程序关联的默认云环境，环境 ID 不写进代码
+    wx.cloud.init({ traceUser: false });
+    cloudReady = true;
+  }
+  const params = { ...(query ? parseQuery(query) : {}), ...(data || {}) };
+  return new Promise((resolve, reject) => {
+    wx.cloud.callFunction({
+      name,
+      data: { path, method, data: params, headers },
+      success: (res) => {
+        try {
+          resolve(unwrap(res.result));
+        } catch (e) {
+          reject(e);
+        }
+      },
+      fail: reject
+    });
+  });
+}
+
+function parseQuery(query) {
+  const out = {};
+  query.split('&').forEach((pair) => {
+    if (!pair) return;
+    const [k, v = ''] = pair.split('=');
+    out[decodeURIComponent(k)] = decodeURIComponent(v);
+  });
+  return out;
+}
+
 /** 去掉 undefined / null / 空字符串参数，避免 GET 拼出 status=undefined */
 function clean(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
@@ -114,6 +162,10 @@ function unwrap(body) {
 function upload({ filePath, scope = 'public', bizType = '' }) {
   if (config.useMock) {
     return Promise.resolve().then(() => require('../mock/index').registerFile({ filePath, scope }));
+  }
+  if (config.useCloud) {
+    // TODO(codex): 文件上传迁到云存储（public / internal 分开判权）后再接入
+    return Promise.reject(new ApiError(501, '文件上传尚未迁移到云开发'));
   }
   return new Promise((resolve, reject) => {
     wx.uploadFile({

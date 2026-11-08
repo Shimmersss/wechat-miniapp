@@ -46,3 +46,7 @@ docs/HANDOFF-*.md
 
 # 开发流程文档（本机自用，不入库）
 docs/workflow/
+
+# 云函数共享代码副本，由 scripts/sync-cloudfunctions.js 生成
+cloudfunctions/*/shared/
+cloudfunctions/*/node_modules/
