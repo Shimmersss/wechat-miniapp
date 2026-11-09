@@ -96,7 +96,14 @@ function request(options) {
 }
 
 // 已迁移到云开发的接口：路径第一段 → 云函数名。未登记的路径直接报错，不回退旧服务器
-const CLOUD_FUNCTIONS = { auth: 'auth', shop: 'shop' };
+const CLOUD_FUNCTIONS = {
+  auth: 'auth', shop: 'shop',
+  catalog: 'staff-stock', models: 'staff-stock', templates: 'staff-stock',
+  suppliers: 'staff-stock', 'purchase-orders': 'staff-stock', shipments: 'staff-stock',
+  acceptances: 'staff-stock', inbound: 'staff-stock', pricing: 'staff-stock',
+  units: 'staff-stock', stocktakes: 'staff-stock', 'stocktake-sessions': 'staff-stock',
+  sales: 'staff-stock', 'sales-orders': 'staff-stock'
+};
 let cloudReady = false;
 
 /**

@@ -38,7 +38,7 @@ function secret(name) {
 }
 
 // 数据库函数里 RAISE 的自定义错误码 P0xxx → HTTP 状态
-const PG_STATUS = { P0400: 400, P0401: 401, P0403: 403, P0404: 404, P0409: 409 };
+const PG_STATUS = { P0400: 400, P0401: 401, P0403: 403, P0404: 404, P0409: 409, P0503: 503 };
 
 /** 调用 PG 存储过程（PostgREST RPC）。API Key 映射 service_role，只在云函数环境变量里。 */
 async function rpc(name, params) {
@@ -86,11 +86,27 @@ function createHandler(routes) {
     const { OPENID } = cloud.getWXContext();
     const method = String(event?.method || "GET").toUpperCase();
     const path = String(event?.path || "");
-    const route = routes.find(([m, p]) => m === method && p === path);
+    let params = {};
+    const route = routes.find(([m, pattern]) => {
+      if (m !== method) return false;
+      const parts = pattern.split('/');
+      const values = path.split('/');
+      if (parts.length !== values.length) return false;
+      const matched = {};
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i].startsWith(':')) {
+          if (!values[i]) return false;
+          matched[parts[i].slice(1)] = values[i];
+        } else if (parts[i] !== values[i]) return false;
+      }
+      params = matched;
+      return true;
+    });
     try {
       if (!route) fail(404, `接口尚未迁移到云开发：${method} ${path}`);
       const data = await route[2]({
         openid: OPENID || "",
+        params,
         data: event.data || {},
         headers: event.headers || {},
         requestId: context?.request_id || "",

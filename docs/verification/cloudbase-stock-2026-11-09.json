@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "schema": {
+    "mysqlTables": 65,
+    "pgTablesMatched": 65,
+    "missing": [],
+    "missingFinalMySQLColumns": []
+  },
+  "migrations": [
+    {
+      "version": "20261109010000",
+      "name": "core_identity_shop"
+    },
+    {
+      "version": "20261109020000",
+      "name": "shop_units"
+    },
+    {
+      "version": "20261109030100",
+      "name": "stock_schema"
+    },
+    {
+      "version": "20261109040000",
+      "name": "stock_routines"
+    },
+    {
+      "version": "20261109050000",
+      "name": "stock_identifier_fix"
+    },
+    {
+      "version": "20261109060000",
+      "name": "stock_contract_alignment"
+    }
+  ],
+  "integration": {
+    "command": "node scripts/verify-cloud-stock.js",
+    "database": "真实云端 PostgreSQL",
+    "runtime": "函数源码；测试夹具只注入平台 OPENID，不替代身份数据库、权限或业务 RPC",
+    "passed": [
+      "型号表单读取",
+      "入库后库存可查",
+      "重复IMEI被拒",
+      "批量任一失败整批回滚",
+      "改价事务成功",
+      "同设备并发改价仅一个成功",
+      "盘点开单、扫码、重复扫码、提交幂等与差异追加",
+      "复检事务成功",
+      "同设备并发收银出库仅一单成功",
+      "销售角色看不到成本与嵌套敏感字段",
+      "改价原因与审计真实落库"
+    ]
+  },
+  "deployedFunction": {
+    "name": "staff-stock",
+    "wechatSimulator": {
+      "role": "sales",
+      "detailCode": 0,
+      "hiddenFields": [],
+      "listCode": 0,
+      "hasCostTotal": false,
+      "restored": true
+    },
+    "customerSessionStatus": 403
+  },
+  "acceptance": {
+    "purchase": true,
+    "manualReceive": true,
+    "passAndFail": true,
+    "idempotentReplay": true,
+    "reinspect": true,
+    "privateProofSignedDownload": true,
+    "source": "真实PG + 真实PG Storage"
+  },
+  "security": {
+    "tables_without_rls": "0",
+    "definer_functions": "0",
+    "audit_update": "false",
+    "audit_delete": "false",
+    "audit_truncate": "false",
+    "anon_units": "false",
+    "authenticated_units": "false",
+    "price_audits": "2"
+  },
+  "regression": {
+    "command": "node --test tests/*.test.js",
+    "passed": 49,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limits": [
+    "前端上传登记、迁移旧附件、收银退款与代理/意向归因留到第3步；相关未迁移请求明确失败",
+    "冷启动耗时未测；模拟器验证为热调用",
+    "测试记录与审计作为验证证据保留，本机凭据与原始证据仅在忽略目录"
+  ]
+}

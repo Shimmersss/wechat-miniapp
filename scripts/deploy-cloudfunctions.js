@@ -20,6 +20,7 @@ const envFile = path.join(root, ".local/cloudbase/functions.env");
 const FUNCTION_ENV = {
   auth: ["NODE_ENV", "SESSION_HOURS", "OTP_DEV_CODE", "OTP_HASH_KEY", "CLOUDBASE_API_KEY"],
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
+  "staff-stock": ["NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT"],
 };
 
 function readEnv() {
@@ -34,7 +35,7 @@ function readEnv() {
 }
 
 execFileSync("node", [path.join(__dirname, "sync-cloudfunctions.js")], { stdio: "inherit" });
-const env = readEnv();
+const env = { WHOLESALE_DISCOUNT: "0", ...readEnv() };
 const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(FUNCTION_ENV);
 const envId = execFileSync("tcb", ["env", "list", "--json"], { encoding: "utf8" });
 const current = JSON.parse(envId.slice(envId.indexOf("{")))?.data?.[0]?.EnvId;

@@ -15,6 +15,9 @@ const sources = [
     .filter((f) => f.endsWith(".js"))
     .map((f) => path.join(fnRoot, "common", f)),
   path.join(root, "miniprogram/constants/roles.js"),
+  path.join(root, "miniprogram/constants/status.js"),
+  path.join(root, "miniprogram/utils/template.js"),
+  path.join(root, "miniprogram/utils/validate.js"),
 ];
 
 for (const name of fs.readdirSync(fnRoot)) {
