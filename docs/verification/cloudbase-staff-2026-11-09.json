@@ -1,0 +1,172 @@
+{
+  "block": "step-3-8-staff-admin",
+  "date": "2026-11-09",
+  "status": "awaiting-user-acceptance",
+  "migration": {
+    "version": "20261109140000",
+    "name": "staff_admin",
+    "taskStatus": "Succeed",
+    "remoteHistoryVerified": true,
+    "historicalMigrationsModified": false
+  },
+  "deployment": {
+    "command": "node scripts/deploy-cloudfunctions.js staff-admin",
+    "function": "staff-admin",
+    "environmentVariableNames": ["NODE_ENV", "CLOUDBASE_API_KEY"]
+  },
+  "pgVerification": {
+    "checks": [
+      "权限/名单筛选/白名单字段/新员工未绑定；并发重复手机号仅一次成功",
+      "经理不能授予/修改/解绑老板；禁止停用、降级、解绑自己",
+      "同版本并发员工修改 [0,409]；失败不改版本，手机号只读，未绑定不可解绑",
+      "开发固定码真实绑定；同令牌角色变更立即裁掉成本；停用撤销员工和顾客全部会话",
+      "恢复后重新登录；解绑不改手机号并撤销全部会话；另一微信重新绑定且旧微信不能抢绑",
+      "角色保存需老板/原因/白名单；并发 [0,409]，实际保存相同授权配置避免影响现有员工",
+      "真实 PG 回滚事务验证角色定义变更立即影响现存会话，事务后原权限/字段/版本完整恢复",
+      "最后一名老板 PG 守卫边界验证；隔离老板互停并发仅一方成功，等待后重新校验操作者",
+      "真实审计含原因及前后值；三个函数 INVOKER 且仅 service_role；审计只追加实际授权"
+    ],
+    "crossBossCodes": [0, 403],
+    "functions": [
+      {
+        "anon": false,
+        "proname": "api_staff_admin",
+        "service": true,
+        "prosecdef": false,
+        "authenticated": false
+      },
+      {
+        "anon": false,
+        "proname": "staff_admin_raw",
+        "service": true,
+        "prosecdef": false,
+        "authenticated": false
+      },
+      {
+        "anon": false,
+        "proname": "staff_admin_transition_guard",
+        "service": true,
+        "prosecdef": false,
+        "authenticated": false
+      }
+    ],
+    "auditRights": {
+      "ins": "true",
+      "upd": "false",
+      "del": "false",
+      "trunc": "false"
+    },
+    "passed": true,
+    "auditProof": {
+      "employee_audits": "6",
+      "employee_version": "6",
+      "changes_with_before_after": "2",
+      "role_audits": "1"
+    }
+  },
+  "wechatVerification": {
+    "checks": [
+      "真实微信 SDK 已部署名单/角色读取、新增未绑定员工、过滤与白名单字段",
+      "真实微信同版本并发修改 [0,409]、停用/恢复与未绑定解绑冲突",
+      "真实微信禁止自停用/自解绑；角色原因保存及版本增加、老板固定；授权内容保持一致",
+      "同令牌经理立即只读角色、禁止改老板；销售拒绝员工与角色维护"
+    ],
+    "timings": [
+      {
+        "e2eMs": 1359,
+        "coldStart": true,
+        "moduleLoadMs": 453.480245,
+        "handlerMs": 574.517162
+      },
+      {
+        "e2eMs": 519,
+        "coldStart": false,
+        "moduleLoadMs": 453.480245,
+        "handlerMs": 65.528519
+      },
+      {
+        "e2eMs": 692,
+        "coldStart": false,
+        "moduleLoadMs": 453.480245,
+        "handlerMs": 84.239166
+      }
+    ],
+    "pages": [
+      {
+        "route": "packages/staff/staff/index",
+        "error": "",
+        "loading": false,
+        "rows": 30,
+        "roles": 7,
+        "isBoss": true
+      },
+      {
+        "route": "packages/staff/staff/roles",
+        "error": "",
+        "loading": false,
+        "roles": 7,
+        "canEdit": true,
+        "activeEditable": true
+      }
+    ],
+    "restoredRole": "sales",
+    "restoredSessionRole": "customer",
+    "passed": true
+  },
+  "tables": [
+    {
+      "rls": true,
+      "anon": false,
+      "relname": "audit_logs",
+      "authenticated": false
+    },
+    {
+      "rls": true,
+      "anon": false,
+      "relname": "roles",
+      "authenticated": false
+    },
+    {
+      "rls": true,
+      "anon": false,
+      "relname": "sessions",
+      "authenticated": false
+    },
+    {
+      "rls": true,
+      "anon": false,
+      "relname": "staff",
+      "authenticated": false
+    },
+    {
+      "rls": true,
+      "anon": false,
+      "relname": "users",
+      "authenticated": false
+    }
+  ],
+  "regression": {
+    "command": "node --test tests/*.test.js",
+    "passed": 84,
+    "failed": 0
+  },
+  "checks": {
+    "javascriptSyntax": true,
+    "sqlAndPlpgsqlParsing": true,
+    "format": true,
+    "gitDiffCheck": true,
+    "sensitiveConfigurationScan": true,
+    "newOrModifiedFilesContainNoPrivateLoginPhone": true
+  },
+  "boundaries": [
+    "Source verifier injects only platform OPENID; PG sessions, transactions and inventory reads are real. Native verifier invokes deployed functions through the real WeChat SDK.",
+    "Real role definition permission changes run inside an isolated rollback transaction. Committed role saves retain the same authorization sets, increment version and append audit.",
+    "Last-active-boss protection tested inside the real PG guard with counts 1 and 2; existing bosses were not all disabled to construct an end-to-end last-boss scenario.",
+    "Native tests verify employee and roles page loads; business writes use the real SDK, not a full manual form walkthrough.",
+    "Initial native permission probe selected the current account after changing its role to manager; its allowed name-only edit was restored using the audit before-value. Probe corrected to select a different actual boss and passed. Existing audit retained.",
+    "Native continuation --finish completed only remaining permission checks; finally restored original staff role/status and customer session.",
+    "First invocation flag and sample timings do not measure full platform cold start or P95/P99.",
+    "Existing fixed development code used; no SMS provider implementation or configuration change.",
+    "Step 3 still requires full API/page coverage reconciliation after this block acceptance. No commit or push."
+  ]
+}

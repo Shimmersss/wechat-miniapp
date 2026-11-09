@@ -165,6 +165,7 @@ const routes = [
     return { token: 'mock-staff-token', user: makeUser(role) };
   }],
   ['POST', '/auth/sms-code', () => ({ sent: true })],
+  ['POST', '/auth/sms-captcha', () => fail(400, '模拟登录不需要图片验证')],
   ['GET', '/auth/me', () => makeUser(currentRole())],
   ['POST', '/auth/logout', () => {
     wx.removeStorageSync(ROLE_KEY);

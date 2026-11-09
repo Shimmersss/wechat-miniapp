@@ -8,6 +8,7 @@
  * - 环境 ID 用 tcb 当前绑定的环境（tcb env use），不写进被跟踪文件。
  */
 const fs = require("node:fs");
+const crypto = require("node:crypto");
 const os = require("node:os");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
@@ -23,11 +24,21 @@ const FUNCTION_ENV = {
     "SESSION_HOURS",
     "OTP_DEV_CODE",
     "OTP_HASH_KEY",
+    "SMS_PROVIDER",
+    "SMS_DAILY_LIMIT",
     "CLOUDBASE_API_KEY",
   ],
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
   "staff-stock": ["NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT"],
   "staff-sales": ["NODE_ENV", "CLOUDBASE_API_KEY"],
+  "cloud-maintenance": [
+    "NODE_ENV",
+    "CLOUDBASE_API_KEY",
+    "MAINTENANCE_KEY",
+    "STORAGE_TIMEOUT_MS",
+  ],
+  "staff-admin": ["NODE_ENV", "CLOUDBASE_API_KEY"],
+  "staff-reports": ["NODE_ENV", "CLOUDBASE_API_KEY", "STORAGE_TIMEOUT_MS"],
   "staff-loans": ["NODE_ENV", "CLOUDBASE_API_KEY"],
   "staff-repair": [
     "NODE_ENV",
@@ -96,6 +107,14 @@ const env = {
 env.APPOINTMENT_SLOTS_B64 =
   env.APPOINTMENT_SLOTS_B64 ||
   Buffer.from(env.APPOINTMENT_SLOTS, "utf8").toString("base64");
+const MAINTENANCE_CRON = "0 */10 * * * * *";
+const maintenanceTrigger = () =>
+  "maintenance-" +
+  crypto
+    .createHmac("sha256", env.MAINTENANCE_KEY)
+    .update("timer-v1")
+    .digest("hex")
+    .slice(0, 32);
 const names = process.argv.slice(2).length
   ? process.argv.slice(2)
   : Object.keys(FUNCTION_ENV);
@@ -128,6 +147,17 @@ try {
             ],
           }
         : {}),
+      ...(name === "cloud-maintenance"
+        ? {
+            triggers: [
+              {
+                name: maintenanceTrigger(),
+                type: "timer",
+                config: MAINTENANCE_CRON,
+              },
+            ],
+          }
+        : {}),
       runtime: "Nodejs18.15",
       timeout: 10,
       handler: "index.main",
@@ -154,6 +184,48 @@ try {
         stdio: "inherit",
       },
     );
+    if (name === "cloud-maintenance") {
+      const readTriggers = () => {
+        const raw = execFileSync("tcb", ["fn", "detail", name, "--json"], {
+          cwd: work,
+          encoding: "utf8",
+        });
+        return JSON.parse(raw.slice(raw.indexOf("{"))).data?.Triggers || [];
+      };
+      const desired = maintenanceTrigger(),
+        existing = readTriggers();
+      const cronOf = (t) =>
+        t.TriggerDesc?.startsWith("{")
+          ? JSON.parse(t.TriggerDesc).cron
+          : t.TriggerDesc;
+      for (const trigger of existing.filter(
+        (t) =>
+          t.TriggerName.startsWith("maintenance-") &&
+          (t.TriggerName !== desired || cronOf(t) !== MAINTENANCE_CRON),
+      ))
+        execFileSync(
+          "tcb",
+          ["fn", "trigger", "delete", name, trigger.TriggerName],
+          { cwd: work, stdio: "inherit" },
+        );
+      if (
+        !existing.some(
+          (t) => t.TriggerName === desired && cronOf(t) === MAINTENANCE_CRON,
+        )
+      )
+        execFileSync("tcb", ["fn", "trigger", "create", name], {
+          cwd: work,
+          stdio: "inherit",
+        });
+      if (
+        !readTriggers().some(
+          (t) => t.TriggerName === desired && cronOf(t) === MAINTENANCE_CRON,
+        )
+      )
+        throw Error("维护触发器读回不一致");
+      console.log("cloud-maintenance 定时触发器已核对");
+    }
+
     if (name === "agent-expiry") {
       const detailText = execFileSync("tcb", ["fn", "detail", name, "--json"], {
         cwd: work,
