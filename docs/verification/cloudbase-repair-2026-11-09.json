@@ -1,0 +1,357 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "block": "第3步第4块：维修",
+  "status": "实现与自动验收通过，待用户验收",
+  "functions": [
+    "staff-repair",
+    "staff-stock",
+    "staff-sales",
+    "staff-loans",
+    "shop"
+  ],
+  "migrations": [
+    "20261109100000_repairs",
+    "20261109100100_repair_total_bounds",
+    "20261109100200_repair_identifier_guards"
+  ],
+  "contract": {
+    "prefixes": [
+      "/repair-orders",
+      "/repair-parts"
+    ],
+    "routes": 17,
+    "internalCostPolicy": "capitalize默认；separate可配置；未知策略503回滚",
+    "financialOperations": "只登记实际办理的收支，不调用支付平台"
+  },
+  "realPg": {
+    "commands": [
+      "node scripts/verify-cloud-repair.js",
+      "node scripts/verify-cloud-repair.js --extra",
+      "node scripts/verify-cloud-repair.js --bounds",
+      "node scripts/verify-cloud-repair.js --identifiers"
+    ],
+    "scope": "云函数源码+真实PG/会话/权限/事务/存储；仅平台OPENID注入隔离夹具。三个补充模式创建独立测试员工，不重跑主链夹具",
+    "passed": [
+      "外部维修开单幂等/标识冲突、密码拒绝、同版本并发推进只有一个成功",
+      "报价版本与确认绑定，改价后必须重新确认，不能跨节点",
+      "配件采购幂等、移动平均领料与按原剩余成本退料、超量回滚",
+      "真实费用/退费、收款/退款和上下限控制，金额精确到分",
+      "维修列表/看板、配件流水与发生期统计",
+      "店长无成本/费用/成本事件但按既有字段授权可见串码，销售禁读维修与配件",
+      "工程师仅获分派工单，改派即时撤权，报价与附件按角色判权",
+      "待配件阻止完工、取机凭证和结清检查、完成幂等并释放外部串码",
+      "库存机送修关闭分享、对客收款拒绝、取消后成本资本化且回待复检、归档不重复加成本",
+      "费用凭证不能降级为外观照片，外部相同串码并发开单仅一单",
+      "非法库存维修成本策略完整回滚，separate单列费用不加库存成本",
+      "多批配件加权到分与部分退料成本守恒，零元报价有效",
+      "两个维修单并发争用最后一件配件，仅一个成功且库存不透支",
+      "统计空范围补零，按工程师过滤实际收支且不混入本店维修成本",
+      "维修事件/凭证/配件流水/收支/成本分摊只追加，原因审计真实落库",
+      "维修与借还并发认领同一内部照片，仅一个业务成功",
+      "库存机完整检测/报价确认/领料/费用/交接完工，成本归集一次且回待复检",
+      "外部维修串码占用阻止入库/借入，未退清不能取消，退清取消释放后可真实入库",
+      "单笔金额合法但累计费用超限时，第二笔、事件、版本和审计全部回滚",
+      "外部维修与真实库存入库争用同串码，连续3组均仅一个成功",
+      "外部维修与借入争用同串码仅一个成功"
+    ],
+    "passedGroups": 21,
+    "appendOnly": [
+      {
+        "relname": "repair_cost_allocations",
+        "can_update": "false",
+        "can_delete": "false"
+      },
+      {
+        "relname": "repair_events",
+        "can_update": "false",
+        "can_delete": "false"
+      },
+      {
+        "relname": "repair_files",
+        "can_update": "false",
+        "can_delete": "false"
+      },
+      {
+        "relname": "repair_part_ledger",
+        "can_update": "false",
+        "can_delete": "false"
+      },
+      {
+        "relname": "repair_payments",
+        "can_update": "false",
+        "can_delete": "false"
+      }
+    ],
+    "auditCount": 20,
+    "concurrentFileClaimCodes": [
+      400,
+      0
+    ],
+    "inboundIdentifierPairs": [
+      [
+        0,
+        409
+      ],
+      [
+        0,
+        409
+      ],
+      [
+        409,
+        0
+      ]
+    ],
+    "borrowIdentifierPair": [
+      409,
+      0
+    ],
+    "cumulativeMoneyBounds": {
+      "version": 2,
+      "paymentCount": 1
+    }
+  },
+  "deployedWechat": {
+    "command": "node scripts/verify-cloud-repair-live.js",
+    "checks": [
+      "真实工程师开单自动归本人、照片上传、开单幂等、报价越权拒绝与成本裁剪",
+      "真实微信同版本并发报价仅一个成功",
+      "已部署维修列表/看板/北京时间超期筛选",
+      "真实报价确认、收款后取机完结，未结清拒绝，实际凭证可下载",
+      "维修详情页实际加载completed、收款金额与外观/取机照片",
+      "真实角色变更即时生效：销售禁读、工程师非指派404、停用拒绝"
+    ],
+    "page": {
+      "route": "packages/staff/repair/detail",
+      "error": "",
+      "status": "completed",
+      "received": 12.34,
+      "files": 2
+    },
+    "scope": "真实微信SDK调用已部署函数与真实对象PUT/下载；页面验证为实际详情加载，业务写入通过SDK完成，无mock接口",
+    "initialOptionsSamples": [
+      {
+        "e2eMs": 2677,
+        "coldStart": true,
+        "moduleLoadMs": 471.018778,
+        "handlerMs": 572.989028
+      },
+      {
+        "e2eMs": 625,
+        "coldStart": false,
+        "moduleLoadMs": 471.018778,
+        "handlerMs": 105.811297
+      },
+      {
+        "e2eMs": 550,
+        "coldStart": false,
+        "moduleLoadMs": 471.018778,
+        "handlerMs": 69.475288
+      }
+    ],
+    "afterFinalMigrationsOptionsSamples": [
+      {
+        "e2eMs": 513,
+        "coldStart": false,
+        "moduleLoadMs": 555.863315,
+        "handlerMs": 113.077749
+      },
+      {
+        "e2eMs": 454,
+        "coldStart": false,
+        "moduleLoadMs": 340.837142,
+        "handlerMs": 90.626976
+      },
+      {
+        "e2eMs": 556,
+        "coldStart": false,
+        "moduleLoadMs": 480.797336,
+        "handlerMs": 119.014892
+      }
+    ],
+    "database": {
+      "events": 10,
+      "payments": 1,
+      "audits": 10,
+      "occupiedSlots": 0,
+      "attachmentRows": 2,
+      "distinctFiles": 1
+    },
+    "restoredStaffRole": "sales",
+    "restoredStaffStatus": "active",
+    "restoredSessionRole": "customer"
+  },
+  "regression": {
+    "miniprogram": {
+      "command": "node --test tests/*.test.js",
+      "passed": 65,
+      "failed": 0
+    },
+    "realStockAfterTriggers": {
+      "command": "node scripts/verify-cloud-stock.js",
+      "passed": [
+        "型号表单读取",
+        "入库后库存可查",
+        "重复IMEI被拒",
+        "批量任一失败整批回滚",
+        "改价事务成功",
+        "同设备并发改价仅一个成功",
+        "盘点开单、扫码、重复扫码、提交幂等与差异追加",
+        "复检事务成功",
+        "同设备并发收银出库仅一单成功",
+        "销售角色看不到成本与嵌套敏感字段",
+        "改价原因与审计真实落库"
+      ]
+    },
+    "realLoansAfterTriggers": {
+      "command": "node scripts/verify-cloud-loans.js",
+      "passed": [
+        "同一自有设备并发出借仅一单成功、关闭分享且不产生销售",
+        "多台出借任一冲突整单回滚",
+        "开单幂等/标识冲突、禁止收费、缺归还凭证不变库存",
+        "部分归还保持进行中、待复检/逾期筛选与串码搜索、归还幂等",
+        "不能跳过真实库存复检，核验流水后逐台完结且不自动恢复分享",
+        "同单同版本并发归还只有一个成功，全部复检后完结",
+        "借入并发同标识幂等、外部货权零成本且不可售、主副IMEI跨槽冲突拒绝",
+        "借入重复串码与中途冲突整单回滚，不遗留串码登记",
+        "借入逐台归还冲销并完结，再借入沿用同设备且历史状态/快照不变",
+        "库管可读交接照片，销售/维修/访客禁读借还与内部凭证",
+        "借还与销售并发认领同一内部凭证只有一个成功",
+        "原因审计真实落库、借还不计销售、订单/快照/事件/附件表只追加"
+      ]
+    }
+  },
+  "securityReview": {
+    "functions": [
+      {
+        "proname": "api_repairs",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_attach",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_engineer",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_finish",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_guard",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_guard_external_identifier",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_guard_unit_identifier",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_raw",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "repair_totals",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      }
+    ],
+    "tables": [
+      {
+        "relname": "repair_cost_allocations",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_events",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_external_slots",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_files",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_orders",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_part_ledger",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_parts",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      },
+      {
+        "relname": "repair_payments",
+        "relrowsecurity": "true",
+        "anon_read": "false",
+        "client_read": "false"
+      }
+    ],
+    "checks": [
+      "SECURITY INVOKER，仅service_role执行，所有维修表RLS开启且客户端无读权限",
+      "工程师指派范围、报价/成本/退款/配件权限、费用凭证不可降级",
+      "所有敏感字段在云函数白名单及事件/付款/配件各分支裁剪",
+      "凭证全局有序行锁、工单版本锁、配件库存锁、串码跨表事务锁",
+      "SQL/JS语法与git diff --check通过，实际配置值扫描通过",
+      "既有迁移与归档WORKLOG未改，借还用户验收状态已更新"
+    ]
+  },
+  "limitations": [
+    "options首调用与热调用只是小样本，不能代表列表/写入P95/P99",
+    "工单照片可以按旧规则在有权读取的维修单之间引用；费用凭证仍不能降级",
+    "通用工作台待办、经营统计导出与代理等业务留后续块，未实现路径明确失败",
+    "大文件核验性能、生产合法域名/真机验证与已签发URL五分钟剩余有效期沿用上一块",
+    "失败/放弃上传定时清理留第5步；用户要求保留的本地SQL解析器继续保留",
+    "验证脚本会写真实PG隔离测试数据及审计，源码和验证证据保留，不自动删除"
+  ]
+}
