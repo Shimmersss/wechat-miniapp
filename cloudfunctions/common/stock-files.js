@@ -7,7 +7,7 @@ async function resolveFiles(value,user) {
   if(Array.isArray(x.attached)){
    rows.push(x);
    for(const f of x.attached){
-    const eligible=f.scope==='public'||(u.staffNo&&((x.receiptAccess===true&&f.field_key==='salesReceipts')||f.owner_id===u.id||['boss','manager','purchaser'].includes(u.role)));
+    const eligible=f.scope==='public'||(u.staffNo&&(((x.receiptAccess===true&&f.field_key==='salesReceipts')||(x.loanAccess===true&&f.field_key==='loanPhotos'))||f.owner_id===u.id||['boss','manager','purchaser'].includes(u.role)));
     if(eligible)ids.add(f.id);
    }
   }

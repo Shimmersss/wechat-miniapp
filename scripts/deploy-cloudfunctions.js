@@ -22,6 +22,7 @@ const FUNCTION_ENV = {
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
   "staff-stock": ["NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT"],
   "staff-sales": ["NODE_ENV", "CLOUDBASE_API_KEY"],
+  "staff-loans": ["NODE_ENV", "CLOUDBASE_API_KEY"],
   files: ["NODE_ENV", "CLOUDBASE_API_KEY", "STORAGE_TIMEOUT_MS"],
 };
 

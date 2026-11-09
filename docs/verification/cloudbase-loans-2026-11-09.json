@@ -1,0 +1,176 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "block": "第3步第3块：借还",
+  "status": "实现与自动验收通过，待用户验收",
+  "functions": [
+    "staff-loans",
+    "staff-stock",
+    "staff-sales",
+    "shop"
+  ],
+  "migration": "20261109090100_loans",
+  "rejectedMigration": {
+    "version": "20261109090000",
+    "applied": false,
+    "reason": "PL/pgSQL条件中的CASE未加括号，语法检查拒绝；失败原稿保留在本机忽略目录，未进入有效迁移序列"
+  },
+  "realPg": {
+    "command": "node scripts/verify-cloud-loans.js",
+    "scope": "云函数源码+真实PG、会话、权限、事务和云存储；仅平台OPENID用隔离夹具注入",
+    "passed": [
+      "同一自有设备并发出借仅一单成功、关闭分享且不产生销售",
+      "多台出借任一冲突整单回滚",
+      "开单幂等/标识冲突、禁止收费、缺归还凭证不变库存",
+      "部分归还保持进行中、待复检/逾期筛选与串码搜索、归还幂等",
+      "不能跳过真实库存复检，核验流水后逐台完结且不自动恢复分享",
+      "同单同版本并发归还只有一个成功，全部复检后完结",
+      "借入并发同标识幂等、外部货权零成本且不可售、主副IMEI跨槽冲突拒绝",
+      "借入重复串码与中途冲突整单回滚，不遗留串码登记",
+      "借入逐台归还冲销并完结，再借入沿用同设备且历史状态/快照不变",
+      "库管可读交接照片，销售/维修/访客禁读借还与内部凭证",
+      "借还与销售并发认领同一内部凭证只有一个成功",
+      "原因审计真实落库、借还不计销售、订单/快照/事件/附件表只追加"
+    ],
+    "evidence": {
+      "auditCount": 5,
+      "appendOnly": [
+        {
+          "relname": "loan_events",
+          "can_update": "false",
+          "can_delete": "false"
+        },
+        {
+          "relname": "loan_files",
+          "can_update": "false",
+          "can_delete": "false"
+        },
+        {
+          "relname": "loan_items",
+          "can_update": "false",
+          "can_delete": "false"
+        },
+        {
+          "relname": "loan_orders",
+          "can_update": "false",
+          "can_delete": "false"
+        }
+      ]
+    }
+  },
+  "deployedWechat": {
+    "command": "node scripts/verify-cloud-loans-live.js",
+    "checks": [
+      "已部署函数真实微信借入与开单幂等",
+      "真实凭证上传、并发归还仅一个成功、借入归还冲销与照片可下载",
+      "已部署列表/详情及分页契约，库管可读其他上传者的交接凭证",
+      "真实借还详情页渲染完结状态、逐台设备与交接照片",
+      "真实微信会话权限变更即时生效，销售不能读借还单及凭证",
+      "测试员工停用后拒绝借还访问"
+    ],
+    "page": {
+      "route": "packages/staff/loans/detail",
+      "error": "",
+      "status": "closed",
+      "photos": 1,
+      "items": 1
+    },
+    "firstAndWarm": [
+      {
+        "e2eMs": 1412,
+        "coldStart": true,
+        "moduleLoadMs": 456.286748,
+        "handlerMs": 494.169132
+      },
+      {
+        "e2eMs": 457,
+        "coldStart": false,
+        "moduleLoadMs": 456.286748,
+        "handlerMs": 70.230581
+      },
+      {
+        "e2eMs": 433,
+        "coldStart": false,
+        "moduleLoadMs": 456.286748,
+        "handlerMs": 72.573901
+      }
+    ],
+    "restoredStaffRole": "sales",
+    "restoredSessionRole": "customer",
+    "scope": "真实微信SDK调用已部署函数；真实存储PUT/签名下载；页面验证为详情页实际加载，无mock接口。测试员工临时库管/销售/停用后已恢复原角色和状态",
+    "database": {
+      "auditCount": 2,
+      "eventCount": 2,
+      "ledgerCount": 2,
+      "fileLinks": 1,
+      "activeUnits": 0,
+      "sample": "首次真实微信验收落库核对"
+    },
+    "repeatWarmOptions": [
+      {
+        "e2eMs": 601,
+        "coldStart": false,
+        "moduleLoadMs": 464.018221,
+        "handlerMs": 123.513995
+      },
+      {
+        "e2eMs": 529,
+        "coldStart": false,
+        "moduleLoadMs": 315.254108,
+        "handlerMs": 119.77102
+      },
+      {
+        "e2eMs": 422,
+        "coldStart": false,
+        "moduleLoadMs": 315.254108,
+        "handlerMs": 66.159317
+      }
+    ]
+  },
+  "securityReview": {
+    "rpcGrants": [
+      {
+        "proname": "api_loans",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "authenticated_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "loan_proofs",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "authenticated_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "loan_raw",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "authenticated_execute": "false",
+        "service_execute": "true"
+      }
+    ],
+    "checks": [
+      "仅员工且loan:manage可访问；出借另需inventory:view",
+      "云函数白名单组装响应，完整IMEI按可见字段裁剪，不返回成本/供应商/设备内部备注",
+      "文件按全局有序行锁认领，跨域关联再判权",
+      "订单/设备快照/事件/凭证关联仅追加；状态表独立更新",
+      "开单按操作者+提交标识串行化，归还/完结锁状态行并核对版本",
+      "完结必须有本次归还流水之后的真实库存复检通过记录",
+      "数据库函数SECURITY INVOKER，仅service_role执行，客户端业务表无权限",
+      "没有环境配置、请求头或平台身份整包回显"
+    ]
+  },
+  "regression": {
+    "command": "node --test tests/*.test.js",
+    "passed": 61,
+    "failed": 0
+  },
+  "limitations": [
+    "出借首请求样本为options端点：不是列表/写入P95或P99",
+    "大文件上传性能、合法域名与五分钟签名链接边界沿用上一块",
+    "失败/放弃上传定时清理安排第5步与每日备份一起实现",
+    "后续维修等业务仍未迁移，本轮不继续实现"
+  ]
+}
