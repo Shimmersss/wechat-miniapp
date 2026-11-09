@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "block": "第3步第1块：销售查询与退款冲回",
+  "status": "实现与自动验收通过，待用户验收",
+  "functions": [
+    "staff-sales",
+    "staff-stock"
+  ],
+  "migrations": [
+    "20261109070000_sales_refunds",
+    "20261109070100_sales_order_lock",
+    "20261109070200_sales_list_alias",
+    "20261109070300_sales_list_reference"
+  ],
+  "realPg": {
+    "command": "node scripts/verify-cloud-sales.js",
+    "passed": [
+      "差价退款不回库、净额与毛利正确",
+      "整机退货进入待复检、成本冲回且销售快照不变",
+      "超额退款拒绝、幂等重试与标识冲突",
+      "同销售明细并发退货仅一个成功",
+      "待转账收益冲回；已转账收益追加负向记录",
+      "销售列表、日期/销售员/状态筛选与详情查询",
+      "销售角色无退款权限，成本/毛利/代理收益裁剪",
+      "退款原因审计真实落库"
+    ],
+    "scope": "函数源码+真实PG；仅OPENID由隔离测试夹具注入，不mock会话/权限/事务",
+    "agentFixtures": "代理完整下单链尚未迁移；在真实PG按旧端合法结构建立pending/settled收益夹具验证退款冲回"
+  },
+  "deployedWechatChecks": {
+    "detailCode": 0,
+    "hasProfit": false,
+    "hasCost": false,
+    "refundCode": 403
+  },
+  "startup": {
+    "method": "部署后首次调用携带coldStart=true，随后同实例coldStart=false；端到端为模拟器wx.cloud.callFunction耗时，含网络与PG，不等同纯平台初始化时间",
+    "latestDeployment": {
+      "staff-stock": [
+        {
+          "code": 0,
+          "elapsedMs": 860,
+          "timing": {
+            "coldStart": true,
+            "moduleLoadMs": 333.822768,
+            "handlerMs": 424.180261
+          }
+        },
+        {
+          "code": 0,
+          "elapsedMs": 440,
+          "timing": {
+            "coldStart": false,
+            "moduleLoadMs": 333.822768,
+            "handlerMs": 60.903841
+          }
+        },
+        {
+          "code": 0,
+          "elapsedMs": 3262,
+          "timing": {
+            "coldStart": false,
+            "moduleLoadMs": 333.822768,
+            "handlerMs": 114.536368
+          }
+        }
+      ],
+      "staff-sales": [
+        {
+          "code": 0,
+          "elapsedMs": 1705,
+          "timing": {
+            "coldStart": true,
+            "moduleLoadMs": 1016.980705,
+            "handlerMs": 862.244379
+          }
+        },
+        {
+          "code": 0,
+          "elapsedMs": 566,
+          "timing": {
+            "coldStart": false,
+            "moduleLoadMs": 1016.980705,
+            "handlerMs": 199.816656
+          }
+        },
+        {
+          "code": 0,
+          "elapsedMs": 787,
+          "timing": {
+            "coldStart": false,
+            "moduleLoadMs": 1016.980705,
+            "handlerMs": 199.238209
+          }
+        }
+      ]
+    },
+    "earlierSalesSample": [
+      {
+        "code": 0,
+        "elapsedMs": 1333,
+        "timing": {
+          "coldStart": true,
+          "moduleLoadMs": 482.233648,
+          "handlerMs": 593.073774
+        }
+      },
+      {
+        "code": 0,
+        "elapsedMs": 403,
+        "timing": {
+          "coldStart": false,
+          "moduleLoadMs": 482.233648,
+          "handlerMs": 77.156997
+        }
+      },
+      {
+        "code": 0,
+        "elapsedMs": 577,
+        "timing": {
+          "coldStart": false,
+          "moduleLoadMs": 482.233648,
+          "handlerMs": 77.752941
+        }
+      }
+    ],
+    "sampleLimit": "每个实例一次首请求与两次热调用，非P95/P99；库存热请求有3262ms样本，函数处理114.5ms，额外耗时位于调用链其余部分，未进一步归因"
+  },
+  "security": {
+    "sales_snapshot_update": "false",
+    "refund_update": "false",
+    "audit_delete": "false",
+    "definer_functions": "0"
+  },
+  "tests": {
+    "command": "node --test tests/*.test.js",
+    "passed": 52,
+    "failed": 0,
+    "skipped": 0,
+    "afterTimingRefactor": "云库存/销售8项专项通过"
+  },
+  "scopeBoundary": [
+    "前端新文件上传和补传凭证仍未实现，明确失败",
+    "完整代理下单与收益管理、借还、维修、意向归因、统计导出、审计查询等待后续分块",
+    "停止在本块等待用户验收；原始证据与测试数据保留在忽略目录"
+  ]
+}

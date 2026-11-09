@@ -1,3 +1,4 @@
+const moduleStarted = process.hrtime.bigint();
 const { createHandler, rpc, fail } = require('./shared/gateway');
 const { requireUser } = require('./shared/identity');
 const { PERM } = require('./shared/roles');
@@ -83,4 +84,4 @@ add('POST','/stocktake-sessions/:id/cancel','sessions.cancel',count);
 add('GET','/sales/lookup','sales.lookup',[PERM.SALES_CREATE]);
 add('POST','/sales/quote','sales.quote',[PERM.SALES_CREATE]);
 add('POST','/sales-orders','sales.create',[PERM.SALES_CREATE]);
-exports.main=createHandler(routes);
+exports.main=require('./shared/startup-timing')(createHandler(routes),moduleStarted);

@@ -21,6 +21,7 @@ const FUNCTION_ENV = {
   auth: ["NODE_ENV", "SESSION_HOURS", "OTP_DEV_CODE", "OTP_HASH_KEY", "CLOUDBASE_API_KEY"],
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
   "staff-stock": ["NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT"],
+  "staff-sales": ["NODE_ENV", "CLOUDBASE_API_KEY"],
 };
 
 function readEnv() {

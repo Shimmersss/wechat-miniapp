@@ -102,7 +102,7 @@ const CLOUD_FUNCTIONS = {
   suppliers: 'staff-stock', 'purchase-orders': 'staff-stock', shipments: 'staff-stock',
   acceptances: 'staff-stock', inbound: 'staff-stock', pricing: 'staff-stock',
   units: 'staff-stock', stocktakes: 'staff-stock', 'stocktake-sessions': 'staff-stock',
-  sales: 'staff-stock', 'sales-orders': 'staff-stock'
+  sales: 'staff-sales', 'sales-orders': 'staff-sales'
 };
 let cloudReady = false;
 

@@ -1,17 +1,18 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
-const { execFileSync } = require('node:child_process');
 const path = require('node:path');
-execFileSync(process.execPath, [path.join(__dirname, '../scripts/sync-cloudfunctions.js')]);
 const load = Module._load;
 Module._load = function (name, ...args) {
   if (name === 'wx-server-sdk') return { init() {}, getWXContext: () => ({ OPENID: 'trusted-platform' }) };
+  if (args[0]?.filename.startsWith(path.join(__dirname, '../cloudfunctions/common/')) && ['roles','status','template','validate'].some(k=>name==='./'+k)) {
+    const key=name.slice(2);return load.call(this,path.join(__dirname,'../miniprogram', ['roles','status'].includes(key)?'constants':'utils',key),...args);
+  }
   return load.call(this, name, ...args);
 };
-const { createHandler } = require('../cloudfunctions/staff-stock/shared/gateway');
-const { unit, view } = require('../cloudfunctions/staff-stock/view');
-const { prepare } = require('../cloudfunctions/staff-stock/input');
+const { createHandler } = require('../cloudfunctions/common/gateway');
+const { unit, view } = require('../cloudfunctions/common/stock-view');
+const { prepare } = require('../cloudfunctions/common/stock-input');
 const { ROLE_PERMISSIONS, defaultVisibleFields } = require('../miniprogram/constants/roles');
 Module._load = load;
 const user = role => ({ id: 'user', staffNo: 'staff', role, permissions: ROLE_PERMISSIONS[role], visibleFields: defaultVisibleFields(role) });
