@@ -1,0 +1,268 @@
+{
+  "date": "2026-11-09",
+  "scope": "第3步第7块：统计导出与审计查询，含访问设备索引优化",
+  "status": "实现与自动验收通过，待用户验收",
+  "migrations": [
+    "20261109120200",
+    "20261109130000",
+    "20261109130100",
+    "20261109130200",
+    "20261109130300"
+  ],
+  "latestRemoteMigration": "20261109130300",
+  "migrationTasks": {
+    "visit-index-status": "Succeed",
+    "reports-status": "Succeed",
+    "reports-exports-status": "Succeed",
+    "reports-storage-status": "Succeed",
+    "reports-storage-guard-status": "Succeed"
+  },
+  "visitUnitIndex": {
+    "passed": true,
+    "before": {
+      "Node Type": "Seq Scan",
+      "Relation Name": "units",
+      "Startup Cost": 0,
+      "Total Cost": 14.1,
+      "Plan Rows": 1,
+      "Filter": "((id)::text = '[unit-id]'::text)"
+    },
+    "after": {
+      "Node Type": "Index Only Scan",
+      "Index Name": "units_pkey",
+      "Relation Name": "units",
+      "Startup Cost": 0.14,
+      "Total Cost": 8.16,
+      "Plan Rows": 1,
+      "Index Cond": "(id = '[unit-id]'::uuid)"
+    },
+    "wechat": {
+      "first": {
+        "ignored": 4,
+        "accepted": 3
+      },
+      "retry": {
+        "ignored": 7,
+        "accepted": 0
+      }
+    },
+    "cases": [
+      "规范UUID",
+      "大写UUID",
+      "非法字符串",
+      "不存在的规范UUID",
+      "无分隔符写法",
+      "花括号写法",
+      "无设备事件"
+    ],
+    "boundary": "EXPLAIN为计划估计，不是EXPLAIN ANALYZE或负载延迟测试；只有查询参数强转，旧文本匹配语义保留。"
+  },
+  "sourceWithRealPgStorage": {
+    "identityBoundary": "仅平台OPENID使用隔离夹具；PG会话、事务、权限、Storage传输和签名下载均真实",
+    "checks": [
+      "实际收款/差价退款/退货跨北京时间边界统计，期初库存与毛利口径正确",
+      "销售趋势补零和型号/员工/门店拆分，与净额总计一致",
+      "真实访问/咨询数据汇总、空期UV/PV补零，统计不返回联系方式",
+      "工作台真实库存、维修/借还/代理待办与库龄查询，代理对账读取真实状态",
+      "真实并发导出幂等、原因审计、私有Storage实际上传下载、UTF8 BOM与公式转义",
+      "下载重新鉴权与降权重新裁列、销售无导出/审计/代理对账权限，工作台成本毛利裁剪",
+      "导出固定快照不随后续退款变化，缓存按裁剪后内容分开存储",
+      "实际审计筛选/操作人/分页和嵌套数据裁剪，原因与普通字段保留",
+      "导出审计恰一条、15分钟快照到期拒绝下载和重放",
+      "六个新RPC/辅助函数实际INVOKER与service_role独占授权核对"
+    ],
+    "grants": [
+      {
+        "proname": "report_sales_events",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "report_overview",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "report_visits",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "report_agent_earnings",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "api_reports",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "api_report_export",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      }
+    ],
+    "metrics": {
+      "day2": {
+        "amount": 1400,
+        "qty": 1,
+        "returnedQty": 0,
+        "refundAmount": 100,
+        "profit": 400,
+        "margin": 0.2857142857142857,
+        "avgProfit": 400,
+        "orders": 1,
+        "avgOrder": 1400,
+        "openingStock": 32,
+        "sellThrough": 0.03125,
+        "from": "6398-08-14T16:00:00.000Z",
+        "to": "6398-08-15T16:00:00.000Z",
+        "definition": "按收款/退款发生时间统计净收入；退货冲回原成本，差价退款仅减收入；动销率分母为起日0点可售库存。"
+      },
+      "combined": {
+        "amount": 500,
+        "qty": 2,
+        "returnedQty": 1,
+        "refundAmount": 1500,
+        "profit": 200,
+        "margin": 0.4,
+        "avgProfit": 100,
+        "orders": 2,
+        "avgOrder": 250,
+        "openingStock": 32,
+        "sellThrough": 0.0625,
+        "from": "6398-08-14T16:00:00.000Z",
+        "to": "6398-08-16T16:00:00.000Z",
+        "definition": "按收款/退款发生时间统计净收入；退货冲回原成本，差价退款仅减收入；动销率分母为起日0点可售库存。"
+      }
+    },
+    "csv": {
+      "rows": 2,
+      "bom": true,
+      "formulaEscaping": true,
+      "currentPermissionCrop": true
+    },
+    "extra": {
+      "passed": true,
+      "agentReconciliation": {
+        "pending": -180,
+        "settled": 180,
+        "reversed": 180,
+        "net": 0
+      },
+      "anonymousObjectStatus": 404,
+      "storagePolicy": {
+        "policyname": "xiamu_reports_server_only",
+        "permissive": "RESTRICTIVE",
+        "roles": "{anon,authenticated}",
+        "qual": "(bucket_id <> 'xiamu-reports'::text)",
+        "with_check": "(bucket_id <> 'xiamu-reports'::text)"
+      },
+      "exportAppendOnly": {
+        "ins": "true",
+        "upd": "false",
+        "del": "false",
+        "trunc": "false"
+      },
+      "otherStaffDenied": 404
+    }
+  },
+  "deployedWechatSdk": {
+    "checks": [
+      "已部署统计实际读取收退款净额/毛利、三维拆分、补零趋势、访问、工作台与代理对账",
+      "真实微信导出同标识并发幂等，私有CSV实际保存，BOM/中文列名/公式转义正确",
+      "真实经理下载重新裁掉成本/毛利，原因审计恰一条并按字段递归脱敏",
+      "真实角色与停用即时生效：销售裁剪/禁导出审计对账，工程师维修统计保持本人范围",
+      "经营统计页面与审计筛选/列表实际加载，无页面业务错误"
+    ],
+    "pages": [
+      {
+        "route": "packages/staff/stats/index",
+        "error": "",
+        "loading": false,
+        "overview": true,
+        "visits": true,
+        "ageing": 2
+      },
+      {
+        "route": "packages/staff/audit/index",
+        "error": "",
+        "loading": false,
+        "overview": false,
+        "visits": false,
+        "rows": 30
+      }
+    ],
+    "timings": [
+      {
+        "e2eMs": 1432,
+        "coldStart": true,
+        "moduleLoadMs": 515.62707,
+        "handlerMs": 535.479402
+      },
+      {
+        "e2eMs": 471,
+        "coldStart": false,
+        "moduleLoadMs": 515.62707,
+        "handlerMs": 72.188857
+      },
+      {
+        "e2eMs": 449,
+        "coldStart": false,
+        "moduleLoadMs": 515.62707,
+        "handlerMs": 73.785758
+      }
+    ],
+    "csvBoss": {
+      "bom": true,
+      "bytes": 1102,
+      "hasCost": true,
+      "hasProfit": true,
+      "hasHeader": true,
+      "hasFormulaEscape": true
+    },
+    "csvManager": {
+      "bom": true,
+      "bytes": 1019,
+      "hasCost": false,
+      "hasProfit": false,
+      "hasHeader": true,
+      "hasFormulaEscape": true
+    },
+    "restoredOriginalStaffRoleAndStatus": true,
+    "restoredSessionRole": "customer",
+    "uiBoundary": "真实SDK完成查询与导出、私有CSV实际保存到小程序文件系统；页面验证为统计/审计实际加载，未向他人发送文件或宣称手动完成全部交互。"
+  },
+  "validation": {
+    "nodeTests": {
+      "passed": 80,
+      "failed": 0
+    },
+    "javascriptSyntax": true,
+    "sqlAndPlpgsqlParse": true,
+    "format": true,
+    "diffWhitespace": true,
+    "secretScan": true
+  },
+  "boundaries": [
+    "仍沿用旧端10000行上限，未向云端灌入一万条明细做压力验证；本轮CSV实际样本为KB级。",
+    "下载接口在云端返回私有签名url，小程序支持url下载并保留旧端/mock的csv直写兼容；报表快照15分钟有效，签名最长5分钟且不超过快照剩余时间。已签发链接和已下载CSV不能即时收回。",
+    "报表对象过期清理安排到第5步维护；快照/审计不因清理对象而改写。",
+    "员工/角色维护(/staff,/roles)和已另行定案的生产短信接入未在本轮实现；未知路径继续明确失败，不把第3步写为全量完成。",
+    "本轮只跑当前块和受影响索引路径真实验证，没有重跑全部旧云端脚本；未改每10分钟到期释放安排。",
+    "源码/验证证据和原始隔离数据保留，临时SQL解析器按用户选择继续保留。"
+  ]
+}

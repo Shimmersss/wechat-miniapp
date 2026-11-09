@@ -97,7 +97,7 @@ function request(options) {
 
 // 已迁移到云开发的接口：路径第一段 → 云函数名。未登记的路径直接报错，不回退旧服务器
 const CLOUD_FUNCTIONS = {
-  auth: 'auth', shop: 'shop', agent: 'agent', share: 'agent', 'customer-requests': 'customer', visits: 'customer',
+  auth: 'auth', shop: 'shop', stats: 'staff-reports', 'audit-logs': 'staff-reports', 'staff/dashboard': 'staff-reports', agent: 'agent', share: 'agent', 'customer-requests': 'customer', visits: 'customer',
   'shop/shares': 'agent', 'shop/orders': 'customer', 'shop/requests': 'customer',
   'shop/contact-options': 'customer', 'shop/consults': 'customer', 'shop/appointments': 'customer',
   'admin/agent-settings': 'agent', 'admin/agent-applications': 'agent', 'admin/agents': 'agent', 'admin/agent-orders': 'agent', 'admin/agent-earnings': 'agent',
