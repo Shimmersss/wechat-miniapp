@@ -1,0 +1,202 @@
+{
+  "date": "2026-11-09",
+  "scope": "第3步第6块：顾客意向归因、普通咨询/预约与访问上报",
+  "status": "实现与自动验收通过，待用户验收",
+  "migrationVersions": [
+    "20261109120000",
+    "20261109120100"
+  ],
+  "latestRemoteMigration": "20261109120100",
+  "migrationTasks": {
+    "requests": "Succeed",
+    "sales": "Succeed"
+  },
+  "sourceWithRealPg": {
+    "platformBoundary": "仅平台OPENID使用隔离夹具注入；会话、权限、PG事务与数据均真实",
+    "checks": [
+      "咨询真实落库，同标识并发仅一份快照/事件，来源核验且不锁库存",
+      "咨询支持不选设备，其他账号404，拒绝前端自报价格/伪造来源",
+      "预约日期/时段配置与不锁库存，配置损坏明确503，已成功提交重试仍返回原单",
+      "员工权限/当前版本并发/处理幂等，内部备注按用途裁剪",
+      "本人取消与终态守卫，预约必须按new→confirmed→completed流转",
+      "普通意向按现价成交但保留提交快照；错误设备完整回滚；归因/销售/状态同事务且幂等",
+      "预约确认后成交转completed，普通意向不生成代理收益",
+      "同行历史快照随当前权限裁剪，失去资格不能读取同行价或公开参数",
+      "同意向取消与成交并发只有一方成功，失败方不产生库存/归因副作用",
+      "真实匿名访问HMAC落库、服务端时间、员工页/未知事件/未知设备忽略，重试与并发去重",
+      "整批非法事件不部分写入，真实分享归因；伪造/同行未授权/撤销来源单列unverified",
+      "新访问上报计入真实代理概览；统一意向接口仍保留代理下单锁库与取消释放",
+      "实际PG授权：四函数INVOKER且只授权service_role，五张业务/审计表只追加"
+    ],
+    "permissions": {
+      "functions": [
+        {
+          "proname": "stock_sale",
+          "prosecdef": "false",
+          "anon": "false",
+          "authenticated": "false",
+          "service": "true"
+        },
+        {
+          "proname": "api_customer_requests",
+          "prosecdef": "false",
+          "anon": "false",
+          "authenticated": "false",
+          "service": "true"
+        },
+        {
+          "proname": "api_visits",
+          "prosecdef": "false",
+          "anon": "false",
+          "authenticated": "false",
+          "service": "true"
+        },
+        {
+          "proname": "customer_request_raw",
+          "prosecdef": "false",
+          "anon": "false",
+          "authenticated": "false",
+          "service": "true"
+        }
+      ],
+      "tables": [
+        {
+          "del": false,
+          "upd": false,
+          "trunc": false,
+          "relname": "audit_logs",
+          "relrowsecurity": true
+        },
+        {
+          "del": false,
+          "upd": false,
+          "trunc": false,
+          "relname": "customer_request_events",
+          "relrowsecurity": true
+        },
+        {
+          "del": false,
+          "upd": false,
+          "trunc": false,
+          "relname": "customer_requests",
+          "relrowsecurity": true
+        },
+        {
+          "del": false,
+          "upd": false,
+          "trunc": false,
+          "relname": "sales_attributions",
+          "relrowsecurity": true
+        },
+        {
+          "del": false,
+          "upd": false,
+          "trunc": false,
+          "relname": "visit_events",
+          "relrowsecurity": true
+        }
+      ]
+    },
+    "affectedAgentSaleRegression": {
+      "passed": true,
+      "agentSnapshotSale": true,
+      "singleEarning": 40,
+      "source": "当前块改动stock_sale后的定向兼容验证，真实PG/会话，平台OPENID隔离夹具"
+    }
+  },
+  "finalPgInvariants": {
+    "consult_attributions": "1",
+    "appointment_attributions": "1",
+    "ordinary_earnings": "0",
+    "appointment_status": "completed",
+    "snapshot_price": "1500.00",
+    "sale_price": "1600.00",
+    "wechat_consult_attributions": "1"
+  },
+  "deployedWechatSdk": {
+    "checks": [
+      "真实微信顾客咨询同标识并发幂等、来源快照与公开字段裁剪",
+      "真实微信预约落库、本人列表及预约详情页加载",
+      "已部署访问上报真实接收、重试去重与员工路径忽略",
+      "真实微信门店同版本并发跟进只有一次成功，内部备注不返回顾客视图",
+      "真实微信预约确认/完成、普通咨询收银成交与归因原子落库",
+      "员工意向详情页真实加载，缺权限和停用员工拒绝读取",
+      "顾客咨询详情/我的预约列表实际加载，无页面业务错误"
+    ],
+    "pages": [
+      {
+        "route": "packages/shop/requests/detail",
+        "error": "",
+        "loading": false,
+        "kind": "appointment",
+        "status": "new"
+      },
+      {
+        "route": "packages/staff/consults/detail",
+        "error": "",
+        "loading": false,
+        "kind": "consult",
+        "status": "closed"
+      },
+      {
+        "route": "packages/shop/requests/detail",
+        "error": "",
+        "loading": false,
+        "kind": "consult",
+        "status": "closed"
+      },
+      {
+        "route": "packages/shop/requests/index",
+        "error": "",
+        "loading": false,
+        "rows": 4
+      }
+    ],
+    "timings": [
+      {
+        "endpoint": "/shop/contact-options",
+        "e2eMs": 465,
+        "coldStart": true,
+        "moduleLoadMs": 1051.230769,
+        "handlerMs": 3.058212
+      },
+      {
+        "endpoint": "/shop/contact-options",
+        "e2eMs": 672,
+        "coldStart": false,
+        "moduleLoadMs": 1051.230769,
+        "handlerMs": 2.768019
+      },
+      {
+        "endpoint": "/shop/contact-options",
+        "e2eMs": 638,
+        "coldStart": false,
+        "moduleLoadMs": 1051.230769,
+        "handlerMs": 1.410268
+      }
+    ],
+    "timingBoundary": "coldStart是新实例首个业务调用标记。本次模块初始化耗时大于客户端端到端耗时，不能解释为完整冷启动总耗时，可能存在预初始化；不能相加或推断P95/P99。contact-options不访问PG。",
+    "restoredOriginalStaffRoleAndStatus": true,
+    "restoredSessionRole": "customer",
+    "uiBoundary": "业务写入通过真实微信SDK完成；页面验证为实际顾客列表/咨询预约详情及员工意向详情加载，未宣称手动完成全部表单交互"
+  },
+  "regression": {
+    "nodeTests": {
+      "passed": 75,
+      "failed": 0
+    },
+    "syntax": true,
+    "sqlAndPlpgsqlParsed": true,
+    "format": true,
+    "diffWhitespace": true,
+    "secretScan": true
+  },
+  "boundaries": [
+    "本块只接通访问上报及已有代理概览数据来源；通用经营统计、导出、工作台聚合与审计查询仍留下一块，未知路径明确失败。",
+    "预约默认30天和原三个时段，仍须门店确认，不锁库存或价格。APPOINTMENT_SLOTS按字符串编码为APPOINTMENT_SLOTS_B64部署，业务配置含义不变。",
+    "定时到期释放仍为每10分钟，本轮未部署或修改agent-expiry。",
+    "匿名访客由客户端生成，服务端HMAC后存储；不声称识别真实自然人或防止客户端更换匿名标识。",
+    "合法域名/真机、五分钟已签发链接、上传暂存清理与临时SQL解析器保留安排沿用前块。",
+    "只跑当前块真实云端验收和受影响代理收银分支定向回归，没有重跑全部历史云端脚本；原始证据与隔离测试数据留在本机忽略目录。"
+  ]
+}

@@ -99,72 +99,7 @@ const earning = (r, internal) => ({
   createdAt: r.created_at,
   settledAt: r.settled_at,
 });
-function request(r, u, internal) {
-  const state = ["new", "contacted"].includes(r.status)
-    ? ["contacted", "closed", "cancelled"].filter((s) => s !== r.status)
-    : [];
-  return {
-    id: r.id,
-    kind: "order",
-    status: r.status,
-    version: r.version,
-    unitId: r.unit_id,
-    unit: r.unit_snapshot ? publicView(r.unit_snapshot, "agent") : null,
-    content: r.content,
-    phone: r.phone,
-    name: r.name,
-    date: null,
-    timeSlot: null,
-    source: r.source,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    saleRecorded: !!r.sale_order_id,
-    agentOrder: {
-      status: r.agent_order.lock_status,
-      sharePrice: Number(r.agent_order.share_price),
-      priceVersion: r.agent_order.price_version,
-      lockExpiresAt: r.agent_order.lock_expires_at,
-      ...(internal
-        ? {
-            agentId: r.agent_order.agent_id,
-            agentName: r.agent_order.agent_name,
-            ...(finance(u) ? { markup: Number(r.agent_order.markup) } : {}),
-          }
-        : {}),
-    },
-    ...(internal
-      ? {
-          ownerId: r.owner_id,
-          shareId: r.share_id,
-          shareOwnerId: r.share_owner_id,
-          shareOwnerName: r.share_owner_name,
-          actions: state,
-          canStartSale:
-            state.length > 0 &&
-            !r.sale_order_id &&
-            u.permissions.includes("sales:create") &&
-            r.agent_order.lock_status === "locked" &&
-            Date.parse(r.agent_order.lock_expires_at) > Date.now(),
-          ...(u.permissions.some((p) =>
-            ["sales:create", "stats:view", "sales:refund"].includes(p),
-          )
-            ? { salesOrderId: r.sale_order_id }
-            : {}),
-        }
-      : { canCancel: state.length > 0 }),
-    timeline: (r.events || []).map((e) => ({
-      id: e.id,
-      status: e.to_status,
-      time: e.created_at,
-      actor: e.actor_kind === "staff" ? "门店" : "本人",
-      ...(internal
-        ? { operator: e.nickname, note: e.note }
-        : e.actor_kind === "customer"
-          ? { note: e.note }
-          : {}),
-    })),
-  };
-}
+const { request } = require("./request-view");
 function share(r) {
   const units = r.units.map((x) => publicView(x, r.link.channel)),
     one = units.length === 1,

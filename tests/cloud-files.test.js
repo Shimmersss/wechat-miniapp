@@ -27,7 +27,8 @@ test('微信文件系统跨JS上下文返回的ArrayBuffer仍可上传',async()=
 
 test('云代理复合前缀优先路由，未知管理接口明确失败',async()=>{
  const {request}=require('../miniprogram/utils/request');const calls=wxMock();
- for(const url of ['/shop/shares/abcdefghijklmnop','/shop/orders','/shop/requests','/admin/agents','/admin/agent-orders','/admin/agent-earnings','/customer-requests']){await request({url,showError:false});assert.equal(calls.at(-1).name,'agent');}
+ for(const url of ['/shop/shares/abcdefghijklmnop','/admin/agents','/admin/agent-orders','/admin/agent-earnings']){await request({url,showError:false});assert.equal(calls.at(-1).name,'agent');}
+ for(const url of ['/shop/contact-options','/shop/consults','/shop/appointments','/shop/orders','/shop/requests','/customer-requests','/visits/batch']){await request({url,showError:false});assert.equal(calls.at(-1).name,'customer');}
  await request({url:'/shop/units',showError:false});assert.equal(calls.at(-1).name,'shop');
  await assert.rejects(request({url:'/admin/unimplemented',showError:false}),e=>e.code===501);
 });

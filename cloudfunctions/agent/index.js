@@ -52,6 +52,20 @@ exports.main = require("./shared/startup-timing")(
       method,
       path,
       async (ctx) => {
+        const customerAction = {
+          "order.create": "order.create",
+          requests: "list",
+          "request.get": "get",
+          "order.cancel": "cancel",
+          "admin.requests": "staff.list",
+          "admin.request.get": "staff.get",
+          "admin.request.status": "staff.status",
+        }[a];
+        if (customerAction)
+          return require("./shared/customer-handler").handle(
+            customerAction,
+            ctx,
+          );
         const u = await currentUser(ctx);
         const limit = {
           apply: 10,

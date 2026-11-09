@@ -10,7 +10,9 @@ Module._load = function (name, ...args) {
     args[0]?.filename.startsWith(
       path.join(__dirname, "../cloudfunctions/common/"),
     ) &&
-    ["roles", "status", "template", "validate"].some((k) => name === "./" + k)
+    ["roles", "status", "customer-requests", "template", "validate"].some(
+      (k) => name === "./" + k,
+    )
   ) {
     const k = name.slice(2);
     return original.call(
@@ -18,7 +20,9 @@ Module._load = function (name, ...args) {
       path.join(
         __dirname,
         "../miniprogram",
-        ["roles", "status"].includes(k) ? "constants" : "utils",
+        ["roles", "status", "customer-requests"].includes(k)
+          ? "constants"
+          : "utils",
         k,
       ),
       ...args,

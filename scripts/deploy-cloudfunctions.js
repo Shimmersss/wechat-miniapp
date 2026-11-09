@@ -45,6 +45,14 @@ const FUNCTION_ENV = {
     "WX_CODE_CHECK_PATH",
   ],
   "agent-expiry": ["CLOUDBASE_API_KEY"],
+  customer: [
+    "NODE_ENV",
+    "CLOUDBASE_API_KEY",
+    "OTP_HASH_KEY",
+    "APPOINTMENT_DAYS",
+    "APPOINTMENT_SLOTS_B64",
+    "AGENT_LOCK_MINUTES",
+  ],
   files: ["NODE_ENV", "CLOUDBASE_API_KEY", "STORAGE_TIMEOUT_MS"],
 };
 
@@ -69,6 +77,10 @@ execFileSync("node", [path.join(__dirname, "sync-cloudfunctions.js")], {
   stdio: "inherit",
 });
 const env = {
+  APPOINTMENT_DAYS: "30",
+  APPOINTMENT_SLOTS: JSON.stringify(
+    require("../miniprogram/constants/customer-requests").DEFAULT_SLOTS,
+  ),
   AGENT_LOCK_MINUTES: "30",
   SHARE_HOURS: "72",
   WX_APP_ID: "",
@@ -80,6 +92,10 @@ const env = {
   STORAGE_TIMEOUT_MS: "12000",
   ...readEnv(),
 };
+// CLI会展开JSON数组环境变量，使用字符串编码保留原预约时段配置。
+env.APPOINTMENT_SLOTS_B64 =
+  env.APPOINTMENT_SLOTS_B64 ||
+  Buffer.from(env.APPOINTMENT_SLOTS, "utf8").toString("base64");
 const names = process.argv.slice(2).length
   ? process.argv.slice(2)
   : Object.keys(FUNCTION_ENV);

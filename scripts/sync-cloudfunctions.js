@@ -16,10 +16,21 @@ const sources = [
     .map((f) => path.join(fnRoot, "common", f)),
   path.join(root, "miniprogram/constants/roles.js"),
   path.join(root, "miniprogram/constants/status.js"),
+  path.join(root, "miniprogram/constants/customer-requests.js"),
   path.join(root, "miniprogram/utils/template.js"),
   path.join(root, "miniprogram/utils/validate.js"),
 ];
 
+const appConfig = JSON.parse(
+  fs.readFileSync(path.join(root, "miniprogram/app.json"), "utf8"),
+);
+const analyticsRoutes = appConfig.pages
+  .filter((p) => p !== "pages/login/index")
+  .concat(
+    appConfig.subPackages
+      .filter((s) => s.name !== "staff")
+      .flatMap((s) => s.pages.map((p) => s.root + "/" + p)),
+  );
 for (const name of fs.readdirSync(fnRoot)) {
   const dir = path.join(fnRoot, name);
   if (name === "common" || !fs.existsSync(path.join(dir, "index.js"))) continue;
@@ -28,5 +39,9 @@ for (const name of fs.readdirSync(fnRoot)) {
   fs.mkdirSync(shared);
   for (const src of sources)
     fs.copyFileSync(src, path.join(shared, path.basename(src)));
-  console.log(`${name}/shared ← ${sources.length} 个文件`);
+  fs.writeFileSync(
+    path.join(shared, "analytics-routes.json"),
+    JSON.stringify(analyticsRoutes),
+  );
+  console.log(`${name}/shared ← ${sources.length + 1} 个文件`);
 }

@@ -307,8 +307,8 @@ async function extraChecks() {
   results.push(
     "同设备两个顾客并发下单只有一个成功；混合状态批量转账回滚；并发转账仅一次成功",
   );
-  await call(agent, "/customer-requests", "GET", {}, 503);
-  await as(customer, agent, "/shop/requests", "GET", {}, 503);
+  await call(agent, "/customer-requests", "GET");
+  await as(customer, agent, "/shop/requests", "GET");
   assert.ok(
     (await call(agent, "/customer-requests", "GET", { kind: "order" })).total >=
       1,
@@ -331,7 +331,7 @@ async function extraChecks() {
     { agreed: false },
     429,
   );
-  results.push("失败请求也受持久限频限制；未迁移普通意向列表明确503");
+  results.push("失败请求也受持久限频限制；意向列表按当前迁移支持不指定kind");
   const publicPhoto = await upload(png, "public"),
     internalPhoto = await upload(png, "internal");
   const still = await make({
