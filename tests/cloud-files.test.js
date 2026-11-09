@@ -24,3 +24,10 @@ test('timing只在development返回，production与未配置环境均不返回',
 test('分段核验响应不当作文件成功，继续到最后登记完成',async()=>{const calls=wxMock({processing:true});const file=await upload({filePath:'/temp/chunk',scope:'internal'});assert.equal(file.fileId,'id');assert.equal(calls.length,4);});
 
 test('微信文件系统跨JS上下文返回的ArrayBuffer仍可上传',async()=>{wxMock({foreignBuffer:true});assert.equal((await upload({filePath:'/temp/native',scope:'internal'})).fileId,'id');});
+
+test('云代理复合前缀优先路由，未知管理接口明确失败',async()=>{
+ const {request}=require('../miniprogram/utils/request');const calls=wxMock();
+ for(const url of ['/shop/shares/abcdefghijklmnop','/shop/orders','/shop/requests','/admin/agents','/admin/agent-orders','/admin/agent-earnings','/customer-requests']){await request({url,showError:false});assert.equal(calls.at(-1).name,'agent');}
+ await request({url:'/shop/units',showError:false});assert.equal(calls.at(-1).name,'shop');
+ await assert.rejects(request({url:'/admin/unimplemented',showError:false}),e=>e.code===501);
+});

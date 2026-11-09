@@ -84,7 +84,7 @@ const imei=()=>{const s='35'+String(Math.floor(Math.random()*1e12)).padStart(12,
  const lookup=await call('/sales/lookup','GET',{code:created.id});const items=[{unitId:created.id,priceVersion:lookup.priceVersion}];await call('/sales/quote','POST',{items});
  const saleResults=await Promise.all([1,2].map(n=>main({path:'/sales-orders',method:'POST',data:{items,requestKey:'sale-'+fixture.tag+'-'+n,payMethod:'现金',paymentConfirmed:true},headers:{Authorization:'Bearer '+fixture.token}},{request_id:'verify-'+fixture.tag})));
  assert.deepEqual(saleResults.map(r=>r.code).sort(),[0,409]);fixture.saleId=saleResults.find(r=>r.code===0).data.id;results.push('同设备并发收银出库仅一单成功');
- await call('/sales-orders','POST',{items,requestKey:'sale-'+fixture.tag+'-x',payMethod:'现金',paymentConfirmed:true,customerRequestId:'unmigrated'},503);
+ await call('/sales-orders','POST',{items,requestKey:'sale-'+fixture.tag+'-x',payMethod:'现金',paymentConfirmed:true,customerRequestId:'unmigrated'},400);
  
  control('managePgDatabase',{action:'execute',confirm:true,sql:`UPDATE staff SET role_key='sales' WHERE user_id='${fixture.uid}'`});
  const sales=await call('/units/'+fixture.unitId);

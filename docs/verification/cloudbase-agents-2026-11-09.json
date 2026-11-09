@@ -1,0 +1,274 @@
+{
+  "date": "2026-11-09",
+  "scope": "第3步第5块：代理订单与收益管理",
+  "status": "实现与自动验收通过，待用户验收",
+  "migrationVersions": [
+    "20261109110000",
+    "20261109110100",
+    "20261109110200",
+    "20261109110300",
+    "20261109110400"
+  ],
+  "latestRemoteMigration": "20261109110400",
+  "sourceWithRealPg": {
+    "platformOpenid": "隔离夹具注入，仅此项替代；会话、数据库、权限、事务和存储均真实",
+    "main": [
+      "真实申请/审核/拒绝再申请、角色即时更新、一级邀请与直属代理脱敏",
+      "代理仅可转发允许设备，服务端加价上限与分享价计算、底价成本串码裁剪",
+      "真实代理分享快照、顾客下单锁库/幂等、自购与越权拒绝",
+      "代理锁库真实收银成交、不可改价、快照出库与归因/收益一次记账",
+      "逐单转账原因审计与重复拒绝，已转账收益退货追加负向冲回",
+      "待转账收益退货直接冲回，原销售/收益记录保留",
+      "顾客取消释放占用与库存，取消幂等",
+      "真实PG隔离订单设为到期后运行实际释放任务，只释放到期锁",
+      "改价或代理停用使分享失效，恢复资格重新判权",
+      "销售可见代理订单但看不到底价/加价及收益台账"
+    ],
+    "extra": [
+      "同设备两个顾客并发下单只有一个成功；混合状态批量转账回滚；并发转账仅一次成功",
+      "失败请求也受持久限频限制；未迁移普通意向列表明确503",
+      "真实公开照片签名下载、内部凭证与完整串码不泄漏、缺微信凭据不生成二维码、撤销生效",
+      "已部署每分钟定时器自主释放过期订单：只观察PG，无手工调用或业务读触发"
+    ]
+  },
+  "deployedWechatSdk": {
+    "checks": [
+      "真实微信顾客读取代理分享价并下单锁库，公开结果不返回成本",
+      "真实微信门店按分享快照成交，收益一次生成并按原因标记转账",
+      "真实微信已转账收益退货追加负向冲回",
+      "真实销售身份可读订单但不返回底价与加价，拒绝收益台账",
+      "代理订单页面真实加载，无页面业务错误"
+    ],
+    "timings": [
+      {
+        "e2eMs": 1321,
+        "coldStart": true,
+        "moduleLoadMs": 476.797369,
+        "handlerMs": 524.596447
+      },
+      {
+        "e2eMs": 533,
+        "coldStart": false,
+        "moduleLoadMs": 476.797369,
+        "handlerMs": 90.161391
+      },
+      {
+        "e2eMs": 2248,
+        "coldStart": false,
+        "moduleLoadMs": 371.581445,
+        "handlerMs": 99.348505
+      }
+    ],
+    "page": {
+      "route": "packages/staff/agents/orders",
+      "error": "",
+      "loading": false,
+      "total": 17,
+      "rows": 17
+    },
+    "restoredOriginalStaffRoleAndStatus": true,
+    "restoredSessionRole": "customer",
+    "boundary": "代理本人审核/加价/邀请由源码加真实PG验证；真实微信使用顾客与门店员工完成订单/成交/转账/退款，页面验证为订单列表加载"
+  },
+  "security": {
+    "functions": [
+      {
+        "proname": "stock_sale",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_person",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_active",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_order_raw",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_request_raw",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_unlock",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_release_expired",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "api_agents",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_rate_limit",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_sale_order",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_shop_unit",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_share_resolve",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_public_unit",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      },
+      {
+        "proname": "agent_earning_totals",
+        "prosecdef": "false",
+        "anon": "false",
+        "authenticated": "false",
+        "service": "true"
+      }
+    ],
+    "appendOnlyTables": [
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "agent_earnings",
+        "authenticated": false,
+        "relrowsecurity": true
+      },
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "agent_orders",
+        "authenticated": false,
+        "relrowsecurity": true
+      },
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "audit_logs",
+        "authenticated": false,
+        "relrowsecurity": true
+      },
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "customer_request_events",
+        "authenticated": false,
+        "relrowsecurity": true
+      },
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "customer_requests",
+        "authenticated": false,
+        "relrowsecurity": true
+      },
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "sales_attributions",
+        "authenticated": false,
+        "relrowsecurity": true
+      },
+      {
+        "del": false,
+        "ins": true,
+        "upd": false,
+        "anon": false,
+        "trunc": false,
+        "relname": "share_items",
+        "authenticated": false,
+        "relrowsecurity": true
+      }
+    ],
+    "settingsVersionConflict": [
+      0,
+      409
+    ],
+    "settingsAudit": true,
+    "invalidConfigurationRejected": true
+  },
+  "regression": {
+    "nodeTests": {
+      "passed": 71,
+      "failed": 0
+    },
+    "realInventoryChecks": 11,
+    "realSalesRefundChecks": 8,
+    "jsSyntax": true,
+    "sqlParse": true,
+    "plpgsqlParse": true,
+    "diffWhitespace": true,
+    "secretScan": true
+  },
+  "boundaries": [
+    "普通咨询/预约及其成交归因、访问上报、通用经营统计导出和审计查询留后续块；未实现路径明确失败。代理概览读取已有真实visit_events，访问上报迁移前不代表本轮新增访问完整计数。",
+    "客户/员工意向列表必须明确kind=order，避免把未迁移普通意向静默漏掉。",
+    "未配置正式微信小程序码凭据时返回qrcode:null与unconfigured，不生成假码。",
+    "微信真机/合法域名与云存储五分钟读取链接边界沿用前块。",
+    "首次请求样本不是P95/P99；后续一次2248ms原因尚未定位，调用可能落到不同实例。",
+    "临时SQL解析器按用户选择保留；不包含凭据、环境ID、AppID、真实手机号或签名链接。"
+  ]
+}

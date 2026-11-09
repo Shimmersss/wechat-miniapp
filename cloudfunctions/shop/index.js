@@ -4,6 +4,7 @@
 const { createHandler, rpc, fail, text } = require("./shared/gateway");
 const { resolveFiles } = require('./shared/stock-files');
 const { currentUser } = require("./shared/identity");
+const sharedChannel = require('./shared/shop-channel');
 const { SENSITIVE_FIELDS } = require("./shared/roles");
 
 // 公开参数里永远不展示的字段（与 share-service.js publicView 一致）
@@ -63,8 +64,7 @@ function publicView(u, audience) {
 }
 
 async function units(ctx) {
-  // TODO(codex): 分享链接（X-Channel）按分享快照价展示，需迁移 share-service 后再支持
-  if (ctx.headers["X-Channel"]) fail(501, "分享链接列表尚未迁移到云开发");
+  if (sharedChannel.sid(ctx)) return sharedChannel.list(ctx, await currentUser(ctx));
   const q = ctx.data,
     p = page(q),
     user = await currentUser(ctx),
@@ -115,9 +115,7 @@ async function units(ctx) {
 }
 
 async function home(ctx) {
-  // TODO(codex): 分享链接（X-Channel）只展示分享内设备，需迁移 share-service 后再支持
-  if (ctx.headers["X-Channel"])
-    fail(501, "分享链接首页尚未迁移到云开发");
+  if (sharedChannel.sid(ctx)) return sharedChannel.home(ctx, await currentUser(ctx));
   const user = await currentUser(ctx);
   const flag = user?.role === "peer" ? "sharePeer" : "showInShop";
   const { count, brands } = await rpc("api_shop_home", { p_flag: flag });
@@ -131,4 +129,5 @@ async function home(ctx) {
 exports.main = createHandler([
   ["GET", "/shop/home", home],
   ["GET", "/shop/units", units],
+  ["GET", "/shop/units/:id", async ctx => sharedChannel.detail(ctx, await currentUser(ctx))],
 ]);

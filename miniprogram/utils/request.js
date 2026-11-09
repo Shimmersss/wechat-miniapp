@@ -97,7 +97,9 @@ function request(options) {
 
 // 已迁移到云开发的接口：路径第一段 → 云函数名。未登记的路径直接报错，不回退旧服务器
 const CLOUD_FUNCTIONS = {
-  auth: 'auth', shop: 'shop',
+  auth: 'auth', shop: 'shop', agent: 'agent', share: 'agent', 'customer-requests': 'agent',
+  'shop/shares': 'agent', 'shop/orders': 'agent', 'shop/requests': 'agent',
+  'admin/agent-settings': 'agent', 'admin/agent-applications': 'agent', 'admin/agents': 'agent', 'admin/agent-orders': 'agent', 'admin/agent-earnings': 'agent',
   catalog: 'staff-stock', models: 'staff-stock', templates: 'staff-stock',
   suppliers: 'staff-stock', 'purchase-orders': 'staff-stock', shipments: 'staff-stock',
   acceptances: 'staff-stock', inbound: 'staff-stock', pricing: 'staff-stock',
@@ -112,7 +114,8 @@ let cloudReady = false;
  */
 function callCloud({ url, method, data, headers }) {
   const [path, query] = url.split('?');
-  const name = CLOUD_FUNCTIONS[path.split('/')[1]];
+  const segments = path.split('/').filter(Boolean);
+  const name = CLOUD_FUNCTIONS[segments.slice(0, 2).join('/')] || CLOUD_FUNCTIONS[segments[0]];
   if (!name) return Promise.reject(new ApiError(501, '该功能尚未迁移到云开发'));
   if (!cloudReady) {
     // 不传 env：使用小程序关联的默认云环境，环境 ID 不写进代码

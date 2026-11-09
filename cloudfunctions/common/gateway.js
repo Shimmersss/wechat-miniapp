@@ -38,7 +38,7 @@ function secret(name) {
 }
 
 // 数据库函数里 RAISE 的自定义错误码 P0xxx → HTTP 状态
-const PG_STATUS = { P0400: 400, P0401: 401, P0403: 403, P0404: 404, P0409: 409, P0503: 503, P0429: 429 };
+const PG_STATUS = { P0400: 400, P0401: 401, P0403: 403, P0404: 404, P0409: 409, P0410: 410, P0503: 503, P0429: 429 };
 
 /** 调用 PG 存储过程（PostgREST RPC）。API Key 映射 service_role，只在云函数环境变量里。 */
 async function rpc(name, params) {
