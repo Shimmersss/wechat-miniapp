@@ -23,6 +23,8 @@ const FUNCTION_ENV = {
     "SESSION_HOURS",
     "OTP_DEV_CODE",
     "OTP_HASH_KEY",
+    "SMS_PROVIDER",
+    "SMS_DAILY_LIMIT",
     "CLOUDBASE_API_KEY",
   ],
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],

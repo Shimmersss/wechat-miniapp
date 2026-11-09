@@ -14,7 +14,7 @@ createPage({
   trackView: false,
   data: {
     sendingCode: false, submitting: false, error: '',
-    account: '',
+    account: '', captchaImage: '', captchaToken: '', captchaCode: '',
     smsCode: '',
     counting: 0,
     redirect: '',
@@ -47,16 +47,27 @@ createPage({
     if (this.data.counting || this.data.sendingCode || this.data.submitting) return;
     if (!isPhone(this.data.account)) return this.$toast('请输入正确的手机号');
     this.setData({ sendingCode: true, error: '' });
-    return api.auth.sendSmsCode({ phone: this.data.account }).then(() => {
+    return api.auth.sendSmsCode({ phone: this.data.account, ...(this.data.captchaToken ? { captchaToken: this.data.captchaToken, captchaCode: this.data.captchaCode } : {}) }).then(() => {
       if (this.unloaded) return;
-      this.setData({ counting: 60 });
+      this.setData({ counting: 60, captchaImage: '', captchaToken: '', captchaCode: '' });
       this.timer = setInterval(() => {
         const n = Math.max(0, this.data.counting - 1);
         this.setData({ counting: n });
         if (n <= 0) clearInterval(this.timer);
       }, 1000);
-    }).catch(error => { if (!this.unloaded) this.setData({ error: error.message || '验证码发送失败，请重试' }); })
+    }).catch(async error => { if (this.unloaded) return; this.setData({ error: error.message || '验证码发送失败，请重试' }); if (Number(error.code) === 428 || this.data.captchaToken) await this.refreshCaptcha(); })
       .finally(() => { if (!this.unloaded) this.setData({ sendingCode: false }); });
+  },
+
+  async refreshCaptcha() {
+    try {
+      const r=await api.auth.smsCaptcha();if(this.unloaded)return;
+      const m=/^data:image\/(gif|png|jpeg);base64,([A-Za-z0-9+/=\s]+)$/.exec(r.image||'');
+      if(!m||!r.token)throw Error('图片验证码加载失败，请重试');
+      const filePath=wx.env.USER_DATA_PATH+'/sms-captcha-'+((this.captchaRevision=(this.captchaRevision||0)+1)%2)+'.'+m[1];
+      await new Promise((resolve,reject)=>wx.getFileSystemManager().writeFile({filePath,data:m[2],encoding:'base64',success:resolve,fail:reject}));
+      if(!this.unloaded)this.setData({captchaImage:filePath,captchaToken:r.token,captchaCode:''});
+    } catch(e) { if(!this.unloaded)this.setData({error:e.message||'图片验证码加载失败，请重试'}); }
   },
 
   submit() {

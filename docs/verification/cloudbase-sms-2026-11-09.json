@@ -1,0 +1,165 @@
+{
+  "block": "step-3-sms",
+  "date": "2026-11-09",
+  "status": "awaiting-user-acceptance",
+  "migration": {
+    "version": "20261109150000",
+    "name": "cloudbase_sms",
+    "taskStatus": "Succeed",
+    "remoteHistoryVerified": true,
+    "historicalMigrationsModified": false
+  },
+  "deployment": {
+    "command": "node scripts/deploy-cloudfunctions.js auth",
+    "environmentVariableNamesAdded": ["SMS_PROVIDER", "SMS_DAILY_LIMIT"],
+    "activeProvider": "cloudbase",
+    "applicationDailySendAttemptBudget": 10
+  },
+  "providerConfiguration": {
+    "phoneEnabled": true,
+    "smsType": "default",
+    "perPhoneSmsDayLimit": 10,
+    "readBackVerified": true
+  },
+  "pgGuardVerification": {
+    "checks": [
+      "真实PG+函数源码开发固定码登录仍绑定真实微信上下文；撤销旧顾客会话且重放拒绝，无身份字段伪造",
+      "真实PG同一挑战并发验证只发一个租约；伪造nonce拒绝，五次失败计数提交且正确码也不能绕过封锁",
+      "重新发码使旧校验租约和迟到的发送登记失效，不覆盖新挑战",
+      "真实PG正式挑战60秒冷却、图片风控重试、开发/正式模式隔离与到期拒绝；合成标识只测数据库边界",
+      "未知员工外观相同且不发送短信；按微信摘要5次/分钟限频在真实PG生效",
+      "真实RPC INVOKER且仅service_role可执行"
+    ],
+    "functions": [
+      {
+        "anon": false,
+        "proname": "api_sms_flow",
+        "service": true,
+        "prosecdef": false,
+        "authenticated": false
+      }
+    ],
+    "passed": true
+  },
+  "dailyBudgetRollbackProbe": {
+    "passed": true,
+    "originalCounterRestored": true
+  },
+  "wechatInspectVerification": {
+    "checks": [
+      "真实微信已部署正式短信路径：非法手机号拒绝、未知员工统一响应且无发信/固定码泄露、伪造身份登录拒绝",
+      "真实平台图片验证码可获取，响应仅包含图片及本人作答challenge",
+      "真实登录页从云端获取图片并保存为微信本地文件，风控补救界面正常加载"
+    ],
+    "captchaBytes": 6278,
+    "page": {
+      "route": "pages/login/index",
+      "error": "",
+      "hasCaptcha": true,
+      "imageSaved": true,
+      "sendingCode": false,
+      "submitting": false
+    },
+    "passed": true
+  },
+  "dataPermissions": {
+    "storagePolicies": [
+      {
+        "name": "xiamu_server_only",
+        "qual": "(bucket_id <> ALL (ARRAY['xiamu-staging'::text, 'xiamu-public'::text, 'xiamu-internal'::text]))",
+        "check": "(bucket_id <> ALL (ARRAY['xiamu-staging'::text, 'xiamu-public'::text, 'xiamu-internal'::text]))",
+        "roles": ["anon", "authenticated"],
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "name": "xiamu_sealed_server_only",
+        "qual": "(bucket_id <> 'xiamu-sealed'::text)",
+        "check": "(bucket_id <> 'xiamu-sealed'::text)",
+        "roles": ["anon", "authenticated"],
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "name": "xiamu_reports_server_only",
+        "qual": "(bucket_id <> 'xiamu-reports'::text)",
+        "check": "(bucket_id <> 'xiamu-reports'::text)",
+        "roles": ["anon", "authenticated"],
+        "permissive": "RESTRICTIVE"
+      }
+    ],
+    "businessTablesWithClientGrants": []
+  },
+  "regression": {
+    "command": "node --test tests/*.test.js",
+    "passed": 90,
+    "failed": 0
+  },
+  "review": {
+    "syntax": true,
+    "sqlAndPlpgsqlParsing": true,
+    "formatAndWhitespace": true,
+    "sensitiveConfigurationScan": true
+  },
+  "realSmsDelivery": {
+    "attempted": true,
+    "sendCalls": 1,
+    "receiptConfirmedByUserSuppliedCode": true,
+    "successfulSmsLoginVerified": true,
+    "wrongCode": 401,
+    "concurrentLoginCodes": [0, 401],
+    "oldGuestSessionCode": 401,
+    "replayCode": 401,
+    "costHiddenFromSales": true,
+    "loginAuditDelta": 1,
+    "platformIdentitySignupOrSigninPerformed": false
+  },
+  "boundaries": [
+    "PG guard tests use synthetic provider identifiers only to exercise real transaction boundaries; they do not represent SMS delivery or platform code verification.",
+    "Native inspect calls real deployed functions and real platform CAPTCHA API; image displayed through the actual login page. Human CAPTCHA answer not yet verified.",
+    "SMS verification and send identifiers remain server-side; CAPTCHA challenge token is intentionally supplied to the person solving the image.",
+    "SmsDayLimit is per phone number. Application daily attempt budget applies only to this cloud function entry point; public platform verification endpoint can be called separately.",
+    "No CloudBase identity signup/signin performed. Actual PG client grants and restrictive storage policies checked; no platform user was created for a JWT end-to-end test.",
+    "Production ignores fixed development code. Active deployed provider is explicitly cloudbase; development code requires non-production development mode.",
+    "Original staff block remains awaiting user acceptance. API coverage reconciliation remains pending. No commit or push.",
+    "Real sending and verification phases completed using a user-confirmed receiving number and actual received code; neither phone nor code is included in this record. Matching test employee phone restored after each phase; original phone, binding, role/status, and logout were checked again through real PG REST.",
+    "Initial read-only management MCP query timed out before any send or phone mutation. Fixture access switched to server-side PG REST; exactly one real SMS send completed. Multi-table business writes remain in the original RPC transaction.",
+    "Actual SMS send did not require CAPTCHA; the image-answer and retry flow has unit/PG boundary coverage, not human-solved end-to-end coverage. Billing and delivery rates across carriers were not measured."
+  ],
+  "wechatSendVerification": {
+    "checks": [
+      "真实微信调用已部署函数，平台接受真实短信发送；PG仅服务端保存验证标识，前端不返回验证码"
+    ],
+    "sent": true,
+    "challenge": {
+      "providerKind": "cloudbase",
+      "delivered": true,
+      "serverOnlyVerificationId": true
+    },
+    "originalPhoneRestored": true,
+    "restoredSessionRole": "customer",
+    "passed": true
+  },
+  "wechatSmsLoginVerification": {
+    "checks": [
+      "真实收到的短信：错码拒绝，正确码并发仅一次登录，旧顾客会话和重放均拒绝，平台证明不返回客户端",
+      "真实短信登录后的销售仍看不到成本，员工登录审计恰增一条"
+    ],
+    "probe": {
+      "wrongCode": 401,
+      "codes": [0, 401],
+      "role": "sales",
+      "oldGuestCode": 401,
+      "replayCode": 401,
+      "leakedProof": false
+    },
+    "originalPhoneRestored": true,
+    "restoredSessionRole": "customer",
+    "passed": true
+  },
+  "restorationReadBack": {
+    "originalPhoneRestored": true,
+    "originalBindingPreserved": true,
+    "originalRoleAndStatusPreserved": true,
+    "staffSessionsAfterCleanup": 0,
+    "customerSessionPresent": true
+  }
+}
