@@ -30,6 +30,7 @@ test('云代理复合前缀优先路由，未知管理接口明确失败',async(
  for(const url of ['/shop/shares/abcdefghijklmnop','/admin/agents','/admin/agent-orders','/admin/agent-earnings']){await request({url,showError:false});assert.equal(calls.at(-1).name,'agent');}
  for(const url of ['/shop/contact-options','/shop/consults','/shop/appointments','/shop/orders','/shop/requests','/customer-requests','/visits/batch']){await request({url,showError:false});assert.equal(calls.at(-1).name,'customer');}
  for(const url of ['/stats/overview','/audit-logs/filters','/staff/dashboard']){await request({url,showError:false});assert.equal(calls.at(-1).name,'staff-reports');}
+ for(const url of ['/staff','/roles','/staff/example/unbind']){await request({url,showError:false});assert.equal(calls.at(-1).name,'staff-admin');}
  await request({url:'/shop/units',showError:false});assert.equal(calls.at(-1).name,'shop');
  await assert.rejects(request({url:'/admin/unimplemented',showError:false}),e=>e.code===501);
 });
