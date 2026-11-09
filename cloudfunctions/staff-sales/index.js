@@ -15,12 +15,15 @@ const definitions = [
   ['GET', '/sales-orders/sellers', 'sales.sellers', read],
   ['GET', '/sales-orders/:id', 'sales.get', read],
   ['POST', '/sales-orders/:id/refund', 'sales.refund', [PERM.REFUND]],
+  ['POST', '/sales-orders/:id/receipts', 'sales.receipts', [PERM.SALES_CREATE, PERM.REFUND]],
 ];
 const handler = createHandler(definitions.map(([method,path,action,permissions]) => [method,path,async ctx => {
   const user = await requireUser(ctx);
   if (!user.staffNo || !permissions.some(p => user.permissions.includes(p))) fail(403, '无权限执行该操作');
   const {d,p} = prepare(action, ctx.data, ctx.params, user);
-  const result = await rpc('api_sales', {p_action:action,p_params:p,p_data:d,p_user:user,p_request_id:ctx.requestId});
+  const result = action === 'sales.receipts'
+    ? await rpc('api_sales_receipts', {p_id:p.id,p_data:d,p_user:user,p_request_id:ctx.requestId})
+    : await rpc('api_sales', {p_action:action,p_params:p,p_data:d,p_user:user,p_request_id:ctx.requestId});
   await resolveFiles(result,user);
   return view(action,result,p,user);
 }]));

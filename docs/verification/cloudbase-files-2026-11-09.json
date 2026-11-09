@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "block": "第3步第2块：云存储上传登记与凭证访问",
+  "status": "实现与自动验收通过，待用户验收",
+  "functions": [
+    "files",
+    "staff-stock",
+    "staff-sales",
+    "shop"
+  ],
+  "migrations": [
+    "20261109080000_file_uploads",
+    "20261109080100_shop_media",
+    "20261109080200_sales_receipts",
+    "20261109080300_file_verification_chunks"
+  ],
+  "realPg": {
+    "command": "node scripts/verify-cloud-files.js",
+    "passed": [
+      "真实PNG上传、字节/摘要核验、登记审计与完成重试",
+      "未登录不能上传或读取内部凭证",
+      "公开媒体允许访客获取临时URL，存储桶仍为私有",
+      "伪造图片内容不登记、不假成功",
+      "超32MB与实际大小不符被拒",
+      "分段核验未完成不登记；恢复后完整SHA256正确且客户端不能伪造进度",
+      "旧上传签名不能覆盖正式凭证",
+      "公开照片入库后库存与商城实际展示，内部凭证不进入公开商品",
+      "销售补传凭证、读取预览与重复认领幂等",
+      "两个销售单并发认领同一内部凭证只有一个成功",
+      "入库与销售跨域并发认领同一内部凭证只有一个成功",
+      "即使原上传者，失去销售读取权限也不能读取已关联销售的凭证",
+      "销售可读收款凭证，但不可上传公开设备媒体",
+      "维修附件按指派/收款/成本权限，借还附件按借还权限判权",
+      "历史跨销售/借还共用文件要求两域权限同时满足",
+      "真实MP4只允许公开设备媒体，内部凭证拒绝视频",
+      "知道对象位置仍不能匿名直读私有桶",
+      "真实JPEG与WebP上传并由服务端识别实际类型",
+      "员工停用或会话退出后不能再获取内部凭证链接"
+    ],
+    "scope": "函数源码+真实PG与对象存储；仅平台OPENID注入隔离夹具，不mock会话、权限、事务、字节或签名",
+    "evidence": {
+      "stagingRewriteStatus": 200
+    }
+  },
+  "deployedWechatLarge": {
+    "command": "node scripts/verify-cloud-files-large.js",
+    "state": "done",
+    "bytes": 33554432,
+    "mime": "image/png",
+    "calls": 64,
+    "uploadMs": 6658,
+    "verificationMs": 44157,
+    "maxCallMs": 2170,
+    "sha256Matches": true,
+    "auditCount": 1
+  },
+  "deployedWechatPage": {
+    "flow": "销售详情补传内部凭证",
+    "beforeReceiptCount": 1,
+    "afterReceiptCount": 2,
+    "error": "",
+    "uploading": false,
+    "dbReceiptCount": 2,
+    "newAuditCount": 1,
+    "automationInputs": "仅chooseMedia及showModal固定输入；网络/云函数/PG真实执行，验证后恢复原生API和顾客会话"
+  },
+  "securityReview": {
+    "functions": [
+      {
+        "proname": "api_file_progress",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "api_file_read",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "api_file_upload",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "api_files_authorized",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "api_sales_receipts",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      },
+      {
+        "proname": "file_can_read",
+        "prosecdef": "false",
+        "anon_execute": "false",
+        "client_execute": "false",
+        "service_execute": "true"
+      }
+    ],
+    "buckets": [
+      {
+        "id": "xiamu-internal",
+        "public": "false",
+        "file_size_limit": "33554432"
+      },
+      {
+        "id": "xiamu-public",
+        "public": "false",
+        "file_size_limit": "33554432"
+      },
+      {
+        "id": "xiamu-sealed",
+        "public": "false",
+        "file_size_limit": "33554432"
+      },
+      {
+        "id": "xiamu-staging",
+        "public": "false",
+        "file_size_limit": "33554432"
+      }
+    ],
+    "timing": "仅development返回",
+    "clientTransferCredentials": "签名PUT不带员工令牌或服务密钥",
+    "limitations": [
+      "已签发读取URL有效300秒；停用/退出阻止获取新链接",
+      "开发工具关闭域名校验；上线需配置request/download合法域名并真机验证",
+      "旧磁盘/COS文件迁移与对账待第6步",
+      "失败/放弃上传对象与验证证据保留待清理确认",
+      "原库存3262ms热请求额外耗时未归因"
+    ]
+  },
+  "regression": {
+    "command": "node --test tests/*.test.js",
+    "passed": 57,
+    "failed": 0
+  },
+  "review": [
+    "新增JS语法检查",
+    "git diff --check",
+    "未改历史迁移与归档WORKLOG",
+    "无环境ID、AppID、API Key或签名URL进入本文"
+  ]
+}

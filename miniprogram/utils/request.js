@@ -102,7 +102,7 @@ const CLOUD_FUNCTIONS = {
   suppliers: 'staff-stock', 'purchase-orders': 'staff-stock', shipments: 'staff-stock',
   acceptances: 'staff-stock', inbound: 'staff-stock', pricing: 'staff-stock',
   units: 'staff-stock', stocktakes: 'staff-stock', 'stocktake-sessions': 'staff-stock',
-  sales: 'staff-sales', 'sales-orders': 'staff-sales'
+  sales: 'staff-sales', 'sales-orders': 'staff-sales', files: 'files'
 };
 let cloudReady = false;
 
@@ -171,8 +171,7 @@ function upload({ filePath, scope = 'public', bizType = '' }) {
     return Promise.resolve().then(() => require('../mock/index').registerFile({ filePath, scope }));
   }
   if (config.useCloud) {
-    // TODO(codex): 文件上传迁到云存储（public / internal 分开判权）后再接入
-    return Promise.reject(new ApiError(501, '文件上传尚未迁移到云开发'));
+    return uploadCloud({ filePath, scope, bizType });
   }
   return new Promise((resolve, reject) => {
     wx.uploadFile({
@@ -191,6 +190,32 @@ function upload({ filePath, scope = 'public', bizType = '' }) {
       fail: reject
     });
   });
+}
+
+/** 暂存签名只允许写本次对象；正式登记成功后才向页面返回文件。 */
+async function uploadCloud({ filePath, scope, bizType }) {
+  const fs = wx.getFileSystemManager();
+  let bytes = await new Promise((resolve, reject) => fs.readFile({ filePath, success: r => resolve(r.data), fail: reject }));
+  if (!bytes || Object.prototype.toString.call(bytes) !== '[object ArrayBuffer]' || !bytes.byteLength || bytes.byteLength > 32 * 1024 * 1024)
+    throw new ApiError(413, '文件须为1～32MB');
+  const requestKey = 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  const intent = await request({ url: '/files/upload-intent', method: 'POST', data: { scope, size: bytes.byteLength, bizType, requestKey } });
+  if (intent.file) return intent.file;
+  // signed PUT 不携带员工令牌，更不携带存储密钥。上传失败不会继续登记。
+  await new Promise((resolve, reject) => wx.request({
+    url: intent.uploadUrl, method: 'PUT', data: bytes,
+    header: { 'Content-Type': 'application/octet-stream' }, timeout: 120000,
+    success: r => r.statusCode >= 200 && r.statusCode < 300 ? resolve() : reject(new ApiError(r.statusCode, '文件传输失败，请重新上传')),
+    fail: reject
+  }));
+  bytes = null;
+  // 分段核验中的响应不是文件成功；只在最终登记完成后返回页面。
+  for (let step = 0; step < 130; step++) {
+    const result = await request({ url: '/files/' + encodeURIComponent(intent.uploadId) + '/complete', method: 'POST', data: {}, loading: false });
+    if (result.fileId) return result;
+    if (!result.processing) throw new ApiError(500, '文件核验响应无效');
+  }
+  throw new ApiError(409, '文件核验未完成，请重试');
 }
 
 const http = {

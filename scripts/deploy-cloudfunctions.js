@@ -22,6 +22,7 @@ const FUNCTION_ENV = {
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
   "staff-stock": ["NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT"],
   "staff-sales": ["NODE_ENV", "CLOUDBASE_API_KEY"],
+  files: ["NODE_ENV", "CLOUDBASE_API_KEY", "STORAGE_TIMEOUT_MS"],
 };
 
 function readEnv() {
@@ -36,7 +37,7 @@ function readEnv() {
 }
 
 execFileSync("node", [path.join(__dirname, "sync-cloudfunctions.js")], { stdio: "inherit" });
-const env = { WHOLESALE_DISCOUNT: "0", ...readEnv() };
+const env = { WHOLESALE_DISCOUNT: "0", STORAGE_TIMEOUT_MS: "12000", ...readEnv() };
 const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(FUNCTION_ENV);
 const envId = execFileSync("tcb", ["env", "list", "--json"], { encoding: "utf8" });
 const current = JSON.parse(envId.slice(envId.indexOf("{")))?.data?.[0]?.EnvId;

@@ -7,6 +7,7 @@ module.exports = function withStartupTiming(handler, moduleStarted) {
     firstInvocation = false;
     const started = process.hrtime.bigint();
     const result = await handler(event, context);
+    if (process.env.NODE_ENV !== 'development') return result;
     return { ...result, timing: { coldStart, moduleLoadMs, handlerMs: Number(process.hrtime.bigint() - started) / 1e6 } };
   };
 };

@@ -79,7 +79,7 @@ function view(action,r,p,u) {
   if(action==='records.list')return paged(r.rows.map(x=>record(x,u,false)));
   if(['records.get','records.resolve','sessions.close'].includes(action))return record(r,u);
   if(action==='sales.list')return paged(r.rows.map(x=>sale(x,u)));
-  if(['sales.get','sales.refund'].includes(action))return sale(r,u,true);
+  if(['sales.get','sales.refund','sales.receipts'].includes(action))return sale(r,u,true);
   if(action==='sales.create')return sale(r,u);
   if(r && Object.hasOwn(r,'rows'))return paged(r.rows);
   return r;
