@@ -1,0 +1,300 @@
+{
+  "date": "2026-11-10",
+  "passed": true,
+  "migrations": [
+    {
+      "version": "20261110010000",
+      "taskStatus": "Succeed",
+      "remoteHistoryVerified": true
+    },
+    {
+      "version": "20261110010100",
+      "taskStatus": "Succeed",
+      "remoteHistoryVerified": true
+    },
+    {
+      "version": "20261110010200",
+      "taskStatus": "Succeed",
+      "remoteHistoryVerified": true
+    },
+    {
+      "version": "20261110010300",
+      "taskStatus": "Succeed",
+      "remoteHistoryVerified": true
+    },
+    {
+      "version": "20261110010400",
+      "taskStatus": "Succeed",
+      "remoteHistoryVerified": true
+    }
+  ],
+  "schedule": {
+    "cron": "0 */10 * * * * *",
+    "dailyCutoff": "02:00 Asia/Shanghai",
+    "logicalBackupDay": "2026-11-09",
+    "bootstrapNote": "First snapshot was created before 02:00 on November 10; snapshotAt records actual creation time.",
+    "actualTimer": {
+      "source": "TRIGGER_TIMER",
+      "timestamp": "2026-11-10 01:00:03.763",
+      "durationMs": 777,
+      "returnCode": "0"
+    }
+  },
+  "deployment": {
+    "status": "Active",
+    "runtime": "Nodejs18.15",
+    "timeoutSeconds": 10,
+    "memoryMB": 256,
+    "triggerReadBack": true,
+    "latestCodeExecuted": true,
+    "postUploadDetailTimeoutRecovered": true
+  },
+  "restore": {
+    "checks": [
+      "从真实私有云存储下载数据分片，逐片校验压缩/原文SHA256；篡改拒绝且不入库，重复分片不重复插入",
+      "全部表行数与每行完整数据摘要一致，实际建立/校验外键，库存成本/销售/退款/代理收益对账，序列只在隔离schema推进",
+      "快照后真实员工变更及新审计未混入归档，隔离恢复得到快照时旧值",
+      "全部已管理云媒体从备份复制到隔离目录，在真实云函数内分段读取每个字节核对完整SHA256；旧未迁移引用单列"
+    ],
+    "tables": 65,
+    "rows": 3005,
+    "externalFiles": 1,
+    "totals": {
+      "files": 79,
+      "units": 107,
+      "unitCost": "98810.91",
+      "salesAmount": "73110.00",
+      "refundAmount": "33250.00",
+      "agentEarnings": "2100.00"
+    },
+    "foreignKeys": 115,
+    "snapshotIsolationVerified": true,
+    "mediaFiles": 78,
+    "mediaBytes": 38964025,
+    "mediaVerification": "cloud-copy-and-full-ranged-sha256",
+    "passed": true
+  },
+  "gc": {
+    "passed": true,
+    "deletedObjects": 9,
+    "preservedObjects": 7,
+    "concurrentLeases": {
+      "disjoint": true,
+      "first": 3,
+      "second": 3
+    },
+    "clientInvokeCode": 403,
+    "anonymousBackupStatus": 404,
+    "checks": [
+      "真实删除失败/放弃上传暂存、校验及未登记正式副本；已登记且关联销售的凭证保留且仍可真实下载",
+      "未到期上传、活跃租约、保护清单与租约后新增保护不删除",
+      "过期报表对象删除，未过期和受保护报表保留；PG快照与审计不删除",
+      "超过30天的独立保留期夹具被删除，最近完整备份及恢复证据保留；并发取得任务不重叠",
+      "真实微信伪造Timer调用403，备份对象匿名直读拒绝"
+    ]
+  },
+  "boundaries": {
+    "realPgRollbackPassed": true,
+    "latestGoodBackupNeverExpiresAlone": true,
+    "crossDayResumesOldJob": true,
+    "registeredFilesBackedUpWithoutEphemeralUploads": true,
+    "changesRolledBack": true
+  },
+  "grants": {
+    "passed": true,
+    "bucket": {
+      "limit": 33554432,
+      "public": false
+    },
+    "tables": [
+      {
+        "rls": true,
+        "name": "maintenance_backup_jobs",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_backup_rows",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_backup_tasks",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_events",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": false,
+        "serviceSelect": true,
+        "serviceUpdate": false
+      },
+      {
+        "rls": true,
+        "name": "maintenance_gc_scans",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_gc_tasks",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_protections",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": false,
+        "serviceSelect": true,
+        "serviceUpdate": false
+      },
+      {
+        "rls": true,
+        "name": "maintenance_restore_chunks",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_restore_media",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_restore_runs",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      },
+      {
+        "rls": true,
+        "name": "maintenance_settings",
+        "anonSelect": false,
+        "authSelect": false,
+        "serviceDelete": true,
+        "serviceSelect": true,
+        "serviceUpdate": true
+      }
+    ],
+    "functions": [
+      {
+        "anon": false,
+        "name": "api_maintenance_restore",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "maintenance_guard",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "maintenance_backup_snapshot",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "maintenance_gc_eligible",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "api_maintenance_restore_media",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "api_shop_catalog",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "maintenance_table_info",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "api_maintenance_backup",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      },
+      {
+        "anon": false,
+        "name": "api_maintenance_gc",
+        "service": true,
+        "authenticated": false,
+        "securityDefiner": false
+      }
+    ],
+    "restoreSchema": {
+      "anonUsage": false,
+      "authUsage": false,
+      "serviceUsage": true
+    }
+  },
+  "validation": {
+    "regressionPassed": 98,
+    "regressionFailed": 0,
+    "syntaxFilesPassed": 44,
+    "scannedFiles": 69,
+    "sensitiveMatches": 0,
+    "sqlMigrationsParsed": 6,
+    "sqlAndPlpgsqlPassed": true,
+    "formatPassed": true,
+    "whitespacePassed": true
+  },
+  "limitations": [
+    "One legacy file reference is explicitly external; its binary remains for step 6 migration.",
+    "All pre-existing upload/report evidence is protected, not purged indiscriminately.",
+    "Restore used isolated schema and object directory; no production overwrite or cutover.",
+    "Schemas, routines, permissions and triggers must first be reconstructed from matching repository migrations; sessions require fresh login.",
+    "Local large-file transport was slow and timed out; complete media copy/read/hash verification ran inside the cloud.",
+    "No official-device domain, Bluetooth printing or formal WeChat-code acceptance was added."
+  ]
+}
