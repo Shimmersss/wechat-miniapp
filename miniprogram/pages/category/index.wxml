@@ -1,5 +1,8 @@
 <theme-shell>
-<view class="layout">
+<empty-state wx:if="{{error}}" text="{{error}}" action-text="重试" bind:action="load" />
+<empty-state wx:elif="{{loading && !categories.length}}" text="正在加载分类" />
+<empty-state wx:elif="{{!categories.length}}" text="暂无分类" />
+<view wx:else class="layout">
   <scroll-view scroll-y class="side">
     <view wx:for="{{categories}}" wx:key="value" class="side-item {{activeIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onCategoryTap">{{item.label}}</view>
   </scroll-view>

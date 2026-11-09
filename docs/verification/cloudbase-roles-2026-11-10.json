@@ -1,0 +1,303 @@
+{
+  "date": "2026-11-10",
+  "source": {
+    "passed": true,
+    "roles": [
+      "boss",
+      "manager",
+      "purchaser",
+      "warehouse",
+      "sales",
+      "engineer",
+      "finance",
+      "customer",
+      "peer",
+      "agent"
+    ],
+    "checks": [
+      "老板/经理/采购/库管/销售/工程师/财务及顾客同行：真实库存权限、成本/完整串码裁剪、公开页零泄露与同行价",
+      "顾客目录/详情→咨询→老板跟进但内部原因不外泄→预约→本人取消；同行不能读他人意向",
+      "同行分享需授权，普通顾客拒绝，分享人停用后旧链接立即失效",
+      "代理申请/老板审批→限额加价/分享→顾客下单→销售按快照收银→收益/转账→老板退款冲回；销售不见加价，代理顾客信息脱敏",
+      "内部凭证真实签名下载与顾客拒绝；登出旧令牌401，停用身份即使重放会话也不能获得员工/凭证权限"
+    ],
+    "boundaries": [
+      "仅在函数源码运行器注入隔离平台OPENID，实际PG/会话/权限/事务/Storage均真实；真实SDK页面回归另记。",
+      "签发出的内部链接仍可在300秒内有效；登出/停用立即禁止新授权，不宣称已签发链接即时失效。"
+    ]
+  },
+  "live": {
+    "pages": [
+      {
+        "page": "pages/shop/index",
+        "passed": true
+      },
+      {
+        "page": "pages/category/index",
+        "passed": true
+      },
+      {
+        "page": "pages/agent-landing/index",
+        "passed": true
+      },
+      {
+        "page": "pages/mine/index",
+        "passed": true
+      },
+      {
+        "page": "pages/login/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/search/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/product/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/consult/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/poster/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/collection/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/requests/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/requests/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/agent/apply/index",
+        "passed": true
+      },
+      {
+        "page": "packages/demo/home/index",
+        "passed": true
+      },
+      {
+        "page": "packages/shop/product/index",
+        "passed": true
+      },
+      {
+        "page": "packages/agent/center/index",
+        "passed": true
+      },
+      {
+        "page": "packages/agent/markup/index",
+        "passed": true
+      },
+      {
+        "page": "packages/agent/orders/index",
+        "passed": true
+      },
+      {
+        "page": "packages/agent/commission/index",
+        "passed": true
+      },
+      {
+        "page": "packages/agent/invite/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/dashboard/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/purchase/list",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/purchase/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/purchase/edit",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/acceptance/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/suppliers/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inbound/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inbound/batch",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/templates/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/templates/edit",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/list",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/label",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/pos/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/sales/list",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/sales/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/repair/board",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/repair/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/repair/edit",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/loans/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/loans/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/loans/edit",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/share/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/agents/review",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/agents/settlement",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/agents/orders",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/stats/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/staff/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/staff/roles",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/audit/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/profile/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/stocktake",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/stocktake-run",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/stocktake-result",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/consults/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/consults/detail",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/repair/parts",
+        "passed": true
+      },
+      {
+        "page": "packages/demo/stock/index",
+        "passed": true
+      },
+      {
+        "page": "packages/demo/biz/index",
+        "passed": true
+      },
+      {
+        "page": "packages/demo/mine/index",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/inventory/list",
+        "passed": true
+      },
+      {
+        "page": "packages/staff/pos/index",
+        "passed": true
+      }
+    ],
+    "checks": [
+      "真实顾客浏览/分类/详情/咨询/本人记录/分享/海报页面；员工API和代理中心守卫拒绝",
+      "真实微信同行会话拿同行价、无成本/完整串码，详情页加载",
+      "真实微信代理中心/加价/订单/收益/邀请页面，代理库存不返回底价、成本及完整串码",
+      "真实老板会话加载全部员工经营页与演示经营页，含采购/验收/库存/模板/盘点/借还/维修/销售/统计/审计/员工角色",
+      "同一个真实微信令牌切换销售/经理/采购/库管/工程师/财务即时生效；成本/串码裁剪、销售管理拒绝与停用拒绝"
+    ],
+    "restored": {
+      "role": "sales",
+      "status": "active",
+      "userRole": "customer",
+      "agentProfileRestored": true,
+      "customerSession": true
+    },
+    "requestCount": 87,
+    "uniquePages": 59,
+    "passed": true,
+    "requestCountScope": "staff continuation only"
+  },
+  "validation": {
+    "regressionPassed": 98,
+    "regressionFailed": 0
+  }
+}

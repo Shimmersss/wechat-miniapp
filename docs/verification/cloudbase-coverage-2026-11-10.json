@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-10",
+  "passed": true,
+  "summary": {
+    "pages": 59,
+    "demoPages": 4,
+    "apiMethods": 141,
+    "utilityRoutes": 2,
+    "cloudRoutes": 154,
+    "missing": 0,
+    "unknownPages": 0
+  },
+  "checks": [
+    "59个页面及依赖、动态域引用按保守方式纳入核对，141个API方法均有正确前缀和处理器",
+    "真实微信已部署分类结果与真实PG公开分类/型号逐项一致",
+    "真实顾客分类页加载分类和型号，无页面错误"
+  ],
+  "page": {
+    "route": "pages/category/index",
+    "error": "",
+    "loading": false,
+    "categories": 27,
+    "models": 28
+  },
+  "boundaries": [
+    "动态方法以域方法全集保守覆盖，并另行核对repair API_METHODS与consult三种模式；静态核对不能代替真实业务验证。",
+    "4个demo页面保留；蓝牙打印和正式微信凭据/小程序码为明确外部条件，没有伪造成功。"
+  ],
+  "migration": {
+    "version": "20261109160000",
+    "taskStatus": "Succeed",
+    "remoteHistoryVerified": true
+  },
+  "validation": {
+    "regressionPassed": 98,
+    "regressionFailed": 0
+  }
+}
