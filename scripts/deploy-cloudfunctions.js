@@ -48,6 +48,10 @@ const FUNCTION_ENV = {
   files: ["NODE_ENV", "CLOUDBASE_API_KEY", "STORAGE_TIMEOUT_MS"],
 };
 
+// 代理锁库到期释放频率（7 段 Cron）。2026-11-09 定为每 10 分钟，节省体验版资源点；
+// 到期设备最多晚 10 分钟回到可售。TODO(confirm): 正式上线后按套餐资源点重新评估频率。
+const EXPIRY_CRON = "0 */10 * * * * *";
+
 function readEnv() {
   if (!fs.existsSync(envFile))
     throw new Error(
@@ -103,7 +107,7 @@ try {
               {
                 name: "agent-order-expiry",
                 type: "timer",
-                config: "0 * * * * * *",
+                config: EXPIRY_CRON,
               },
             ],
           }
@@ -143,19 +147,21 @@ try {
       const existing = (detail.data?.Triggers || []).find(
         (t) => t.TriggerName === "agent-order-expiry",
       );
-      if (!existing)
+      const cron = existing?.TriggerDesc?.startsWith("{")
+        ? JSON.parse(existing.TriggerDesc).cron
+        : existing?.TriggerDesc;
+      // 频率以本脚本为准：现有触发器 Cron 不同就先删后建，删除失败则不再创建。
+      if (existing && cron !== EXPIRY_CRON)
+        execFileSync(
+          "tcb",
+          ["fn", "trigger", "delete", name, "agent-order-expiry"],
+          { cwd: work, stdio: "inherit" },
+        );
+      if (!existing || cron !== EXPIRY_CRON)
         execFileSync("tcb", ["fn", "trigger", "create", name], {
           cwd: work,
           stdio: "inherit",
         });
-      else if (
-        (existing.TriggerDesc?.startsWith("{")
-          ? JSON.parse(existing.TriggerDesc).cron
-          : existing.TriggerDesc) !== "0 * * * * * *"
-      )
-        throw new Error(
-          "agent-order-expiry 的现有 Cron 与预期不符，请核对触发器配置",
-        );
     }
   }
 } finally {

@@ -386,7 +386,8 @@ async function extraChecks() {
     `UPDATE agent_orders SET lock_expires_at=now()-interval '1 second' WHERE request_id='${expOrder.id}'`,
   );
   let state;
-  for (let i = 0; i < 15; i++) {
+  // 定时器每 10 分钟触发（见 deploy-cloudfunctions.js 的 EXPIRY_CRON），最多等 11 分钟。
+  for (let i = 0; i < 132; i++) {
     state = query(
       `SELECT s.status,u.status unit_status FROM agent_order_states s JOIN agent_orders a ON a.request_id=s.request_id JOIN units u ON u.id=a.unit_id WHERE s.request_id='${expOrder.id}'`,
     )[0];
@@ -396,7 +397,7 @@ async function extraChecks() {
   assert.equal(state.status, "released");
   assert.equal(state.unit_status, "in_stock");
   results.push(
-    "已部署每分钟定时器自主释放过期订单：只观察PG，无手工调用或业务读触发",
+    "已部署定时器自主释放过期订单：只观察PG，无手工调用或业务读触发",
   );
   fs.writeFileSync(
     `${local}/agent-extra-results.json`,
