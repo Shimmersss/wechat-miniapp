@@ -119,8 +119,11 @@ function callCloud({ url, method, data, headers }) {
   const name = CLOUD_FUNCTIONS[segments.slice(0, 2).join('/')] || CLOUD_FUNCTIONS[segments[0]];
   if (!name) return Promise.reject(new ApiError(501, '该功能尚未迁移到云开发'));
   if (!cloudReady) {
-    // 不传 env：使用小程序关联的默认云环境，环境 ID 不写进代码
-    wx.cloud.init({ traceUser: false });
+    // cloudEnv 为空时用小程序关联的默认环境；填了就显式指定。
+    // 环境 ID 不写死在代码里，由 config 的 develop.cloudEnv 提供，本机覆盖。
+    wx.cloud.init(
+      config.cloudEnv ? { env: config.cloudEnv, traceUser: false } : { traceUser: false }
+    );
     cloudReady = true;
   }
   const params = { ...(query ? parseQuery(query) : {}), ...(data || {}) };

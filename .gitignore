@@ -50,3 +50,6 @@ docs/workflow/
 # 云函数共享代码副本，由 scripts/sync-cloudfunctions.js 生成
 cloudfunctions/*/shared/
 cloudfunctions/*/node_modules/
+
+# 根目录下的服务器交接文档同样含凭据，必须排除
+HANDOFF-*.md
