@@ -2,7 +2,7 @@
 const { http } = require('../../utils/request');
 
 module.exports = {
-  /** { imei } → { matched, model?, source?, message }；仅查已核验 TAC 映射，未命中不猜型号，不能推断容量颜色 */
+  /** { imei, allowPaidLookup? } → { matched, model?, source?, candidate?, message }；优先查已核验 TAC，付费结果仅为候选 */
   identifyModel: (data) => http.post('/inbound/identify-model', data),
   /** IMEI 唯一校验 { imei } → { unique, conflictUnitId?, model? } */
   checkImei: (data) => http.post('/inbound/check-imei', data),

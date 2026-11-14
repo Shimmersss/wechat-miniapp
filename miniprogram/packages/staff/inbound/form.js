@@ -66,21 +66,23 @@ module.exports = function inboundPage(batch) {
       if (index < 0) return;
       const update = {}; Object.keys(patch).forEach(k => { update[`rows[${index}].${k}`] = patch[k]; }); this.setData(update);
     },
-    checkRow(key) {
+    checkRow(key, promptModel = true) {
       const current = this.data.rows.find(r => r.key === key); if (!current) return;
+      if (current.state === 'ok') return Promise.resolve();
       const imei = current.imei1;
       if (!isImei(imei)) { this.setRow(key, { state: 'invalid', message: 'IMEI1 需为有效的 15 位串码' }); return Promise.resolve(); }
       if (this.data.rows.some(r => r.key !== key && (r.imei1 === imei || r.imei2 === imei))) { this.setRow(key, { state: 'dup', message: '与本批其他设备串码重复' }); return Promise.resolve(); }
       this.setRow(key, { state: 'checking', message: '正在校验与识别…' });
-      return Promise.all([api.inbound.checkImei({ imei }), api.inbound.identifyModel({ imei })]).then(([check, result]) => {
+      return Promise.all([api.inbound.checkImei({ imei }), api.inbound.identifyModel({ imei, allowPaidLookup: promptModel })]).then(([check, result]) => {
         const latest = this.data.rows.find(r => r.key === key);
         if (!latest || latest.imei1 !== imei || this.destroyed) return;
         if (!check.unique) return this.setRow(key, { state: 'dup', message: '串码已存在，不能重复入库' });
         this.setRow(key, { state: 'ok', message: result.matched ? `识别型号：${result.model.name}，请核对实机` : result.message, matchModelId: result.matched ? result.model.id : '' });
-        if (result.matched && (!this.data.model || this.data.model.id !== result.model.id)) {
-          wx.showModal({ title: '识别到型号', content: `${result.model.name}\n${result.message}\n是否使用该型号并重新加载公共参数？`, success: r => {
+        const suggestedModel = result.matched ? result.model : result.candidate?.model;
+        if (promptModel && !this.data.checkingSubmission && suggestedModel && this.data.model?.id !== suggestedModel.id) {
+          wx.showModal({ title: result.matched ? '识别到型号' : '候选型号', content: `${suggestedModel.name}\n${result.message}\n是否使用该型号并重新加载公共参数？`, success: r => {
             const latest = this.data.rows.find(r => r.key === key);
-            if (r.confirm && latest && latest.imei1 === imei) this.selectModel(result.model);
+            if (r.confirm && latest && latest.imei1 === imei) this.selectModel(suggestedModel);
           } });
         }
       }).catch(e => { const latest = this.data.rows.find(r => r.key === key); if (latest && latest.imei1 === imei) this.setRow(key, { state: 'invalid', message: e.message || '校验失败，请重试' }); });

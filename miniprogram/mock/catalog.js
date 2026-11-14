@@ -55,6 +55,7 @@ module.exports = function catalog(db, { fail, requirePermission, clone, template
     ['POST', '/inbound/identify-model', d => {
       requirePermission(PERM.INBOUND);
       if (!require('../utils/validate').isImei(d.imei)) fail(400, 'IMEI 格式或校验位无效');
+      if (d.allowPaidLookup !== undefined && typeof d.allowPaidLookup !== 'boolean') fail(400, '机型查询参数无效');
       const models = db.models.filter(m => (m.tacs || []).includes(d.imei.slice(0, 8)));
       if (models.length !== 1) return { matched: false, message: '未找到已核验的型号，请手动选择' };
       const { tacs, tacSource, ...model } = models[0];

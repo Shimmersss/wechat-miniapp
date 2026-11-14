@@ -43,6 +43,12 @@ function prepare(action, input, params, user) {
     if(!Array.isArray(tacs)||tacs.length>100||tacs.some(t=>typeof t!=='string'||!/^\d{8}$/.test(t))||new Set(tacs).size!==tacs.length) fail(400,'TAC 必须为不重复的八位数字');
     d.tacs=tacs; if(tacs.length) text(d.tacSource,'TAC 核验来源',200);
   }
+  if (action === 'models.identify') {
+    d.imei = text(d.imei, 'IMEI', 15);
+    if (!isImei(d.imei)) fail(400, 'IMEI 格式或校验位无效');
+    if (d.allowPaidLookup !== undefined && typeof d.allowPaidLookup !== 'boolean')
+      fail(400, '机型查询参数无效');
+  }
   if (/suppliers\.(create|update)/.test(action) && d.active!==undefined && typeof d.active!=='boolean') fail(400,'供应商状态无效');
   if(action==='suppliers.list' && d.active!==undefined) choice(String(d.active),['true','false'],'供应商状态');
   if(/purchase\.(create|update)/.test(action)) {
