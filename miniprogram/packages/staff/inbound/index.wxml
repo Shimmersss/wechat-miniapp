@@ -1,6 +1,11 @@
 <theme-shell>
 <view class="container inbound">
   <view class="mode-tabs"><button class="{{!batch ? 'active' : ''}}" data-mode="single" bindtap="onSwitchMode" disabled="{{submitting}}">单台入库</button><button class="{{batch ? 'active' : ''}}" data-mode="batch" bindtap="onSwitchMode" disabled="{{submitting}}">批量入库</button></view>
+  <view wx:if="{{hasDraft}}" class="card row">
+    <text class="small flex-1">本机草稿</text>
+    <button class="btn btn-line btn-sm" bindtap="onDeleteDraft" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">删除</button>
+    <button class="btn btn-soft btn-sm" bindtap="onRestoreDraft" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">恢复草稿</button>
+  </view>
   <view class="card">
     <view class="reference-row"><text class="row-label">设备类型</text><view class="chips"><view aria-role="button" class="type-chip {{form.condition === 'used' ? 'selected' : ''}}" data-value="used" bindtap="onCondition">二手机</view><view aria-role="button" class="type-chip {{form.condition === 'new' ? 'selected' : ''}}" data-value="new" bindtap="onCondition">新机</view></view></view>
     <view class="reference-row"><text class="row-label">设备型号</text><text class="h3 flex-1">{{model ? model.name : '扫码识别或选择型号'}}</text><button class="btn btn-line btn-sm choose-model" bindtap="onChooseModel" disabled="{{submitting || modelLoading}}">{{modelLoading ? '加载中' : '切换'}}</button></view>
@@ -35,6 +40,10 @@
     <view class="grid-2 mt"><view><view class="field-label required">代理结算底价</view><input class="input" type="digit" value="{{form.agentBase}}" data-field="agentBase" bindinput="onInput" disabled="{{submitting}}" /></view><view><view class="field-label">目标利润（定价辅助）</view><input class="input" type="digit" value="{{form.targetProfit}}" data-field="targetProfit" bindinput="onInput" disabled="{{submitting}}" /></view></view><view class="tiny muted mt"></view>
   </view>
   <view class="card row"><text class="small flex-1">已逐台核对实机、串码、机况与收货凭证</text><switch checked="{{form.inspectionConfirmed}}" data-field="inspectionConfirmed" bindchange="onInput" disabled="{{submitting}}" /></view>
-  <view class="footer-space"></view><view class="footer-bar"><button class="btn btn-primary submit-inbound" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0}}">{{batch ? '批量入库（' + rows.length + '台）' : '确认单台入库'}}</button></view>
+  <view class="footer-space"></view>
+  <view class="footer-bar">
+    <button class="btn btn-line" bindtap="onSaveDraft" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">存草稿</button>
+    <button class="btn btn-primary submit-inbound" bindtap="onSubmit" loading="{{submitting || checkingSubmission}}" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">{{batch ? '批量入库（' + rows.length + '台）' : '确认单台入库'}}</button>
+  </view>
 </view>
 </theme-shell>
