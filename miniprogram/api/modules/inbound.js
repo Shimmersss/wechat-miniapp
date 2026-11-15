@@ -2,7 +2,7 @@
 const { http } = require('../../utils/request');
 
 module.exports = {
-  /** { imei, allowPaidLookup? } → { matched, model?, source?, candidate?, message }；优先查已核验 TAC，付费结果仅为候选 */
+  /** { imei } → { matched, model?, source?, candidate?, message }；优先查店内已核验 TAC，开放库结果作为候选 */
   identifyModel: (data) => http.post('/inbound/identify-model', data),
   /** IMEI 唯一校验 { imei } → { unique, conflictUnitId?, model? } */
   checkImei: (data) => http.post('/inbound/check-imei', data),

@@ -5,7 +5,6 @@ const { PERM } = require('./shared/roles');
 const { prepare, money, text } = require('./input');
 const { view, canSee } = require('./view');
 const { resolveFiles } = require('./files');
-const { identifyWithFallback } = require('./imei-lookup');
 // 每个内层数组表示一组可替代权限；外层数组中的每组都必须满足。
 const readModels=[PERM.TEMPLATE_MANAGE,PERM.INBOUND,PERM.PURCHASE_MANAGE,PERM.ACCEPTANCE,PERM.INVENTORY_VIEW];
 const readTemplate=readModels.filter(p=>p!==PERM.INVENTORY_VIEW);
@@ -20,7 +19,7 @@ function add(method,path,action,permissions) {
       if(!user.permissions.includes(PERM.SUPPLIER_VIEW)||!canSee(user,'supplier'))fail(403,'无权限查看供应商');
     }
     const {d,p}=prepare(action,ctx.data,ctx.params,user);
-    if (action === 'models.identify') return identifyWithFallback({ data: d, user, requestId: ctx.requestId });
+    if (action === 'models.identify') return rpc('api_imei_model_lookup', { p_imei: d.imei });
     if(action==='pricing.suggest') {
       const cents=v=>{const [w,f='']=money(v).split('.');return BigInt(w)*100n+BigInt(f.padEnd(2,'0'));};
       const total=cents(d.cost)+cents(d.targetProfit??0);

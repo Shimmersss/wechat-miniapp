@@ -73,7 +73,7 @@ module.exports = function inboundPage(batch) {
       if (!isImei(imei)) { this.setRow(key, { state: 'invalid', message: 'IMEI1 需为有效的 15 位串码' }); return Promise.resolve(); }
       if (this.data.rows.some(r => r.key !== key && (r.imei1 === imei || r.imei2 === imei))) { this.setRow(key, { state: 'dup', message: '与本批其他设备串码重复' }); return Promise.resolve(); }
       this.setRow(key, { state: 'checking', message: '正在校验与识别…' });
-      return Promise.all([api.inbound.checkImei({ imei }), api.inbound.identifyModel({ imei, allowPaidLookup: promptModel })]).then(([check, result]) => {
+      return Promise.all([api.inbound.checkImei({ imei }), api.inbound.identifyModel({ imei })]).then(([check, result]) => {
         const latest = this.data.rows.find(r => r.key === key);
         if (!latest || latest.imei1 !== imei || this.destroyed) return;
         if (!check.unique) return this.setRow(key, { state: 'dup', message: '串码已存在，不能重复入库' });

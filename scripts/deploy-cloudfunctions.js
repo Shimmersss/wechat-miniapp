@@ -29,10 +29,7 @@ const FUNCTION_ENV = {
     "CLOUDBASE_API_KEY",
   ],
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
-  "staff-stock": [
-    "NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT",
-    "IMEI_PAID_LOOKUP_ENABLED", "IMEI_51GCC_API_KEY", "IMEI_PAID_LOOKUP_DAILY_LIMIT",
-  ],
+  "staff-stock": ["NODE_ENV", "CLOUDBASE_API_KEY", "WHOLESALE_DISCOUNT"],
   "staff-sales": ["NODE_ENV", "CLOUDBASE_API_KEY"],
   "cloud-maintenance": [
     "NODE_ENV",
@@ -103,9 +100,6 @@ const env = {
   WX_CODE_CHECK_PATH: "true",
   REPAIR_INTERNAL_COST_POLICY: "capitalize",
   WHOLESALE_DISCOUNT: "0",
-  IMEI_PAID_LOOKUP_ENABLED: "0",
-  IMEI_51GCC_API_KEY: "",
-  IMEI_PAID_LOOKUP_DAILY_LIMIT: "20",
   STORAGE_TIMEOUT_MS: "12000",
   ...readEnv(),
 };
