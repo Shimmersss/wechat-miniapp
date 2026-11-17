@@ -142,7 +142,7 @@ function buildUnit(db, row, receipt) {
   const no = Number(id.slice(1)), supplier = no % 2 ? '深圳严选供应链' : '华强北 B 档';
   const attributes = {
     version: '国行', networkLock: '无锁', storage, color, grade, activation: '已激活', idLock: '已退出（无锁）', repairStatus: '无拆修',
-    refurbishment: '无需整备', store: '夏目数码总店', system: 'iOS 26.1', allGreen: '爱思全绿', battery, shopWarranty: 90, warrantyLength: '90天', supplier, receipt: [receipt]
+    store: '夏目数码总店', system: 'iOS 26.1', allGreen: '爱思全绿', battery, shopWarranty: 90, warrantyLength: '90天', supplier, receipt: [receipt]
   };
   return {
     id, modelId, name: model.name, brand: model.brand, category: model.category, condition, storage, color, grade, battery, version: '国行',
@@ -198,29 +198,15 @@ module.exports = function loadTestSeed(db, { callAs, fileAs }) {
   // 维修单：看板每一列至少一张；店外机为主，t60 是本店机送修
   const external = (model, identifier, customer, fault, engineerId, expectedAt) => callAs('boss', 'POST', '/repair-orders', { requestKey: key(), kind: 'external', model, identifier, customer, phone: '13833330001', fault, engineerId, expectedAt, photos: [photo('boss')] });
   const act = (order, path, role, data) => callAs(role, 'POST', `/repair-orders/${order.id}/${path}`, { requestKey: key(), version: order.version, reason: '预置维修操作', ...data });
-  const inspect = order => {
-    let o = act(order, 'transition', 'engineer', { to: 'checking' });
-    o = callAs('engineer', 'PUT', `/repair-orders/${o.id}`, { requestKey: key(), version: o.version, reason: '保存检测结果', diagnosis: '检测确认需更换部件' });
-    return o;
-  };
-  const quote = (order, amount) => act(inspect(order), 'quote', 'boss', { amount });
-  const confirmed = (order, amount) => {
-    let o = act(quote(order, amount), 'transition', 'engineer', { to: 'pending_confirm' });
-    o = act(o, 'confirm', 'engineer', { confirmed: true, quoteVersion: o.quoteVersion });
-    return act(o, 'transition', 'engineer', { to: 'repairing' });
-  };
-  external('iPhone 15 Pro', 'SN-SEED-001', '陈先生', '无法开机，进水痕迹待确认', null);
-  inspect(external('华为 Mate 60', 'SN-SEED-002', '李女士', '屏幕闪烁', 'mock_engineer'));
-  act(quote(external('iPhone 14', 'SN-SEED-003', '同行张店', '无法充电', 'mock_engineer'), '260'), 'transition', 'engineer', { to: 'pending_confirm' });
-  confirmed(external('iPhone 13', 'SN-SEED-004', '周先生', '更换电池', 'mock_engineer', '2026-10-30'), '199');
-  let pickup = confirmed(external('小米 14', 'SN-SEED-005', '吴女士', '听筒无声', 'mock_engineer'), '150');
-  pickup = act(pickup, 'payment', 'finance', { kind: 'receipt', amount: '150', method: '微信', confirmed: true });
-  pickup = act(pickup, 'transition', 'engineer', { to: 'pending_pickup', result: '更换听筒后通话正常' });
-  let done = confirmed(external('iPad Air', 'SN-SEED-006', '郑先生', '更换外屏', 'mock_engineer'), '300');
-  done = act(done, 'payment', 'finance', { kind: 'receipt', amount: '300', method: '现金', confirmed: true });
-  done = act(done, 'transition', 'engineer', { to: 'pending_pickup', result: '触控正常' });
-  act(done, 'transition', 'engineer', { to: 'completed', pickupName: '郑先生', pickupProof: [photo('engineer')], warrantyDays: 90 });
-  act(external('荣耀 Magic6', 'SN-SEED-007', '钱女士', '顾客决定不修', 'mock_engineer'), 'transition', 'boss', { to: 'cancelled' });
+  // 新流程：6张维修中（含本店机）、1张已完成、1张已取消。
+  external('iPhone 15 Pro', 'SN-SEED-001', '陈先生', '无法开机', null);
+  external('华为 Mate 60', 'SN-SEED-002', '李女士', '屏幕闪烁', 'mock_engineer');
+  external('iPhone 14', 'SN-SEED-003', '同行张店', '无法充电', 'mock_engineer');
+  external('iPhone 13', 'SN-SEED-004', '周先生', '更换电池', 'mock_engineer', '2026-10-30');
+  external('小米 14', 'SN-SEED-005', '吴女士', '听筒无声', 'mock_engineer');
+  const done = external('iPad Air', 'SN-SEED-006', '郑先生', '更换外屏', 'mock_engineer');
+  act(done, 'close', 'boss', { amount:'300', cost:'80', method:'现金', confirmed:true, note:'触控正常' });
+  act(external('荣耀 Magic6', 'SN-SEED-007', '钱女士', '顾客决定不修', 'mock_engineer'), 'transition', 'boss', { to:'cancelled' });
   callAs('boss', 'POST', '/repair-orders', { requestKey: key(), kind: 'inventory', unitId: 't60', fault: '扬声器有杂音', engineerId: 'mock_engineer', photos: [photo('boss')] });
 
   // 咨询、预约、同行意向

@@ -20,3 +20,6 @@
 /* 非手机：无序列号原因 */
 .reason-box { padding: 8rpx 0 4rpx; }
 .reason-box .chips { flex-wrap: wrap; }
+
+.success-mask { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 40rpx; background: var(--c-mask); }
+.success-dialog { width: 100%; max-width: 600rpx; margin: 0; box-shadow: var(--e3); }

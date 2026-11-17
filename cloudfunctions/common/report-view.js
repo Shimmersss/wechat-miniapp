@@ -159,18 +159,7 @@ function view(a, r, u, d) {
         "/packages/staff/repair/board?overdue=true",
         ["repair:handle", "repair:quote", "repair:cash"],
       ],
-      [
-        "repairConfirm",
-        "维修待确认",
-        "/packages/staff/repair/board?status=pending_confirm",
-        ["repair:handle", "repair:quote", "repair:cash"],
-      ],
-      [
-        "repairParts",
-        "维修待配件",
-        "/packages/staff/repair/board?waitingParts=true",
-        ["repair:handle", "repair:quote", "repair:cash"],
-      ],
+      ["repairActive", "维修中", "/packages/staff/repair/board?status=active", ["repair:handle", "repair:quote", "repair:cash"]],
     ];
     const todos = defs
       .filter(([, , , p]) => p.some((k) => u.permissions.includes(k)))

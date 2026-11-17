@@ -57,7 +57,7 @@ function request(options) {
   const done = (promise) =>
     promise
       .catch((err) => {
-        const apiErr = err instanceof ApiError ? err : new ApiError(-1, err && err.errMsg ? '网络异常，请稍后重试' : err.message);
+        const apiErr = err instanceof ApiError ? err : transportError(err);
         handleError(apiErr, showError);
         throw apiErr;
       })
@@ -121,19 +121,23 @@ const CLOUD_FUNCTIONS = {
   units: 'staff-stock', stocktakes: 'staff-stock', 'stocktake-sessions': 'staff-stock',
   sales: 'staff-sales', 'sales-orders': 'staff-sales', files: 'files', loans: 'staff-loans', 'repair-orders': 'staff-repair', 'repair-parts': 'staff-repair'
 };
-let cloudReady = false;
+function transportError(err) {
+  const detail = String(err?.errMsg || err?.message || err || '');
+  console.warn('[request]', detail);
+  if (/-505005|FUNCTIONS_NOT_FOUND/i.test(detail)) return new ApiError(-1, '后端接口未部署');
+  if (/domain list|合法域名/i.test(detail)) return new ApiError(-1, '云开发网关未加入小程序的 request 合法域名');
+  if (/timeout|timed out/i.test(detail)) return new ApiError(-1, '连接服务器超时，请稍后重试');
+  return new ApiError(-1, detail || '连接服务器失败，请稍后重试');
+}
 
-/**
- * 云开发传输层：把 HTTP 式请求转成 wx.cloud.callFunction，返回同样的信封。
- * 身份由平台注入的 OPENID 决定；headers 只携带会话令牌、渠道、访客 ID，云函数不信任其中的角色信息。
- */
+/** HTTPS 网关传输；身份依靠会话及 wx.login code 换取，禁止回退默认云环境。 */
 function callCloud({ url, method, data, headers }) {
   const [path, query] = url.split('?');
   const segments = path.split('/').filter(Boolean);
   const name = CLOUD_FUNCTIONS[segments.slice(0, 2).join('/')] || CLOUD_FUNCTIONS[segments[0]];
   if (!name) return Promise.reject(new ApiError(501, '该功能尚未迁移到云开发'));
-  if (config.env === 'trial' && !config.cloudHttpBaseUrl)
-    return Promise.reject(new ApiError(503, '当前体验包未配置后端地址，请联系管理员更新体验版'));
+  if (!config.cloudHttpBaseUrl)
+    return Promise.reject(new ApiError(503, '未配置云开发网关，请运行 node scripts/configure-cloud-preview.js <网关域名>'));
   const params = { ...(query ? parseQuery(query) : {}), ...(data || {}) };
   if (config.cloudHttpBaseUrl) {
     const base = config.cloudHttpBaseUrl.replace(/\/+$/, '');
@@ -147,50 +151,18 @@ function callCloud({ url, method, data, headers }) {
         header: headers,
         timeout: config.timeout,
         success: (res) => {
+          if (res.statusCode >= 400 && res.data?.code === undefined)
+            return reject(new ApiError(res.statusCode, res.statusCode === 404 ? '后端接口未部署' : `服务异常(${res.statusCode})`));
           try {
             resolve(unwrap(res.data));
           } catch (e) {
             reject(e);
           }
         },
-        fail: (err) => {
-          const detail = err?.errMsg || '';
-          if (/domain list|合法域名/i.test(detail))
-            return reject(new ApiError(-1, '云开发网关未加入小程序的 request 合法域名'));
-          if (/timeout|timed out/i.test(detail))
-            return reject(new ApiError(-1, '连接云开发网关超时，请稍后重试'));
-          reject(err);
-        }
+        fail: reject
       });
     });
   }
-  if (!cloudReady) {
-    // cloudEnv 为空时用小程序关联的默认环境；填了就显式指定。
-    // 环境 ID 不写死在代码里，由 config 的 develop.cloudEnv 提供，本机覆盖。
-    wx.cloud.init(
-      config.cloudEnv ? { env: config.cloudEnv, traceUser: false } : { traceUser: false }
-    );
-    cloudReady = true;
-  }
-  return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
-      name,
-      data: { path, method, data: params, headers },
-      success: (res) => {
-        try {
-          resolve(unwrap(res.result));
-        } catch (e) {
-          reject(e);
-        }
-      },
-      fail: (err) => {
-        const detail = err?.errMsg || '';
-        if (/environment|invalid env|权限|环境|授权/i.test(detail))
-          return reject(new ApiError(-1, '小程序无法访问当前云环境，请检查云开发配置'));
-        reject(err);
-      }
-    });
-  });
 }
 
 function parseQuery(query) {
@@ -215,6 +187,10 @@ function clean(data) {
 
 function unwrap(body) {
   if (!body || typeof body !== 'object') throw new ApiError(-1, '响应格式错误');
+  if (body.code === -505005 || /FUNCTIONS_NOT_FOUND/.test(body.message || '')) {
+    console.warn('[request]', body.message || String(body.code));
+    throw new ApiError(body.code, '后端接口未部署');
+  }
   if (body.code !== 0) throw new ApiError(body.code, body.message, body.data);
   return body.data;
 }

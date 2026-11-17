@@ -14,6 +14,8 @@ module.exports = {
   /** {requestKey,version,reason,diagnosis?,waitingParts?,engineerId?,expectedAt?,fault?,customer?,phone?,photos?}；指派/联系方式另需授权 */
   update: (id, data) =>
     http.put(`/repair-orders/${id}`, data, { loading: true }),
+  /** {requestKey,version,reason,amount,method,confirmed:true,cost?,note?,proof?} → 结单；实收和费用事务写入，成本需授权，凭证选填 */
+  close: (id, data) => http.post(`/repair-orders/${id}/close`, data, { loading: true }),
   /** {requestKey,version,reason,amount} → 最新报价版本；需repair:quote，0元报价有效 */
   quote: (id, data) => http.post(`/repair-orders/${id}/quote`, data),
   /** {requestKey,version,reason,quoteVersion,confirmed:true}；本店机须管理授权确认维修方案 */

@@ -47,14 +47,13 @@ module.exports = function inbound(db, { fail, requirePermission, clone, getTempl
     if (d.condition && !['used', 'new'].includes(d.condition)) fail(400, '设备类型无效');
     if (d.flags && Object.keys(d.flags).some(k => !['showInShop', 'sharePeer', 'shareAgent'].includes(k) || typeof d.flags[k] !== 'boolean')) fail(400, '分享开关格式无效');
     const clean = {};
-    template.fields.forEach(f => { if (attributes[f.key] !== undefined) clean[f.key] = clone(attributes[f.key]); });
-    const preparing = clean.refurbishment === '正在整备';
+    template.fields.forEach(f => { if (attributes[f.key] !== undefined) clean[f.key] = f.allowCustom && typeof attributes[f.key] === 'string' ? attributes[f.key].trim() : clone(attributes[f.key]); });
     return {
       id: `u_${Date.now()}_${++sequence}`, modelId: model.id, name: model.name, brand: model.brand, category: model.category, condition: d.condition || 'used',
       supplier: clean.supplier || '', receiptImages: clone(clean.receipt || d.receiptImages || []),
-      imei1: id.imei1, imei2: id.imei2 || '', serialNo: id.serialNo, noSerialReason: id.noSerialReason, lotId: d.lotId || null, status: preparing ? 'recheck' : 'in_stock', ageDays: 0,
+      imei1: id.imei1, imei2: id.imei2 || '', serialNo: id.serialNo, noSerialReason: id.noSerialReason, lotId: d.lotId || null, status: 'in_stock', ageDays: 0,
       cost: Number(d.cost), retail: Number(d.retail), wholesale: Number(d.wholesale), agentBase: Number(d.agentBase),
-      flags: preparing ? { showInShop: false, sharePeer: false, shareAgent: false } : clone(d.flags || {}),
+      flags: clone(d.flags || {}),
       images: (d.publicImages || []).filter(f => f.mediaType !== 'video').map(f => f.url),
       videos: (d.publicImages || []).filter(f => f.mediaType === 'video').map(f => f.url),
       customerDesc: d.customerDesc || '', peerDesc: d.peerDesc || '', internalNote: d.internalNote || '',

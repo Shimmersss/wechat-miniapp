@@ -1,21 +1,11 @@
-const config = require('../../../config/index');
-const { isStaff, can } = require('../../../utils/permission');
-const { PERM } = require('../../../constants/roles');
 const { initialValues, validateValues } = require('../../../utils/template');
 
 const formFields = [
-  'condition', 'cost', 'wholesale', 'retail', 'agentBase', 'targetProfit',
+  'condition', 'supplierId', 'cost', 'wholesale', 'retail', 'agentBase', 'retailProfit', 'wholesaleProfit', 'agentProfit',
   'peerDesc', 'customerDesc', 'internalNote', 'flags',
 ];
 
-function keyFor(user, batch) {
-  if (!user?.id || !isStaff(user) || !can(user, PERM.INBOUND)) return '';
-  const backend = config.useMock ? 'mock' : config.useCloud
-    ? config.cloudHttpBaseUrl || config.cloudEnv || 'cloud-default'
-    : config.baseUrl;
-  return ['xm_inbound_draft_v1', config.env, backend, user.id, user.staffNo || '', user.role,
-    batch ? 'batch' : 'single'].map(encodeURIComponent).join(':');
-}
+const { keyFor } = require('../../../utils/inbound-draft-key');
 
 function fileRefs(files = []) {
   return (Array.isArray(files) ? files : []).filter(file => file?.fileId).map(({ fileId, mediaType }) => ({
@@ -72,6 +62,12 @@ function restoredValues(draft, template, rowFields) {
   };
 }
 
+/** 旧草稿的单一利润恢复为零售利润；不再恢复核对开关。 */
+function restoredForm(saved, defaults = {}) {
+  const { targetProfit, inspectionConfirmed, ...form } = saved;
+  return { ...defaults, ...form, retailProfit: form.retailProfit ?? targetProfit ?? '' };
+}
+
 async function refreshFiles(groups, getFile) {
   const pending = groups.flat().filter(Boolean);
   let failed = false;
@@ -89,4 +85,4 @@ async function refreshFiles(groups, getFile) {
   return failed;
 }
 
-module.exports = { keyFor, snapshot, restoredValues, refreshFiles };
+module.exports = { keyFor, snapshot, restoredValues, restoredForm, refreshFiles };

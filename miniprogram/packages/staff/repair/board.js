@@ -2,18 +2,18 @@ const { createPage } = require("../../../utils/page");
 const api = require("../../../api/index");
 const { PERM } = require("../../../constants/roles");
 const { can } = require("../../../utils/permission");
-const { REPAIR_STATUS, REPAIR_FLOW } = require("../../../constants/status");
+const { REPAIR_STATUS } = require("../../../constants/status");
 const { ROUTES } = require("../../../utils/router");
 createPage({
   requireStaff: true,
   permission: [PERM.REPAIR_HANDLE, PERM.REPAIR_CASH, PERM.REPAIR_QUOTE],
   data: {
-    columns: [...REPAIR_FLOW, "cancelled"].map((key) => ({
+    columns: ["repairing", "completed", "cancelled"].map((key) => ({
       key,
       label: REPAIR_STATUS[key].label,
       list: [],
     })),
-    activeKey: "pending_check",
+    activeKey: "repairing",
     stats: null,
     loading: false,
     error: "",
@@ -32,11 +32,9 @@ createPage({
     this.setData({
       overdue: query.overdue === "true",
       waitingParts: query.waitingParts === "true",
-      activeKey: REPAIR_STATUS[query.status] ? query.status : "pending_check",
+      activeKey: REPAIR_STATUS[query.status] ? query.status : "repairing",
       canCreate: can(this.data.user, PERM.REPAIR_HANDLE),
-      canParts: [PERM.REPAIR_HANDLE, PERM.REPAIR_CASH, PERM.PARTS_MANAGE].some(
-        (p) => can(this.data.user, p),
-      ),
+      canParts: false,
     });
     return api.repair
       .options()
@@ -103,8 +101,8 @@ createPage({
         columns: this.data.columns.map((c) => ({
           ...c,
           list: reset
-            ? board.columns[c.key] || []
-            : c.list.concat(board.columns[c.key] || []),
+            ? c.key === 'repairing' ? Object.entries(board.columns).filter(([key]) => !['completed','cancelled'].includes(key)).flatMap(([,list]) => list) : board.columns[c.key] || []
+            : c.list.concat(c.key === 'repairing' ? Object.entries(board.columns).filter(([key]) => !['completed','cancelled'].includes(key)).flatMap(([,list]) => list) : board.columns[c.key] || []),
         })),
         page,
         more: board.hasMore,

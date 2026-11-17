@@ -3,6 +3,7 @@ const api = require('../../../api/index');
 const track = require('../../../utils/track');
 const channel = require('../../../utils/channel');
 const { ROUTES } = require('../../../utils/router');
+const { productInfo } = require('../../../utils/product-info');
 const PRICE_LABEL = { retail: '零售价', wholesale: '同行价', agent: '代理分享价' };
 createPage({
   data: {id:'', shareId:'', unit:null, share:null, priceLabel:'', current:0, loading:false, error:'', similar:[]},
@@ -21,7 +22,7 @@ createPage({
       if(this.data.shareId){share=await api.share.resolve(this.data.shareId);unit=this.data.id?share.units.find(u=>u.id===this.data.id):share.units.length===1?share.units[0]:null;if(!unit)throw new Error('请从分享合集选择设备');}
       else {if(!this.data.id)throw new Error('缺少设备编号');unit=await api.shop.unit(this.data.id);}
       if(revision!==this._revision)return;
-      this.setData({unit,id:unit.id,priceLabel:PRICE_LABEL[unit.priceType]||'',share});
+      this.setData({...productInfo(unit),unit,id:unit.id,priceLabel:PRICE_LABEL[unit.priceType]||'',share});
       wx.setNavigationBarTitle({title:unit.name});
       if(!share)this.loadSimilar(unit,revision);
     }catch(e){if(revision===this._revision)this.setData({error:e.message||'商品加载失败'});}

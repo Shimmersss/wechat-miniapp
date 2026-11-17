@@ -9,3 +9,5 @@
 .footer-bar button.icon-action { flex: 0 0 88rpx; width: 88rpx; margin: 0; padding: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 2rpx; font-size: 22rpx; line-height: 1.3; color: var(--c-ink-2); }
 .footer-bar button.icon-action::after { border: 0; }
 .action-icon { width: 44rpx; height: 44rpx; }
+
+.condition-description { white-space: pre-wrap; overflow-wrap: anywhere; }

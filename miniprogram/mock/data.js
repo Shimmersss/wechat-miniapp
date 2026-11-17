@@ -60,12 +60,12 @@ const categories = [
 // 排序与串码方式，与迁移 20261116010000_device_categories.sql 的预置一致
 const CATEGORY_META = {
   phone: { sortOrder: 10, identifierMode: 'imei' },
-  tablet: { sortOrder: 20, identifierMode: 'serial_imei', keys: ['version', 'networkLock', 'storage', 'ram', 'color', 'grade', 'peerGrade', 'activation', 'warrantyUntil', 'idLock', 'repairStatus', 'repairNote', 'refurbishment', 'store', 'system', 'allGreen', 'battery', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'] },
-  audio: { sortOrder: 30, identifierMode: 'serial', keys: ['color', 'grade', 'peerGrade', 'activation', 'repairStatus', 'repairNote', 'refurbishment', 'store', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'],
+  tablet: { sortOrder: 20, identifierMode: 'serial_imei', keys: ['version', 'networkLock', 'storage', 'ram', 'color', 'grade', 'peerGrade', 'activation', 'warrantyUntil', 'idLock', 'repairStatus', 'repairNote', 'store', 'system', 'allGreen', 'battery', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'] },
+  audio: { sortOrder: 30, identifierMode: 'serial', keys: ['color', 'grade', 'peerGrade', 'activation', 'repairStatus', 'repairNote', 'store', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'],
     extra: [{ key: 'kitStatus', label: '配件情况', type: 'select', options: ['配件齐全', '缺少配件', '仅主机'], required: true, visibility: ['customer', 'peer'], filterable: true }] },
   accessory: { sortOrder: 40, identifierMode: 'serial', keys: ['color', 'grade', 'store', 'shopWarranty', 'supplier', 'receipt'],
     extra: [{ key: 'spec', label: '规格（功率、长度、接口等）', type: 'text', required: false, visibility: ['customer', 'peer'], filterable: false }] },
-  other: { sortOrder: 50, identifierMode: 'serial', keys: ['storage', 'color', 'grade', 'peerGrade', 'activation', 'warrantyUntil', 'repairStatus', 'repairNote', 'refurbishment', 'store', 'system', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'],
+  other: { sortOrder: 50, identifierMode: 'serial', keys: ['storage', 'color', 'grade', 'peerGrade', 'activation', 'warrantyUntil', 'repairStatus', 'repairNote', 'store', 'system', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'],
     extra: [{ key: 'spec', label: '配置规格', type: 'text', required: false, visibility: ['customer', 'peer'], filterable: false }] }
 };
 categories.forEach(c => Object.assign(c, { sortOrder: CATEGORY_META[c.value].sortOrder, identifierMode: CATEGORY_META[c.value].identifierMode }));

@@ -54,14 +54,15 @@ const CARRIERS = [
 
 /** 维修看板列（框架文档 6.2） */
 const REPAIR_STATUS = {
-  pending_check: { label: '待检测', tone: 'gray' },
-  checking: { label: '检测中', tone: 'blue' },
-  pending_confirm: { label: '待顾客确认', tone: 'orange' },
+  pending_check: { label: '维修中', tone: 'gray' },
+  checking: { label: '维修中', tone: 'blue' },
+  pending_confirm: { label: '维修中', tone: 'orange' },
   repairing: { label: '维修中', tone: 'blue' },
-  pending_pickup: { label: '待取机', tone: 'gold' },
+  pending_pickup: { label: '维修中', tone: 'gold' },
   completed: { label: '已完成', tone: 'green' },
   cancelled: { label: '已取消', tone: 'gray' }
 };
+// 旧服务器仍使用完整状态值校验；前端看板自行合并所有未结束状态。
 const REPAIR_FLOW = Object.keys(REPAIR_STATUS).filter(k=>k!=='cancelled');
 
 const LOAN_TYPE = {
@@ -156,7 +157,8 @@ const NO_SERIAL_REASONS = ['配件无序列号', '标签磨损无法辨认', '�
 const QUANTITY_LIMIT = 100;
 
 /** 顾客端搜索的成色选项，与默认手机模板“成色”下拉一致；按模板公开取值精确匹配。“未激活”已拆到独立的激活状态字段 */
-const GRADE_OPTIONS = ['准新', '99新', '98新', '97新', '95新', '9成新'];
+// 自定义成色按原字符串展示，不加入固定顾客筛选选项。
+const GRADE_OPTIONS = ['准新', '99新', '98新', '97新', '95新', '9成新', '8成新'];
 
 /** 盘点只能选实物在店内的状态；在途、已售、出借中、已归还的设备不应出现在应盘清单 */
 const STOCKTAKE_SCOPE = ['pending_acceptance', 'accepting', 'abnormal', 'in_stock', 'locked', 'recheck', 'repairing', 'borrowed_in'];

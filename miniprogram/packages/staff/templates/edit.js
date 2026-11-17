@@ -40,7 +40,7 @@ createPage({
     const { editor, editIndex, detail } = this.data;
     const field = { key: editor.key.trim(), label: editor.label.trim(), type: editor.type, required: editor.required, filterable: editor.filterable, visibility: editor.visibility, default: editor.default };
     if (field.type === 'number') { if (editor.min !== undefined && editor.min !== '') field.min = Number(editor.min); if (editor.max !== undefined && editor.max !== '') field.max = Number(editor.max); }
-    if (field.type === 'select') field.options = editor.optionsText.split('\n').map(v => v.trim()).filter(Boolean);
+    if (field.type === 'select') { field.options = editor.optionsText.split('\n').map(v => v.trim()).filter(Boolean); field.allowCustom = !!editor.allowCustom; }
     if (field.type === 'number' && field.default !== '') field.default = Number(field.default);
     const fields = detail.fields.slice();
     if (editIndex < 0) fields.push(field); else fields[editIndex] = field;

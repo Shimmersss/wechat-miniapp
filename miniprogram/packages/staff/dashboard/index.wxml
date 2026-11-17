@@ -10,7 +10,7 @@
       </view>
     </view>
     <view class="hero-greet">{{greeting}}，{{displayName}}</view>
-    <view class="hero-sub">{{dateText}}<text wx:if="{{stats}}"> · {{todoTotal ? '有 ' + todoTotal + ' 类事项待处理' : '暂无待处理事项'}}</text></view>
+    <view class="hero-sub">{{dateText}}<text wx:if="{{stats}}"> · {{todoKinds ? '有 ' + todoKinds + ' 类事项待处理' : '暂无待处理事项'}}</text></view>
   </view>
 
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
@@ -45,7 +45,7 @@
       </view>
     </section-card>
 
-    <section-card wx:if="{{stats}}" title="待处理" subtitle="{{todoTotal ? todoTotal + ' 类' : ''}}">
+    <section-card wx:if="{{stats}}" title="待处理" subtitle="{{todoKinds ? todoKinds + ' 类' : ''}}">
       <view wx:for="{{todos}}" wx:key="key" class="todo" hover-class="todo-press" bindtap="onNavigate" data-url="{{item.url}}">
         <image class="todo-icon" src="/packages/staff/dashboard/tools/{{item.tool}}.svg" />
         <text class="todo-text">{{item.text}}</text>

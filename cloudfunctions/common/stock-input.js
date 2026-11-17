@@ -76,6 +76,7 @@ function prepare(action, input, params, user) {
     d.items.forEach(x=>choice(x.result,['pass','fail'],'验收结论'));
   }
   if(action==='acceptance.resolve') choice(d.action,['return','dispute','reinspect'],'异常处理方式');
+  if (action === 'pricing.suggest') { d.cost = money(d.cost); for (const k of ['targetProfit','retailProfit','wholesaleProfit','agentProfit']) if (d[k] !== undefined) d[k] = money(d[k]); }
   if(action==='inbound.batch') rows(d.units,'入库设备');
   if(action==='inbound.single' || action==='inbound.batch') {
     const common=action==='inbound.single'?d:object(d.common||{},'公共参数');

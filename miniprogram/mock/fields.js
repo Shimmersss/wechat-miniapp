@@ -13,14 +13,13 @@ function fields() {
     select('storage', '存储容量', ['64G', '128G', '256G', '512G', '1T', '2T'], true),
     select('ram', '运行内存', RAM_OPTIONS.slice()),
     select('color', '机身颜色', ['黑色', '白色', '银色', '金色', '蓝色', '紫色', '绿色', '红色', '粉色', '橙色', '其他'], true),
-    select('grade', '成色', ['准新', '99新', '98新', '97新', '95新', '9成新'], true),
+    { ...select('grade', '成色', ['准新', '99新', '98新', '97新', '95新', '9成新', '8成新'], true), allowCustom: true },
     select('peerGrade', '同行标准', ['L1-靓机', 'L2-小花靓', 'Y1-小花', 'Y2-南宁花'], false, ['peer']),
     select('activation', '激活状态', ['未激活', '已激活'], true),
     text('warrantyUntil', '官方保修到期（无则不填）', 'date'),
     select('idLock', 'ID 锁', ['已退出（无锁）', '有锁'], true),
     select('repairStatus', '拆修情况', ['无拆修', '有拆修'], true),
     text('repairNote', '拆修说明（换过的部件、非原装件）'),
-    { ...select('refurbishment', '是否整备', ['无需整备', '正在整备', '整备完成'], true, ['internal']), default: '无需整备' },
     text('store', '所属门店', 'text', false, ['internal']),
     text('system', '系统版本'),
     select('allGreen', '是否全绿', ['爱思全绿', '沙漏全绿', '未检测', '检测异常']),
@@ -28,7 +27,7 @@ function fields() {
     { ...text('shopWarranty', '店保期限（天）', 'number'), min: 0 },
     select('warrantyLength', '保修时长', ['无', '30天', '90天', '180天', '365天']),
     text('supplier', '供应商', 'ref', true, ['internal']),
-    text('receipt', '收货凭证', 'image', true, ['internal'])
+    text('receipt', '收货凭证', 'image', false, ['internal'])
   ];
 }
 

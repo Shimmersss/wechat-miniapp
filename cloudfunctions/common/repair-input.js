@@ -5,7 +5,7 @@ const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Obje
 const uuid=v=>{const s=text(v,'记录标识',36);if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(s))fail(400,'记录标识无效');return s;};
 function date(v){const s=text(v,'日期',10);if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||!Number.isFinite(Date.parse(s))||new Date(s).toISOString().slice(0,10)!==s)fail(400,'日期格式无效');return s;}
 function photos(v){if(v===undefined)return [];if(!Array.isArray(v)||v.length>9)fail(400,'每组附件最多9张');const ids=v.map(f=>uuid(f?.fileId));if(new Set(ids).size!==ids.length)fail(400,'附件重复');return ids.map(fileId=>({fileId}));}
-const keys={create:['requestKey','kind','unitId','model','identifier','customer','phone','fault','engineerId','expectedAt','photos'],update:['customer','phone','fault','engineerId','expectedAt','diagnosis','waitingParts','photos'],quote:['amount'],confirm:['quoteVersion','confirmed'],issue:['partId','quantity'],return_parts:['issueId','quantity'],payment:['kind','amount','method','confirmed','proof'],transition:['to','result','pickupName','pickupProof','warrantyDays']};
+const keys={close:['amount','cost','method','confirmed','proof','note'],create:['requestKey','kind','unitId','model','identifier','customer','phone','fault','engineerId','expectedAt','photos'],update:['customer','phone','fault','engineerId','expectedAt','diagnosis','waitingParts','photos'],quote:['amount'],confirm:['quoteVersion','confirmed'],issue:['partId','quantity'],return_parts:['issueId','quantity'],payment:['kind','amount','method','confirmed','proof'],transition:['to','result','pickupName','pickupProof','warrantyDays']};
 function prepare(action,input,id,user){
  if(!input||typeof input!=='object'||Array.isArray(input))fail(400,'提交参数无效');const d={...input};if(id)uuid(id);
  if(keys[action]){
@@ -14,7 +14,7 @@ function prepare(action,input,id,user){
   if(action!=='create'){d.version=integer(d.version,'版本',1,2147483647);d.reason=text(d.reason,'处理说明',500);}
  }
  if(['list','board','parts.list','parts.ledger'].includes(action)){d.page=integer(d.page||1,'页码',1,1000000);d.pageSize=action==='board'?200:integer(d.pageSize||20,'每页数量',1,1000);d.offset=(d.page-1)*d.pageSize;if(d.keyword)d.keyword=text(d.keyword,'搜索',100);}
- if(['list','board'].includes(action)&&d.status&&!['pending_check','checking','pending_confirm','repairing','pending_pickup','completed','cancelled'].includes(d.status))fail(400,'维修状态无效');
+ if(['list','board'].includes(action)&&d.status&&!['active','pending_check','checking','pending_confirm','repairing','pending_pickup','completed','cancelled'].includes(d.status))fail(400,'维修状态无效');
  if(d.engineerId)d.engineerId=uuid(d.engineerId);
  if(action==='create'){
   d.kind=d.kind||'external';if(!['external','inventory'].includes(d.kind))fail(400,'维修来源无效');d.fault=text(d.fault,'故障',2000);
@@ -29,7 +29,12 @@ function prepare(action,input,id,user){
  if(['issue','return_parts','parts.receive'].includes(action))d.quantity=integer(d.quantity,'数量',1,1000000);
  if(action==='issue')d.partId=uuid(d.partId);if(action==='return_parts')d.issueId=uuid(d.issueId);
  if(action==='confirm'){if(d.quoteVersion!==undefined&&typeof d.quoteVersion!=='number')fail(409,'请核对当前报价版本');}
- if(action==='payment')d.proof=photos(d.proof);
+ if(action==='close') {
+  d.amount=money(d.amount); if(d.cost!==undefined){if(!user.visibleFields?.includes('cost'))fail(403,'无权登记维修成本');d.cost=money(d.cost);}
+  d.note=text(d.note,'维修说明',2000,true);
+  if(d.confirmed!==true||!['微信','支付宝','现金','银行卡','其他'].includes(d.method))fail(400,'请确认收款方式和实际收款');
+ }
+ if(['payment','close'].includes(action))d.proof=photos(d.proof);
  if(action==='transition')d.pickupProof=photos(d.pickupProof);
  if(action==='transition'&&d.to==='completed')d.warrantyDays=integer(d.warrantyDays,'维修质保天数',0,3650);
  if(action==='parts.create'){d.sku=text(d.sku,'配件SKU',80);d.name=text(d.name,'配件名称',120);d.unit=text(d.unit||'件','计量单位',20);}
