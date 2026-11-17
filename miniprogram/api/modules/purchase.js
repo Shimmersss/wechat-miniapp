@@ -5,7 +5,7 @@ module.exports = {
   /** { status?, keyword?（单号/运单）, supplierId?, page?, pageSize? } → { list, total, page, pageSize, summary } */
   list: (params) => http.get('/purchase-orders', params),
   detail: (id) => http.get(`/purchase-orders/${id}`),
-  /** { supplierId, expectedAt, freight?, remark?, lines:[{modelId,quantity,unitCost,attributes?:{storage,color,version}}] } → 采购单；总额由服务端计算 */
+  /** { supplierId, expectedAt, freight?, remark?, lines:[{modelId,quantity,unitCost,attributes?:{storage,ram,color,version}}] } → 采购单；总额由服务端计算 */
   create: (data) => http.post('/purchase-orders', data, { loading: true }),
   update: (id, data) => http.put(`/purchase-orders/${id}`, data, { loading: true }),
   /** 绑定运单 { carrier:'SF'|'JD'|'OTHER', trackingNo } → { id } */

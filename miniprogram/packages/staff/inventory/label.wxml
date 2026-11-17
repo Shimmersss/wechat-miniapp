@@ -1,10 +1,11 @@
+<wxs src="../../../utils/filters.wxs" module="f" />
 <theme-shell>
 <view class="container">
   <view class="card label">
     <view class="h3">{{brand.name}}</view>
     <view class="qr">二维码</view>
-    <view class="h3">{{label.name}} {{label.storage}}</view>
-    <view class="tiny muted">{{label.grade}} · 零售 ¥{{label.retail}} · {{label.imeiMasked}}</view>
+    <view class="h3">{{label.name}} {{label.storage}}<text wx:if="{{label.ram}}"> · 运行内存 {{label.ram}}</text></view>
+    <view class="tiny muted">{{label.grade}} · 零售 ¥{{label.retail}} · {{f.code(label)}}</view>
     <view class="tiny muted">编号 {{label.unitId}}</view>
   </view>
   <todo-block items="{{['标签模板：型号 / 存储 / 成色 / 零售价 / 二维码', '蓝牙打印机连接与指令', '批量打印']}}" />

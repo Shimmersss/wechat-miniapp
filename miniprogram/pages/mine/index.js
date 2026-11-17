@@ -82,6 +82,6 @@ createPage({
   },
 
   onLogout() {
-    auth.logout().then(() => auth.silentLogin()).then(() => this.refresh());
+    auth.logout().then(() => this.refresh());
   }
 });

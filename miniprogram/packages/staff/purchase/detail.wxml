@@ -14,7 +14,7 @@
     </section-card>
     <section-card title="采购明细">
       <view wx:for="{{detail.lines}}" wx:key="id" class="mb">
-        <view class="h3">{{item.modelName}}</view><view class="small muted mt-sm">{{item.attributes.version || '版本不限'}} / {{item.attributes.storage || '容量不限'}} / {{item.attributes.color || '颜色不限'}}</view>
+        <view class="h3">{{item.modelName}}</view><view class="small muted mt-sm">{{item.attributes.version || '版本不限'}} / {{item.attributes.storage || '容量不限'}}<text wx:if="{{item.attributes.ram}}"> / 运行内存 {{item.attributes.ram}}</text> / {{item.attributes.color || '颜色不限'}}</view>
         <view class="small mt-sm">采购 {{item.quantity}} · 已收 {{item.received}} · 通过 {{item.accepted}} · 异常 {{item.rejected}} · 待验 {{item.remaining}}</view><view class="tiny muted mt-sm">单价 {{item.unitCost !== undefined ? '¥' + f.maskMoney(item.unitCost, privacy) : '无权限查看'}}</view>
       </view>
     </section-card>
@@ -34,7 +34,7 @@
     <section-card wx:if="{{detail.exceptions.length}}" title="验收异常">
       <view wx:for="{{detail.exceptions}}" wx:key="id" class="mb">
         <view class="row"><text class="h3">{{item.modelName}}</text><status-pill text="{{resolutions[item.resolution]}}" tone="{{item.resolution === 'none' || item.resolution === 'dispute' ? 'red' : 'gray'}}" /></view>
-        <view class="small mt-sm">{{item.imei1 || item.imeiMasked}}</view><view class="small muted mt-sm">{{item.reason}}</view><view wx:if="{{item.observedModel}}" class="small muted mt-sm">实机型号说明：{{item.observedModel}}</view>
+        <view class="small mt-sm">{{f.code(item, true)}}</view><view class="small muted mt-sm">{{item.reason}}</view><view wx:if="{{item.observedModel}}" class="small muted mt-sm">实机型号说明：{{item.observedModel}}</view>
         <view wx:if="{{canAccept && (item.resolution === 'none' || item.resolution === 'dispute')}}" class="row-start gap-sm mt"><button class="btn btn-line btn-sm" data-id="{{item.id}}" data-action="return" bindtap="onResolve" disabled="{{saving}}">登记退货</button><button class="btn btn-line btn-sm" data-id="{{item.id}}" data-action="dispute" bindtap="onResolve" disabled="{{saving}}">争议</button><button class="btn btn-soft btn-sm" data-id="{{item.id}}" bindtap="onReinspect" disabled="{{saving}}">复验入库</button></view>
       </view>
     </section-card>

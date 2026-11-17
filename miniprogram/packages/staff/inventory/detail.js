@@ -14,6 +14,7 @@ createPage({
     priceLabels: { retail: '零售价', wholesale: '批发价', agentBase: '代理底价' },
     docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检' },
     loanTypeLabels: { loan_out: '出借单', borrow_in: '借入单' }, canLoan: false, canLoanOut: false },
+  onLot() { if (this.data.detail && this.data.detail.lotId) this.$go(ROUTES.INVENTORY, { lotId: this.data.detail.lotId }); },
   onLoad(query) { this.setData({ id: query.id, statusMap: UNIT_STATUS }); return this.load(); },
   onShow() { if (this.loaded && !this.data.mutating && !this.data.priceEditor && !this.data.recheckEditor) this.load(); },
   onUnload() { this.destroyed = true; },

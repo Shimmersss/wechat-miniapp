@@ -15,6 +15,7 @@ const {
   tokenHash,
 } = require("./shared/gateway");
 const { userView, requireUser } = require("./shared/identity");
+const exchangeWechatCode = (code) => require("./shared/wechat-login").exchangeWechatCode(code);
 
 const phonePattern = /^1\d{10}$/;
 const sessionHours = () => Number(process.env.SESSION_HOURS || 12);
@@ -50,6 +51,7 @@ function unwrap(result) {
 }
 
 async function wxLogin(ctx) {
+  if (ctx.transport === "https") ctx.openid = await exchangeWechatCode(ctx.data.code);
   if (!ctx.openid) fail(401, "无法识别微信身份");
   const token = newToken();
   const row = unwrap(
@@ -62,11 +64,35 @@ async function wxLogin(ctx) {
   return { token, user: userView(row) };
 }
 
+async function staffWechatLogin(ctx) {
+  if (process.env.STAFF_WECHAT_ONLY !== "1")
+    fail(503, "员工微信登录暂未启用");
+  const openid = ctx.transport === "https"
+    ? await exchangeWechatCode(ctx.data.code)
+    : ctx.openid;
+  if (!openid) fail(401, "无法识别微信身份");
+  const token = newToken();
+  const row = unwrap(await rpc("api_staff_wechat_login", {
+    p_openid: openid,
+    p_token_hash: hash(token),
+    p_hours: sessionHours(),
+    p_request_id: ctx.requestId,
+  }));
+  return { token, user: userView(row) };
+}
+
+function requireSmsEnabled() {
+  if (process.env.STAFF_WECHAT_ONLY === "1")
+    fail(410, "员工短信验证已关闭，请使用微信登录");
+}
+
 async function smsCaptcha(ctx) {
+  requireSmsEnabled();
   await flow(ctx, "captcha", {});
   return provider.captcha(ctx.openid);
 }
 async function smsCode(ctx) {
+  requireSmsEnabled();
   const phone = text(ctx.data.phone, "手机号", 11);
   if (!phonePattern.test(phone)) fail(400, "手机号格式无效");
   const dev = devOtp(),
@@ -116,11 +142,14 @@ async function smsCode(ctx) {
   return { sent: true, message: "如该手机号已开通员工账号，将收到验证码" };
 }
 async function staffLogin(ctx) {
+  requireSmsEnabled();
   const phone = text(ctx.data.account, "手机号", 11),
     smsCode = text(ctx.data.smsCode, "验证码", 6);
   if (!phonePattern.test(phone) || !/^\d{6}$/.test(smsCode))
     fail(400, "手机号或验证码格式无效");
   if (!ctx.openid) fail(401, "无法识别微信身份");
+  if (ctx.transport === "https" && await exchangeWechatCode(ctx.data.code) !== ctx.openid)
+    fail(401, "微信身份与当前会话不一致，请重新登录");
   const dev = devOtp(),
     kind = dev ? "development" : "cloudbase",
     challenge = await flow(ctx, "begin", { phone, kind });
@@ -160,6 +189,7 @@ async function logout(ctx) {
 
 exports.main = createHandler([
   ["POST", "/auth/wx-login", wxLogin],
+  ["POST", "/auth/staff-wechat-login", staffWechatLogin],
   ["POST", "/auth/sms-code", smsCode],
   ["POST", "/auth/sms-captcha", smsCaptcha],
   ["POST", "/auth/staff-login", staffLogin],

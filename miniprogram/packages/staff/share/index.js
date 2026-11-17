@@ -19,7 +19,7 @@ createPage({
  catch(e){if(revision===this._search)this.setData({error:e.message});}
  finally{if(revision===this._search)this.setData({searching:false});}
  },
- onAdd(e){const id=e.currentTarget.dataset.id,u=this.data.results.find(u=>u.id===id);if(!u||this.data.selected.some(u=>u.id===id))return;if(this.data.selected.length>=50)return this.$toast('每个合集最多50台');this.invalidate({selected:this.data.selected.concat([{id:u.id,name:u.name,storage:u.storage,color:u.color,imeiMasked:u.imeiMasked}])});},
+ onAdd(e){const id=e.currentTarget.dataset.id,u=this.data.results.find(u=>u.id===id);if(!u||this.data.selected.some(u=>u.id===id))return;if(this.data.selected.length>=50)return this.$toast('每个合集最多50台');this.invalidate({selected:this.data.selected.concat([{id:u.id,name:u.name,storage:u.storage,ram:u.ram,color:u.color,imeiMasked:u.imeiMasked}])});},
  onRemove(e){this.invalidate({selected:this.data.selected.filter(u=>u.id!==e.currentTarget.dataset.id)});},
  onAudienceTap(e){this.invalidate({active:e.currentTarget.dataset.value});},
  async createLink(){

@@ -30,7 +30,7 @@
     <view wx:for="{{units}}" wx:key="id" class="unit">
       <image class="thumb" src="{{item.cover}}" mode="aspectFill" />
       <view class="flex-1">
-        <view class="h3 ellipsis">{{item.name}} {{item.storage}}</view>
+        <view class="h3 ellipsis">{{item.name}} {{item.storage}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></view>
         <view class="tiny muted ellipsis">{{item.color}} · {{item.grade}}</view>
         <view class="row mt-sm"><price-tag value="{{item.sharePrice}}" size="sm" /><text class="tiny muted" data-id="{{item.id}}" bindtap="onMarkup">加价 ¥{{item.markup}} ›</text></view>
         <view wx:if="{{item.aboveRetail}}" class="tiny price">高于门店零售价 ¥{{item.retail}}</view>

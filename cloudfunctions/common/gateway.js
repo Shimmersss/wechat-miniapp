@@ -37,13 +37,18 @@ function secret(name) {
   return value;
 }
 
+function dataEnvironment() {
+  const envId = process.env.CLOUDBASE_DATA_ENV_ID || process.env.TCB_ENV || process.env.SCF_NAMESPACE;
+  if (!/^[a-z0-9-]+$/.test(envId || "")) fail(503, "无法识别云开发数据环境");
+  return envId;
+}
+
 // 数据库函数里 RAISE 的自定义错误码 P0xxx → HTTP 状态
 const PG_STATUS = { P0400: 400, P0401: 401, P0403: 403, P0404: 404, P0409: 409, P0410: 410, P0503: 503, P0429: 429 };
 
 /** 调用 PG 存储过程（PostgREST RPC）。API Key 映射 service_role，只在云函数环境变量里。 */
 async function rpc(name, params) {
-  const envId = process.env.TCB_ENV || process.env.SCF_NAMESPACE;
-  if (!envId) fail(503, "无法识别云开发环境");
+  const envId = dataEnvironment();
   const started = Date.now();
   const res = await fetch(
     `https://${envId}.api.tcloudbasegateway.com/v1/rdb/rest/rpc/${name}`,
@@ -76,14 +81,21 @@ function tokenHash(headers) {
   return match ? hash(match[1]) : "";
 }
 
+function httpResponse(result) {
+  return {
+    statusCode: result.code || 200,
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+    body: JSON.stringify(result),
+  };
+}
+
 /**
  * @param {Array<[method, path, handler]>} routes handler(ctx) 返回 data
  * ctx: { openid, data, headers, requestId }
  */
 function createHandler(routes) {
-  return async (event, context) => {
+  async function dispatch(event, context, openid, transport = "wechat") {
     const started = Date.now();
-    const { OPENID } = cloud.getWXContext();
     const method = String(event?.method || "GET").toUpperCase();
     const path = String(event?.path || "");
     let params = {};
@@ -105,7 +117,8 @@ function createHandler(routes) {
     try {
       if (!route) fail(404, `接口尚未迁移到云开发：${method} ${path}`);
       const data = await route[2]({
-        openid: OPENID || "",
+        openid,
+        transport,
         params,
         data: event.data || {},
         headers: event.headers || {},
@@ -123,6 +136,47 @@ function createHandler(routes) {
     } finally {
       console.log(`[api] ${method} ${path} ${Date.now() - started}ms`);
     }
+  }
+
+  return async (event, context) => {
+    if (!event?.httpMethod)
+      return dispatch(event, context, cloud.getWXContext().OPENID || "");
+    if (process.env.XIAMU_HTTP_API !== "1" || event.httpMethod !== "POST")
+      return httpResponse({ code: 405, data: null, message: "请求方式不受支持" });
+
+    let request;
+    try {
+      const body = event.isBase64Encoded
+        ? Buffer.from(event.body, "base64").toString("utf8")
+        : event.body;
+      request = JSON.parse(body);
+      if (!request || typeof request.path !== "string" || typeof request.method !== "string")
+        throw new Error("invalid request");
+    } catch {
+      return httpResponse({ code: 400, data: null, message: "请求格式无效" });
+    }
+
+    // Identity and credentials come from the real HTTP headers, never from the JSON envelope.
+    const headers = {};
+    for (const [name, value] of Object.entries(event.headers || {})) {
+      if (typeof value === "string") headers[name.toLowerCase()] = value;
+    }
+    const freshLogin = request.method.toUpperCase() === "POST" &&
+      (request.path === "/auth/wx-login" || request.path === "/auth/staff-wechat-login");
+    try {
+      const h = freshLogin ? "" : tokenHash(headers);
+      const openid = h ? await rpc("api_http_session_openid", { p_token_hash: h }) : "";
+      if (!freshLogin && headers.authorization && !openid)
+        return httpResponse({ code: 401, data: null, message: "请先登录" });
+      return httpResponse(await dispatch({
+        method: request.method,
+        path: request.path,
+        data: request.data,
+        headers,
+      }, context, openid || "", "https"));
+    } catch {
+      return httpResponse({ code: 503, data: null, message: "会话服务暂不可用" });
+    }
   };
 }
 
@@ -134,6 +188,7 @@ module.exports = {
   newToken,
   text,
   secret,
+  dataEnvironment,
   rpc,
   tokenHash,
   createHandler,

@@ -1,7 +1,7 @@
 /** 与 server/src/loans.js 的输入规则相同；先对原始请求做稳定摘要，再规范化字段。 */
 const {fail,hash}=require('./gateway');
 const {text,integer}=require('./stock-input');
-const {isPhone,isImei}=require('./validate');
+const {isPhone,isImei,serialError}=require('./validate');
 const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 function allowed(d,keys){if(!d||typeof d!=='object'||Array.isArray(d)||Object.keys(d).some(k=>!keys.includes(k)))fail(400,'借还参数无效');}
 function uuid(v){const s=text(v,'记录标识',36);if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(s))fail(400,'记录标识无效');return s;}
@@ -28,8 +28,14 @@ function prepare(action,input,id,user){
   d.photos=photos(d.photos);
   if(d.type==='loan_out'){d.unitIds=rows(d.unitIds,'每单须有1～50台').map(uuid);if(new Set(d.unitIds).size!==d.unitIds.length)fail(400,'设备重复');}
   else{
-   const seen=new Set();d.devices=rows(d.devices,'每单须有1～50台').map(x=>{allowed(x,['modelId','imei1','imei2','condition','description']);const r={modelId:text(x.modelId,'型号',60),imei1:text(x.imei1,'IMEI1',15),imei2:text(x.imei2||'','IMEI2',15,true),condition:x.condition||'used',description:text(x.description||'','设备交接描述',2000,true)};
-    if(!['new','used'].includes(r.condition))fail(400,'设备类型无效');for(const code of [r.imei1,r.imei2].filter(Boolean)){if(!isImei(code)||seen.has(code))fail(400,'借入串码无效或重复');seen.add(code);}return r;});
+   const seen=new Set();d.devices=rows(d.devices,'每单须有1～50台').map(x=>{allowed(x,['modelId','imei1','imei2','serialNo','ram','condition','description']);
+    // 手机登记 IMEI；非手机登记序列号。是否与型号所属分类相符由库内按分类串码方式判断。
+    const serial=x.serialNo!==undefined&&x.serialNo!=='';
+    const r={modelId:text(x.modelId,'型号',60),...(serial?{serialNo:text(x.serialNo,'序列号',40).toUpperCase()}:{imei1:text(x.imei1,'IMEI1',15),imei2:text(x.imei2||'','IMEI2',15,true)}),condition:x.condition||'used',description:text(x.description||'','设备交接描述',2000,true)};
+    if(x.ram!==undefined)r.ram=text(x.ram,'运行内存',30);
+    if(!['new','used'].includes(r.condition))fail(400,'设备类型无效');
+    if(serial){const err=serialError(r.serialNo);if(err)fail(400,err);if(seen.has('SN:'+r.modelId+':'+r.serialNo))fail(400,'借入序列号重复');seen.add('SN:'+r.modelId+':'+r.serialNo);return r;}
+    for(const code of [r.imei1,r.imei2].filter(Boolean)){if(!isImei(code)||seen.has(code))fail(400,'借入串码无效或重复');seen.add(code);}return r;});
   }
  }else{
   d.version=integer(d.version,'版本',1,2147483647);

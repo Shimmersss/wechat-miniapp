@@ -52,6 +52,22 @@ test("云员工维护拒绝伪造绑定/身份字段，变更必须给原因与�
     ),
   );
 });
+test("员工微信绑定接受本人编号和版本，不接受客户端指定角色或 OpenID", () => {
+  const bind = { userId: id, reason: "员工本人确认", version: 1 };
+  assert.deepEqual(prepare("bind", bind, { id }).d, bind);
+  for (const invalid of [
+    { ...bind, openid: "forged" },
+    { ...bind, roleKey: "boss" },
+    { ...bind, userId: "forged" },
+    { ...bind, version: undefined },
+    { ...bind, reason: "" },
+  ])
+    assert.throws(() => prepare("bind", invalid, { id }));
+  assert.equal(
+    prepare("create", { name: "测试员工", roleKey: "sales", reason: "入职" }).d.phone,
+    undefined,
+  );
+});
 test("云角色权限只接受共享白名单并去重排序，老板角色不可编辑", () => {
   const d = {
     reason: "权限核对",

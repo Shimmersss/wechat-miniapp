@@ -36,10 +36,13 @@ function add(method,path,action,permissions) {
 add('GET','/catalog/categories','categories.list',[readModels]);
 add('POST','/catalog/categories','categories.create',[PERM.TEMPLATE_MANAGE]);
 add('PUT','/catalog/categories/:id','categories.update',[PERM.TEMPLATE_MANAGE]);
+add('GET','/models/brands','models.brands',[readModels]);
+add('GET','/models/series','models.series',[PERM.TEMPLATE_MANAGE]);
 add('GET','/models/tree','models.list',[readModels]);
 add('GET','/models/:id/form','models.form',[readTemplate]);
 add('POST','/models','models.create',[PERM.TEMPLATE_MANAGE]);
 add('PUT','/models/:id','models.update',[PERM.TEMPLATE_MANAGE]);
+add('DELETE','/models/:id','models.delete',[PERM.TEMPLATE_MANAGE]);
 add('GET','/templates','templates.list',[PERM.TEMPLATE_MANAGE]);
 add('GET','/templates/:id/versions','templates.versions',[PERM.TEMPLATE_MANAGE]);
 add('POST','/templates/:id/versions','templates.publish',[PERM.TEMPLATE_MANAGE]);
@@ -59,6 +62,7 @@ add('GET','/shipments/:id/tracks','shipment.tracks',[[PERM.PURCHASE_MANAGE,PERM.
 add('POST','/acceptances/:id/resolve','acceptance.resolve',[PERM.ACCEPTANCE]);
 add('POST','/inbound/identify-model','models.identify',[PERM.INBOUND]);
 add('POST','/inbound/check-imei','inbound.check',[[PERM.INBOUND,PERM.ACCEPTANCE]]);
+add('POST','/inbound/check-serial','inbound.checkSerial',[[PERM.INBOUND,PERM.ACCEPTANCE]]);
 add('POST','/inbound/units','inbound.single',[PERM.INBOUND,PERM.ACCEPTANCE]);
 add('POST','/inbound/batch','inbound.batch',[PERM.INBOUND,PERM.ACCEPTANCE]);
 add('POST','/pricing/suggest','pricing.suggest',[PERM.INBOUND]);

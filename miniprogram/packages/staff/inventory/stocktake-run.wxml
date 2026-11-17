@@ -15,7 +15,7 @@
   <view class="row gap-sm mt"><button class="btn btn-line btn-sm flex-1" bindtap="onScan" disabled="{{busy || scanning}}">扫一台</button><button class="btn btn-dark btn-sm flex-1" bindtap="onScanLoop" disabled="{{busy || scanning}}">{{scanning ? '连续扫码中…' : '连续扫码'}}</button></view>
   <view wx:if="{{last}}" class="feedback {{last.tone}} mt">
    <view class="small strong">{{last.message}}</view>
-   <view class="tiny">{{last.name ? last.name + ' · ' + last.imeiMasked : last.code}}</view>
+   <view class="tiny">{{last.name ? last.name + ' · ' + f.code(last) : last.code}}</view>
   </view>
  </view>
  <view class="chips mb"><view wx:for="{{tabs}}" wx:key="value" class="chip {{tab === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onTab">{{item.label}}</view></view>
@@ -25,7 +25,7 @@
    <view wx:for="{{list}}" wx:key="id" class="list-item" data-id="{{item.unitId}}" bindtap="onUnit"><view class="flex-1"><view class="small">{{item.name || item.code}}</view><view class="tiny red">{{item.reason}}</view><view class="tiny muted">{{item.scanner}} · {{item.timeText}}</view></view><text wx:if="{{item.unitId}}">›</text></view>
   </block>
   <block wx:else>
-   <view wx:for="{{list}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onUnit"><view class="flex-1"><view class="small">{{item.name}} {{item.storage || ''}} {{item.color || ''}}</view><view class="tiny muted">{{item.imeiMasked}}{{item.scannedAt ? ' · ' + item.scanner + ' ' + item.timeText : ''}}</view></view><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+   <view wx:for="{{list}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="onUnit"><view class="flex-1"><view class="small">{{item.name}} {{item.storage || ''}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text> {{item.color || ''}}</view><view class="tiny muted">{{f.code(item)}}{{item.scannedAt ? ' · ' + item.scanner + ' ' + item.timeText : ''}}</view></view><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
   </block>
   <button wx:if="{{more && list.length}}" class="btn btn-line btn-block mt" bindtap="onReachBottom" loading="{{listLoading}}">加载更多</button>
  </view>

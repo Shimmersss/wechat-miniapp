@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 从私有云备份实际下载、校验并恢复到隔离PG表/媒体目录；绝不覆盖生产表或原媒体。 */
+require("./lib/verification-guard").guard();
 const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto"),

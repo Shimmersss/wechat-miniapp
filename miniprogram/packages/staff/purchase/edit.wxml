@@ -14,7 +14,7 @@
       <view class="row mb"><text class="h3">采购明细 {{index + 1}}</text><button wx:if="{{lines.length > 1}}" class="btn btn-line btn-sm" data-key="{{item.key}}" bindtap="onRemoveLine" disabled="{{saving || loading}}">删除</button></view>
       <button class="btn btn-soft btn-block mb" data-key="{{item.key}}" bindtap="onChooseModel" disabled="{{saving || loading}}">{{item.modelName || '选择型号'}}</button>
       <template-fields fields="{{item.specFields}}" values="{{item.attributes}}" data-key="{{item.key}}" bindchange="onSpec" disabled="{{saving || loading}}" />
-      <view wx:if="{{item.modelId}}" class="small muted mt-sm">规格：{{item.attributes.version || '版本不限'}} / {{item.attributes.storage || '容量不限'}} / {{item.attributes.color || '颜色不限'}}</view>
+      <view wx:if="{{item.modelId}}" class="small muted mt-sm">规格：{{item.attributes.version || '版本不限'}} / {{item.attributes.storage || '容量不限'}}<text wx:if="{{item.attributes.ram}}"> / 运行内存 {{item.attributes.ram}}</text> / {{item.attributes.color || '颜色不限'}}</view>
       <button wx:if="{{item.modelId}}" class="btn btn-line btn-sm mt-sm" data-key="{{item.key}}" bindtap="onClearSpecs" disabled="{{saving || loading}}">清空规格限制</button>
       <view class="grid-2 mt"><view><view class="field-label required">数量（台）</view><input class="input" type="number" value="{{item.quantity}}" data-key="{{item.key}}" data-field="quantity" bindinput="onLineInput" disabled="{{saving || loading}}" /></view><view><view class="field-label required">单台采购价（元）</view><input class="input" type="digit" value="{{item.unitCost}}" data-key="{{item.key}}" data-field="unitCost" bindinput="onLineInput" disabled="{{saving || loading}}" /></view></view>
     </view>

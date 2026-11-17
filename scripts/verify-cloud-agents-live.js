@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 已部署代理链路 + 真实微信SDK验收。使用忽略目录中的隔离夹具；临时切换测试员工，finally恢复原角色/状态及顾客会话。 */
+require("./lib/verification-guard").guard();
 const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto"),

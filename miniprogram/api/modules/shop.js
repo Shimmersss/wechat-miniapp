@@ -7,28 +7,28 @@ const { http } = require('../../utils/request');
 
 module.exports = {
   /** 首页：banner、当前在售现货数、品牌筛选项 */
-  home: () => http.get('/shop/home'),
+  home: () => http.get('/shop/home', undefined, { optionalSession: true }),
   /**
    * 商品列表 { keyword, brand, category, modelId, condition(used|new), grade, priceMin, priceMax, batteryMin, sort(price_asc|price_desc), page, pageSize } → { list, total }
    * 成色/电池/价格按当前渠道公开可见的取值由服务端筛选；价格为当前渠道价（零售/同行/分享快照）
    */
-  units: (params) => http.get('/shop/units', params),
+  units: (params) => http.get('/shop/units', params, { optionalSession: true }),
   /** 单机详情（一机一档），price 字段已由服务端按身份计算 */
-  unit: (id, shareId) => http.get(`/shop/units/${id}`,undefined,shareId !== undefined?{header:{'X-Channel':shareId}}:undefined),
+  unit: (id, shareId) => http.get(`/shop/units/${id}`, undefined, { optionalSession: true, ...(shareId !== undefined ? { header: { 'X-Channel': shareId } } : {}) }),
   /** 分类树：分类 → 品牌 → 系列 → 型号 */
-  categories: () => http.get('/shop/categories'),
+  categories: () => http.get('/shop/categories', undefined, { optionalSession: true }),
   /** 预约可选时段与北京时间日期范围 → {timeSlots,minDate,maxDate,notice}；提交仍需门店确认 */
-  contactOptions: () => http.get('/shop/contact-options'),
+  contactOptions: () => http.get('/shop/contact-options', undefined, { optionalSession: true }),
   /** {requestKey,unitId?,content,phone,name?} → 本人咨询快照；shareId固定本次来源，重试不更换 */
-  consult: (data, shareId) => http.post('/shop/consults', data, {loading:true,...(shareId !== undefined?{header:{'X-Channel':shareId}}:{})}),
+  consult: (data, shareId) => http.post('/shop/consults', data, {requireSession:true,loading:true,...(shareId !== undefined?{header:{'X-Channel':shareId}}:{})}),
   /** {requestKey,unitId?,content?,phone,name,date,timeSlot} → 本人预约；不锁库存/价格 */
-  appointment: (data, shareId) => http.post('/shop/appointments', data, {loading:true,...(shareId !== undefined?{header:{'X-Channel':shareId}}:{})}),
+  appointment: (data, shareId) => http.post('/shop/appointments', data, {requireSession:true,loading:true,...(shareId !== undefined?{header:{'X-Channel':shareId}}:{})}),
   /** 代理链接下单 {requestKey,unitId,name,phone,content?} + 代理分享 shareId → 本人订单（kind=order，含 agentOrder 锁定到期时间与分享价）；仅代理链接可下单，锁库期间门店确认成交 */
-  order: (data, shareId) => http.post('/shop/orders', data, {loading:true,header:{'X-Channel':shareId}}),
+  order: (data, shareId) => http.post('/shop/orders', data, {requireSession:true,loading:true,header:{'X-Channel':shareId}}),
   /** {kind?,status?,page?,pageSize?} → 本人咨询/预约/下单分页，内部备注不返回 */
-  requests: params => http.get('/shop/requests',params),
+  requests: params => http.get('/shop/requests', params, { requireSession: true }),
   /** id → 本人记录/公开时间线；其他账号404 */
-  request: id => http.get(`/shop/requests/${id}`),
+  request: id => http.get(`/shop/requests/${id}`, undefined, { requireSession: true }),
   /** {requestKey,version,reason} → {id,status,version}；结果未知时原样重试 */
   cancelRequest: (id,data) => http.patch(`/shop/requests/${id}/cancel`,data)
 };

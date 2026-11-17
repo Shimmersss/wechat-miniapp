@@ -11,7 +11,7 @@ const { rpc, tokenHash, fail } = require("./gateway");
 
 function userView(row) {
   const u = row.user;
-  // 只有经过员工短信登录（assurance=staff）的会话才拥有员工身份
+  // 只有通过员工登录且绑定仍在职的会话才拥有员工身份
   const staff = row.assurance === "staff" && row.staff_status === "active";
   const role = staff
     ? row.staff_role

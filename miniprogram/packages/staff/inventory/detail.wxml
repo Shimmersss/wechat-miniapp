@@ -3,7 +3,7 @@
 <view class="container">
  <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm" bindtap="load">重试</button></view>
  <block wx:if="{{detail}}">
-  <view class="card"><view class="h2">{{detail.name}} {{detail.storage}}</view><status-pill text="{{f.label(statusMap,detail.status)}}" tone="{{f.tone(statusMap,detail.status)}}" /><view class="small mt-sm">{{detail.imei1 || detail.imeiMasked}}</view><view wx:if="{{detail.imei2}}" class="small">IMEI2 {{detail.imei2}}</view><view class="small muted">库龄 {{detail.ageDays}} 天 · {{detail.color}} · {{detail.grade}}</view></view>
+  <view class="card"><view class="h2">{{detail.name}} {{detail.storage}}<text wx:if="{{detail.ram}}"> · 运行内存 {{detail.ram}}</text></view><status-pill text="{{f.label(statusMap,detail.status)}}" tone="{{f.tone(statusMap,detail.status)}}" /><view class="small mt-sm">{{f.code(detail, true)}}</view><view wx:if="{{detail.imei2}}" class="small">IMEI2 {{detail.imei2}}</view><view wx:if="{{(detail.imei1 || detail.imeiMasked) && (detail.serialNo || detail.serialMasked)}}" class="small">SN {{detail.serialNo || detail.serialMasked}}</view><view wx:if="{{detail.noSerialReason}}" class="small muted">无序列号：{{detail.noSerialReason}}</view><view wx:if="{{detail.lotId}}" class="small gold" bindtap="onLot">同批按数量入库，查看同批 ›</view><view class="small muted">库龄 {{detail.ageDays}} 天 · {{detail.color}} · {{detail.grade}}</view></view>
   <section-card title="价格与货源">
    <view class="list-item"><text>成本</text><text>{{detail.cost !== undefined ? '¥'+f.maskMoney(detail.cost,privacy) : '无权限查看'}}</text></view>
    <view class="list-item"><text>零售价</text><text>¥{{f.maskMoney(detail.retail,privacy)}}</text></view>

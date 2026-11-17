@@ -16,6 +16,32 @@ function isImei(value) {
   return sum % 10 === 0;
 }
 
+/** 序列号规范化：去首尾空格、转大写 */
+function normalizeSerial(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+/**
+ * 序列号校验，与服务端 stock_serial 一致：4～40 位字母、数字或连字符；
+ * 15 位且通过 IMEI 校验的串视为 IMEI。返回空串表示通过，否则返回提示。
+ */
+function serialError(value) {
+  const s = normalizeSerial(value);
+  if (!/^[A-Z0-9-]{4,40}$/.test(s)) return '序列号需为 4～40 位字母、数字或连字符';
+  if (isImei(s)) return '这是 IMEI，请填写到 IMEI 栏';
+  return '';
+}
+
+function isSerial(value) {
+  return !serialError(value);
+}
+
+/** 无序列号原因：2～100 字 */
+function noSerialReasonError(value) {
+  const s = String(value || '').trim();
+  return s.length >= 2 && s.length <= 100 ? '' : '没有序列号时请填写原因（2～100字）';
+}
+
 function isPhone(value) {
   return /^1\d{10}$/.test(String(value || '').trim());
 }
@@ -36,4 +62,4 @@ function required(form, rules) {
   return miss ? miss[1] : '';
 }
 
-module.exports = { isImei, isPhone, isTrackingNo, required };
+module.exports = { isImei, normalizeSerial, serialError, isSerial, noSerialReasonError, isPhone, isTrackingNo, required };

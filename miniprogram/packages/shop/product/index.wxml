@@ -16,7 +16,7 @@
         <status-pill text="已质检" tone="gold" />
       </view>
       <view class="h1 mt-sm">{{unit.name}}</view>
-      <view class="muted small">{{unit.version}} · {{unit.storage}} · {{unit.color}} · {{unit.grade}}<text wx:if="{{unit.battery !== undefined}}"> · 电池 {{unit.battery}}%</text></view>
+      <view class="muted small">{{unit.version}} · {{unit.storage}}<text wx:if="{{unit.ram}}"> · 运行内存 {{unit.ram}}</text> · {{unit.color}} · {{unit.grade}}<text wx:if="{{unit.battery !== undefined}}"> · 电池 {{unit.battery}}%</text></view>
       <view class="row mt">
         <price-tag value="{{unit.price}}" size="lg" />
         <text class="tiny muted">{{priceLabel}}</text>
@@ -31,7 +31,8 @@
       </view>
       <view class="divider"></view>
       <view class="small muted">{{unit.desc}}</view>
-      <view class="tiny muted mt-sm">串码 {{unit.imeiMasked}} · 完整串码到店核验</view>
+      <view wx:if="{{unit.imeiMasked}}" class="tiny muted mt-sm">串码 {{unit.imeiMasked}} · 完整串码到店核验</view>
+      <view wx:elif="{{unit.serialMasked}}" class="tiny muted mt-sm">序列号 {{unit.serialMasked}} · 完整序列号到店核验</view>
     </section-card>
 
     <section-card wx:if="{{unit.publicFields.length}}" title="单机检测与参数">

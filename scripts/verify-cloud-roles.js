@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 隔离 OPENID + 真实PG/Storage的完整角色业务回归；不是平台身份或短信验收的替代品。 */
+require("./lib/verification-guard").guard();
 const fs = require("node:fs"),
   crypto = require("node:crypto"),
   assert = require("node:assert/strict");

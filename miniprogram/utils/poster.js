@@ -14,7 +14,7 @@ async function draw(page,data,brand){
  if(cover){const scale=Math.max(608/cover.width,480/cover.height),w=cover.width*scale,h=cover.height*scale;ctx.save();ctx.beginPath();ctx.rect(36,124,608,480);ctx.clip();ctx.drawImage(cover,36+(608-w)/2,124+(480-h)/2,w,h);ctx.restore();}
  else{ctx.fillStyle=ink;ctx.font='28px sans-serif';ctx.fillText('查看小程序内设备资料',36,360);}
  ctx.fillStyle=ink;ctx.font='bold 30px sans-serif';const title=data.units.length===1?data.units[0].name:data.title;lines(ctx,title,600,2).forEach((t,i)=>ctx.fillText(t,36,656+i*40));
- ctx.font='22px sans-serif';const u=data.units[0];ctx.fillStyle=muted;ctx.fillText(data.units.length===1?[u.storage,u.color,u.grade].filter(Boolean).join(' · '):data.units.length+'台设备 · 扫码查看完整合集',36,748);
+ ctx.font='22px sans-serif';const u=data.units[0];ctx.fillStyle=muted;ctx.fillText(data.units.length===1?[u.storage,u.ram && '运行内存 ' + u.ram,u.color,u.grade].filter(Boolean).join(' · '):data.units.length+'台设备 · 扫码查看完整合集',36,748);
  if(data.units.length===1){ctx.fillStyle=gold;ctx.font='bold 44px sans-serif';ctx.fillText('¥'+money(data.price),36,822);ctx.font='18px sans-serif';ctx.fillText(data.channel==='peer'?'同行授权价':'顾客零售价',36,856);}
  ctx.fillStyle=ink;ctx.font='22px sans-serif';lines(ctx,data.units.length===1?u.desc:'一机一档 · 价格及可售状态以打开小程序时为准',350,4).forEach((t,i)=>ctx.fillText(t,36,922+i*32));
  ctx.drawImage(code,428,912,216,216);ctx.fillStyle=muted;ctx.font='17px sans-serif';ctx.fillText(data.channel==='peer'?'授权同行扫码查看':'扫码查看最新机况',428,1154);

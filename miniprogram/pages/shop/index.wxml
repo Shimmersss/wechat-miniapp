@@ -1,17 +1,26 @@
 <theme-shell>
 <view class="container has-tabbar home">
   <view class="search-sticky">
-    <view class="search-bar" bindtap="onSearchTap"><image class="search-icon" src="/assets/icons/search-gray.svg" />搜索品牌 / 型号 / 内存</view>
+    <view class="search-bar" bindtap="onSearchTap"><image class="search-icon" src="/assets/icons/search-gray.svg" />搜索品牌 / 型号 / 存储 / 运行内存</view>
   </view>
 
   <view wx:if="{{scoped}}" class="notice">当前查看分享内商品<button class="btn btn-line btn-sm" bindtap="onBrowseAll">浏览全部现货</button></view>
 
-  <view wx:else class="brand-grid">
-    <view wx:for="{{tiles}}" wx:key="key" class="brand-tile {{filters.brand === item.value ? 'active' : ''}}" hover-class="brand-press" data-value="{{item.value}}" bindtap="onBrandTap">
-      <image class="brand-img" src="{{item.image}}" mode="aspectFit" />
-      <text class="brand-name">{{item.label}}</text>
+  <block wx:else>
+    <swiper class="brand-swiper" current="{{tilePage}}" bindchange="onTilePage">
+      <swiper-item wx:for="{{tilePages}}" wx:for-item="pageItem" wx:key="index">
+        <view class="brand-grid">
+          <view wx:for="{{pageItem.tiles}}" wx:key="key" class="brand-tile {{filters.brandKey === item.key ? 'active' : ''}}" hover-class="brand-press" data-key="{{item.key}}" bindtap="onBrandTap">
+            <image class="brand-img" src="{{item.image}}" mode="aspectFit" />
+            <text class="brand-name">{{item.label}}</text>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+    <view wx:if="{{tilePages.length > 1}}" class="brand-dots">
+      <view wx:for="{{tilePages}}" wx:key="index" class="brand-dot {{tilePage === index ? 'on' : ''}}" data-index="{{index}}" bindtap="onTileDot"></view>
     </view>
-  </view>
+  </block>
 
   <view id="filter-anchor"></view>
   <shop-filter id="filter" class="filter-sticky {{filterRaised ? 'raised' : ''}}" value="{{filters}}" bind:change="onFilterChange" bind:overlay="onFilterOverlay" />

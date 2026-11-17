@@ -10,7 +10,7 @@
   <view class="chips">
     <view class="chip {{open === 'grade' || value.grade ? 'on' : ''}}" data-panel="grade" bindtap="onPanel"><text>{{value.grade || '成色'}}</text><view class="caret {{open === 'grade' ? 'flip' : ''}}"></view></view>
     <view class="chip {{open === 'price' || value.priceMin !== '' || value.priceMax !== '' ? 'on' : ''}}" data-panel="price" bindtap="onPanel"><text>价格区间</text><view class="caret {{open === 'price' ? 'flip' : ''}}"></view></view>
-    <view class="chip {{open === 'battery' || value.batteryMin ? 'on' : ''}}" data-panel="battery" bindtap="onPanel"><text>{{value.batteryMin ? value.batteryMin + '%以上' : '电池健康'}}</text><view class="caret {{open === 'battery' ? 'flip' : ''}}"></view></view>
+    <view wx:if="{{showBattery}}" class="chip {{open === 'battery' || value.batteryMin ? 'on' : ''}}" data-panel="battery" bindtap="onPanel"><text>{{value.batteryMin ? value.batteryMin + '%以上' : '电池健康'}}</text><view class="caret {{open === 'battery' ? 'flip' : ''}}"></view></view>
   </view>
 </view>
 
@@ -67,8 +67,8 @@
       <view class="options">
         <view wx:for="{{priceRanges}}" wx:key="label" class="option {{draft.priceMin === item.min && draft.priceMax === item.max ? 'on' : ''}}" data-min="{{item.min}}" data-max="{{item.max}}" bindtap="onPriceRange">{{item.label}}</view>
       </view>
-      <view class="group-title">电池健康</view>
-      <view class="options">
+      <view wx:if="{{showBattery}}" class="group-title">电池健康</view>
+      <view wx:if="{{showBattery}}" class="options">
         <view wx:for="{{batteryOptions}}" wx:key="value" class="option {{draft.batteryMin === item.value ? 'on' : ''}}" data-field="batteryMin" data-value="{{item.value}}" bindtap="onPick">{{item.label}}</view>
       </view>
     </scroll-view>
@@ -100,7 +100,7 @@
             <view wx:for="{{series.models}}" wx:for-item="model" wx:key="name" class="model {{model.id && modelDraft.id === model.id ? 'on' : ''}}" data-id="{{model.id}}" data-name="{{model.name}}" bindtap="onModel">{{model.name}}</view>
           </view>
         </block>
-        <view wx:if="{{!categories[categoryIndex].brands.length}}" class="models-empty">该分类暂无型号</view>
+        <view wx:if="{{!categories[categoryIndex].brands.length}}" class="models-empty">该分类暂无现货</view>
       </scroll-view>
     </view>
     <view class="actions fixed">

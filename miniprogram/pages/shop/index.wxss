@@ -6,13 +6,18 @@
   background: var(--c-bg);
 }
 .home .search-sticky .search-bar { margin: 0; }
-.brand-grid { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 20rpx; padding: 12rpx 0 20rpx; }
+.brand-swiper { height: 404rpx; }
+/* 两行固定高度：每格 10 + 112 + 8 + 约 36 + 10 rpx，行距 20rpx */
+.brand-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, 176rpx); row-gap: 20rpx; padding: 12rpx 0 20rpx; }
 .brand-tile { display: flex; flex-direction: column; align-items: center; gap: 8rpx; padding: 10rpx 0; border-radius: var(--radius); }
 .brand-tile.active { background: var(--c-surface); box-shadow: var(--e1); }
 .brand-press { opacity: 0.7; }
 .brand-img { width: 112rpx; height: 112rpx; }
-.brand-name { font-size: 26rpx; color: var(--c-ink); }
+.brand-name { font-size: 26rpx; color: var(--c-ink); white-space: nowrap; }
 .brand-tile.active .brand-name { font-weight: 700; }
+.brand-dots { display: flex; justify-content: center; gap: 12rpx; padding: 0 0 20rpx; }
+.brand-dot { width: 12rpx; height: 12rpx; border-radius: 6rpx; background: var(--c-muted); opacity: 0.35; transition: width 0.2s; }
+.brand-dot.on { width: 32rpx; background: var(--c-ink); opacity: 1; }
 .filter-sticky { display: block; position: sticky; top: var(--search-h); z-index: 20; margin-bottom: 16rpx; }
 .filter-sticky.raised { z-index: 40; }
 .end { text-align: center; padding: 40rpx 0 10rpx; }

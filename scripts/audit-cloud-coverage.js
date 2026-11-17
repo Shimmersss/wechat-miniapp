@@ -10,6 +10,7 @@ function discover() {
   const http = Object.fromEntries(
     methods.map((m) => [m, (url) => ({ method: m.toUpperCase(), path: url })]),
   );
+  http.del = http.delete;
   const aliases = Object.fromEntries(
     [
       ...fs

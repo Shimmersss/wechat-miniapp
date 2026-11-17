@@ -12,16 +12,27 @@
     </view>
     <view wx:for="{{items}}" wx:key="key" class="card">
       <view class="row"><text class="h3">{{index + 1}}. {{item.modelName}}</text><status-pill text="{{item.result === 'pass' ? '通过' : '异常'}}" tone="{{item.result === 'pass' ? 'green' : 'red'}}" /></view>
-      <view class="small mt-sm">{{item.imei1}}</view><view class="small muted mt-sm">{{item.result === 'pass' ? item.attributes.storage + ' / ' + item.attributes.color : item.remark}}</view>
+      <view class="small mt-sm">{{item.imei1 || (item.noSerial ? '无序列号：' + item.noSerialReason : 'SN ' + item.serialNo)}}</view><view class="small muted mt-sm">{{item.result === 'pass' ? item.attributes.storage + (item.attributes.ram ? ' / 运行内存 ' + item.attributes.ram : '') + ' / ' + item.attributes.color : item.remark}}</view>
       <view class="row-start gap-sm mt"><button class="btn btn-soft btn-sm" data-key="{{item.key}}" bindtap="onEdit" disabled="{{submitting || pending || editor || loading}}">编辑本台</button><button class="btn btn-line btn-sm" data-key="{{item.key}}" bindtap="onRemove" disabled="{{submitting || pending || editor || loading}}">移除</button></view>
     </view>
     <view wx:if="{{editor}}" class="card" id="acceptance-editor">
       <view class="h2 mb">{{exceptionId ? '异常设备复验' : '逐台验收'}} · {{editor.modelName}}</view>
+      <block wx:if="{{editor.identifierMode === 'imei'}}">
       <view class="row gap-sm mb"><input class="input flex-1" type="number" maxlength="15" placeholder="IMEI1（必填）" value="{{editor.imei1}}" data-field="imei1" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" /><button wx:if="{{!exceptionId}}" class="btn btn-soft btn-sm" data-field="imei1" bindtap="onScan" disabled="{{submitting || pending || busy > 0 || uploading}}">扫码</button></view>
       <view class="row gap-sm mb"><input class="input flex-1" type="number" maxlength="15" placeholder="IMEI2（可选）" value="{{editor.imei2}}" data-field="imei2" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" /><button wx:if="{{!exceptionId}}" class="btn btn-line btn-sm" data-field="imei2" bindtap="onScan" disabled="{{submitting || pending || busy > 0 || uploading}}">扫码</button></view>
+      </block>
+      <block wx:else>
+      <view wx:if="{{!editor.noSerial}}" class="row gap-sm mb"><input class="input flex-1" maxlength="40" placeholder="SN 码（推荐填写）" value="{{editor.serialNo}}" data-field="serialNo" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" /><button wx:if="{{!exceptionId}}" class="btn btn-soft btn-sm" data-field="serialNo" bindtap="onScan" disabled="{{submitting || pending || busy > 0 || uploading}}">扫码</button></view>
+      <view class="list-item"><text>没有序列号</text><switch checked="{{editor.noSerial}}" bindchange="onNoSerial" disabled="{{submitting || pending || exceptionId}}" /></view>
+      <view wx:if="{{editor.noSerial}}" class="mb">
+        <view class="chips"><view wx:for="{{reasonPresets}}" wx:key="*this" class="chip {{editor.noSerialReason === item ? 'active' : ''}}" data-value="{{item}}" bindtap="onReasonPreset">{{item}}</view></view>
+        <input class="input mt-sm" maxlength="100" placeholder="无序列号原因（2～100字）" value="{{editor.noSerialReason}}" data-field="noSerialReason" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" />
+      </view>
+      <input wx:if="{{editor.identifierMode === 'serial_imei'}}" class="input mb" type="number" maxlength="15" placeholder="IMEI（选填，蜂窝版填写）" value="{{editor.imei1}}" data-field="imei1" bindinput="onEditorInput" disabled="{{submitting || pending || exceptionId}}" />
+      </block>
       <view wx:if="{{!exceptionId}}" class="chips mb"><view class="chip {{editor.result === 'pass' ? 'active' : ''}}" data-value="pass" bindtap="onResult">验收通过</view><view class="chip {{editor.result === 'fail' ? 'active' : ''}}" data-value="fail" bindtap="onResult">异常，不入库</view></view>
       <block wx:if="{{editor.result === 'pass'}}">
-        <view class="chips mb"><view class="chip {{editor.condition === 'used' ? 'active' : ''}}" data-value="used" bindtap="onCondition">二手机</view><view class="chip {{editor.condition === 'new' ? 'active' : ''}}" data-value="new" bindtap="onCondition">新机</view></view>
+        <view class="chips mb"><view wx:for="{{conditionOptions}}" wx:key="value" class="chip {{editor.condition === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onCondition">{{item.label}}</view></view>
         <template-fields fields="{{fields}}" values="{{editor.attributes}}" bindchange="onAttribute" bindbusy="onFieldBusy" disabled="{{submitting || pending}}" />
         <view class="h3 mt mb">单台定价（元）</view>
         <view class="grid-3"><view><view class="field-label required">零售价</view><input class="input" type="digit" value="{{editor.retail}}" data-field="retail" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view><view><view class="field-label required">批发价</view><input class="input" type="digit" value="{{editor.wholesale}}" data-field="wholesale" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view><view><view class="field-label required">代理底价</view><input class="input" type="digit" value="{{editor.agentBase}}" data-field="agentBase" bindinput="onEditorInput" disabled="{{submitting || pending}}" /></view></view>

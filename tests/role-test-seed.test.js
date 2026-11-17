@@ -15,9 +15,12 @@ test('角色测试预置数据：74 台设备覆盖全部状态，串码有效�
   assert.equal(db.units.length, 74);
   const statuses = new Set(db.units.map(u => u.status));
   Object.keys(UNIT_STATUS).forEach(s => assert.ok(statuses.has(s), `缺少状态 ${s}`));
-  const imeis = db.units.map(u => u.imei1);
+  const imeis = db.units.map(u => u.imei1).filter(Boolean);
   assert.equal(new Set(imeis).size, imeis.length);
-  db.units.filter(u => u.id.startsWith('t')).forEach(u => assert.ok(isImei(u.imei1), u.id));
+  // 手机、平板有 IMEI；其他非手机设备只登记序列号
+  db.units.filter(u => u.id.startsWith('t')).forEach(u => assert.ok(u.imei1 ? isImei(u.imei1) : /^SEED\d{6}$/.test(u.serialNo), u.id));
+  const serials = db.units.map(u => u.serialNo).filter(Boolean);
+  assert.equal(new Set(serials).size, serials.length);
   for (let n = 1001; n <= 1012; n += 1) {
     assert.ok(isImei(imeiOf(n)));
     assert.ok(!imeis.includes(imeiOf(n)), '备用串码不能被占用');

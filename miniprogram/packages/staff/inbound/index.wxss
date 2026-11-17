@@ -16,3 +16,7 @@
 .media-actions button { margin: 0; flex: 1; padding: 0; font-size: 22rpx; line-height: 48rpx; color: var(--c-ink-2); background: var(--c-surface-soft); }
 .media-actions button::after { border: none; }
 .overrides { background: var(--c-surface-soft); padding: 0 16rpx; border-radius: var(--radius-sm); }
+
+/* 非手机：无序列号原因 */
+.reason-box { padding: 8rpx 0 4rpx; }
+.reason-box .chips { flex-wrap: wrap; }

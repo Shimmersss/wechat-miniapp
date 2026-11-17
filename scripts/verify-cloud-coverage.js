@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 路由/页面静态核对 + 已部署公开分类的真实微信/PG验证。 */
+require("./lib/verification-guard").guard();
 const assert = require("node:assert/strict");
 const { discover } = require("./audit-cloud-coverage");
 const {

@@ -1,7 +1,7 @@
 /** 只在服务端使用的 PG Storage API；路径来自数据库，不接收客户端 URL。 */
-const {fail,secret}=require('./gateway');
+const {fail,secret,dataEnvironment}=require('./gateway');
 const MAX_BYTES=32*1024*1024;
-function origin(){const id=process.env.TCB_ENV||process.env.SCF_NAMESPACE;if(!id)fail(503,'无法识别云环境');return `https://${id}.api.tcloudbasegateway.com`;}
+function origin(){return `https://${dataEnvironment()}.api.tcloudbasegateway.com`;}
 function objectPath(bucket,key){return `${encodeURIComponent(bucket)}/${key.split('/').map(encodeURIComponent).join('/')}`;}
 async function request(path,{method='GET',body,headers={}}={}){
  return fetch(origin()+'/v1/storages/'+path,{method,body,headers:{Authorization:`Bearer ${secret('CLOUDBASE_API_KEY')}`,...headers},signal:AbortSignal.timeout(Number(process.env.STORAGE_TIMEOUT_MS)||12000)});

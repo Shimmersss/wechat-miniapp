@@ -122,14 +122,38 @@ const PRICE_TYPE = {
 const DEVICE_CATEGORY = [
   { value: 'phone', label: '手机' },
   { value: 'tablet', label: '平板' },
-  { value: 'laptop', label: '笔记本' },
-  { value: 'wearable', label: '穿戴设备' }
+  { value: 'audio', label: '耳机耳麦' },
+  { value: 'accessory', label: '配件' },
+  { value: 'other', label: '其他设备' }
 ];
 
 const CONDITION_TYPE = [
   { value: 'used', label: '二手机' },
   { value: 'new', label: '新机' }
 ];
+
+/** 非手机分类的新旧文案；值不变 */
+const CONDITION_TYPE_DEVICE = [
+  { value: 'used', label: '二手' },
+  { value: 'new', label: '全新' }
+];
+
+/**
+ * 分类的串码方式（categories.identifier_mode）：
+ * imei 手机，IMEI1 必填；serial 非手机，推荐填序列号，没有时说明原因；
+ * serial_imei 非手机，另可选填 IMEI（蜂窝版平板）。
+ */
+const IDENTIFIER_MODES = [
+  { value: 'imei', label: '手机（IMEI）' },
+  { value: 'serial', label: '序列号' },
+  { value: 'serial_imei', label: '序列号 + 选填 IMEI' }
+];
+
+/** 没有序列号时的快捷原因；选“其他”需手写 */
+const NO_SERIAL_REASONS = ['配件无序列号', '标签磨损无法辨认', '散件无包装', '其他'];
+
+/** 按数量入库上限，与批量入库一致 */
+const QUANTITY_LIMIT = 100;
 
 /** 顾客端搜索的成色选项，与默认手机模板“成色”下拉一致；按模板公开取值精确匹配。“未激活”已拆到独立的激活状态字段 */
 const GRADE_OPTIONS = ['准新', '99新', '98新', '97新', '95新', '9成新'];
@@ -162,6 +186,10 @@ module.exports = {
   PRICE_TYPE,
   DEVICE_CATEGORY,
   CONDITION_TYPE,
+  CONDITION_TYPE_DEVICE,
+  IDENTIFIER_MODES,
+  NO_SERIAL_REASONS,
+  QUANTITY_LIMIT,
   GRADE_OPTIONS,
   STOCKTAKE_SCOPE,
   STOCKTAKE_DEFAULT_SCOPE,

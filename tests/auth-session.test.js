@@ -30,3 +30,43 @@ test('旧退出请求不能清空新登录；过期事件清除缓存与全局�
   assert.equal(storage.get('user').role, 'boss');
   callbacks['auth:expired']();assert.equal(storage.get('user'), undefined);assert.equal(app.globalData.user, null);
 });
+
+test('公开商品请求接受匿名访问并在旧会话失效时保留渠道重试', async () => {
+  const storage = new Map([['visitor', 'guest-1']]);
+  const sent = [], emitted = [];
+  const context = {
+    module: { exports: {} },
+    require(name) {
+      if (name === '../config/index') return {
+        useCloud: true, cloudHttpBaseUrl: 'https://shop.example.com',
+        storageKeys: { token: 'token', visitorId: 'visitor' }
+      };
+      if (name === './channel') return { getHeaderValue: () => 'share-1' };
+      if (name === './events') return { emit: name => emitted.push(name) };
+      throw new Error(name);
+    },
+    wx: {
+      getStorageSync: key => storage.get(key),
+      removeStorageSync: key => storage.delete(key),
+      showToast: () => assert.fail('公开浏览不应提示登录'),
+      request(options) {
+        const { header } = options;
+        sent.push({ ...header });
+        options.success({ data: header.Authorization === 'Bearer expired'
+          ? { code: 401, message: '请先登录' }
+          : { code: 0, data: header.Authorization ? 'wholesale' : 'retail' } });
+      }
+    }
+  };
+  vm.runInNewContext(fs.readFileSync(require.resolve('../miniprogram/utils/request'), 'utf8'), context);
+  const browse = () => context.module.exports.http.get('/shop/units', {}, { optionalSession: true });
+  assert.equal(await browse(), 'retail');
+  storage.set('token', 'expired');
+  assert.equal(await browse(), 'retail');
+  assert.deepEqual(emitted, ['auth:expired']);
+  assert.equal(storage.has('token'), false);
+  assert.deepEqual(sent.map(header => header.Authorization), [undefined, 'Bearer expired', undefined]);
+  assert.ok(sent.every(header => header['X-Channel'] === 'share-1' && header['X-Visitor-Id'] === 'guest-1'));
+  storage.set('token', 'valid');
+  assert.equal(await browse(), 'wholesale');
+});

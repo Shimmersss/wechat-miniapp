@@ -1,4 +1,5 @@
 const { PERM, SENSITIVE_FIELDS } = require('../constants/roles');
+const { applySpecs, validateValues } = require('../utils/template');
 const { isImei } = require('../utils/validate');
 module.exports = function purchase(db, { fail, requirePermission, clone, paginate, currentRole, getTemplate, prepareUnit, commitUnits, validateFiles }) {
   let sequence = 0;
@@ -60,6 +61,14 @@ module.exports = function purchase(db, { fail, requirePermission, clone, paginat
       if (total > 99999999999999) fail(400, '采购金额超出范围');
       const attributes = {};
       for (const key of ['storage', 'color', 'version']) if (row.attributes && row.attributes[key]) { if (typeof row.attributes[key] !== 'string' || row.attributes[key].length > 100) fail(400, '采购规格无效'); attributes[key] = row.attributes[key]; }
+      const ram = row.attributes?.ram;
+      if (ram !== undefined && ram !== null && ram !== '') {
+        const field = applySpecs(getTemplate(model.templateId).fields, model.specs).find(f => f.key === 'ram');
+        if (!field) fail(400, '该型号未配置运行内存字段');
+        const error = validateValues([field], { ram });
+        if (error) fail(400, error);
+        attributes.ram = ram;
+      }
       return { id: makeId('line'), modelId: model.id, modelName: model.name, templateId: model.templateId, attributes, quantity, unitCost: cost / 100, received: 0, accepted: 0, rejected: 0 };
     });
     if (qty > 10000) fail(400, '采购数量超出范围');

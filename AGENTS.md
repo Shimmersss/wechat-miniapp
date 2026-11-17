@@ -15,7 +15,7 @@
 2. **AppID 不进版本库**：`project.config.json` 固定为占位 `touristappid`，真实 AppID 写在已忽略的 `project.private.config.json`（开发者工具优先读它）。
    本机设置：`./scripts/appid.sh wx…`（用自己微信有开发者权限的那个），`./scripts/appid.sh` 查看，`./scripts/appid.sh clear` 去掉。
    不要把真实 AppID 写进任何被跟踪的文件，`tests/appid.test.js` 会拦截。
-3. **开发版默认连测试服务器**（`miniprogram/config/index.js` 的 `develop`：`useMock: false`），靠开发者工具 `urlCheck: false` 放行 HTTP + IP。员工用手机号和验证码登录；未配置 `WX_APP_SECRET` 时，顾客、同行、代理的微信静默登录不可用。
+3. **开发版默认连云开发**（`miniprogram/config/index.js` 的 `develop`：`useMock: false`，`useCloud: true`）。新 AppID 的个人版环境启用员工微信登录，须由管理员预先绑定在职员工。旧测试服务器仍保留短信登录。个人版环境走 HTTPS 网关时，云函数需配置 `WX_APP_ID` 和 `WX_APP_SECRET` 验证微信登录凭证。
 4. 需要本地 mock 时，把 `develop` 的 `useMock` 改为 `true` 后重新编译，**不要提交这项改动**。mock 模式下才有“我的 → 开发调试”：切换模拟身份、加载测试设备（`docs/role-tests`）；员工登录页也可选择模拟角色。
 5. 本机需要 `project.config.json` 的 `watchOptions.ignore` 排除 `.local/`、`server/node_modules/`、`.git/`：桌面程序占满了 inotify 额度，不排除会卡在初始化文件监听。
 
@@ -34,8 +34,9 @@
 
 - 2026-11-09 定案：后端迁到 CloudBase 国内站，路线为“云函数 + PostgreSQL 共享实例”，方案见 `docs/WECHAT-CLOUDBASE-MIGRATION.md`。环境 ID、AppID、API Key 仅放本机忽略的 `docs/HANDOFF-*.md`。
 - 共享 PG 不能 TCP 直连，只能经网关；小程序不直连 PG，所有读写经云函数，多表事务写成 PG 存储过程。
-- PG 迁移放 `cloudbase/migrations/<14位版本>_<名称>.sql`；云函数放 `cloudfunctions/<名称>/`，共享代码改 `cloudfunctions/common/`（`shared/` 是生成产物，不要手改）；部署用 `node scripts/deploy-cloudfunctions.js`。开发版 `useCloud: true` 时请求走云函数，未迁移的路径会明确报错。
+- PG 迁移放 `cloudbase/migrations/<14位版本>_<名称>.sql`；云函数放 `cloudfunctions/<名称>/`，共享代码改 `cloudfunctions/common/`（`shared/` 是生成产物，不要手改）；部署用 `node scripts/deploy-cloudfunctions.js --env-id <环境ID> [函数名...]`。目标环境必须与本机私有函数配置中的 `CLOUDBASE_ENV_ID` 一致。开发版 `useCloud: true` 时请求走云函数，未迁移的路径会明确报错。
 - 云托管（容器）方案已放弃，不要再加 Dockerfile 或容器部署。迁移完成前现有 `server/` 继续服务旧测试服务器。
+- `scripts/verify-cloud-*.js` 会在目标库留下验证分类和设备，开头的 `scripts/lib/verification-guard.js` 会拒绝对正式环境（本机私有配置 `NODE_ENV=production` 的环境）运行。已留下的验证数据用 `scripts/cleanup-verification-data.js` 清理：先预览、核对后再 `--apply`，不可恢复。
 
 ## 测试服务器
 
@@ -76,7 +77,7 @@ miniprogram/
   assets/icons/                  多彩 SVG 图标（深色 / -gray / -white / -light 等变体）
   pages/                         主包：顾客端 tabBar 四页 + 员工登录
   components/shop-filter         首页排序筛选栏（下拉面板、型号弹层、筛选抽屉）
-  assets/brands/<key>.png        首页品牌配图，替换同名文件即可，说明见 constants/shop-brands.js
+  assets/brands/<key>.png        首页入口配图（16 个，左右滑动两页），替换同名文件即可，说明见 constants/shop-brands.js
   packages/shop                  顾客端分包：搜索、单机详情、咨询预约、分享海报
   packages/agent                 代理端分包：申请、代理中心、加价、订单、收益明细、邀请
   packages/staff                 员工经营端分包：工作台、采购/验收、入库、模板、库存、收银、销售、
@@ -96,6 +97,7 @@ miniprogram/
 - 每个页面里的 `<todo-block items="...">` 列出了该页待实现功能；**做完一项就从列表删掉，全部完成后删除该组件**。JS 里的 `TODO(codex):` 同理。
 
 ### 数据与接口
+- 分类有串码方式 `identifierMode`（`imei` / `serial` / `serial_imei`，见 `constants/status.js` 的 `IDENTIFIER_MODES`），已有设备的分类不能改。完整序列号与完整 IMEI 同级裁剪，公开页面只给 `serialMasked`；页面显示串码统一用 `filters.wxs` 的 `f.code(unit)`。
 - 新增接口：①在 `api/modules/<域>.js` 加函数并写注释（参数、返回）；②在 `mock/index.js` 的 `routes` 加 mock；③页面只通过 `api.<域>.<fn>()` 调用。
 - 后端响应信封固定为 `{ code: 0, data, message }`；列表统一 `{ list, total, page, pageSize }`。
 - 金额单位前端统一为“元”。
@@ -130,7 +132,7 @@ miniprogram/
 - [x] 型号模板：每个分类一套模板（字段编辑、版本发布），型号单独配置容量/颜色，作为入库型号选择器回传 `modelId`（`staff/templates/*`）；入库/采购/验收统一读 `GET /models/:id/form`
 - [x] 采购单：供应商选择、明细行增删、运单绑定与扫码（首期不查轨迹）（`staff/purchase/*`、`staff/suppliers`）
 - [x] 到货验收：逐台验收表单、异常分支、数量比对（`staff/acceptance`）
-- [x] 单台入库：按模板字段动态渲染（`staff/inbound/index`）
+- [x] 单台入库：按模板字段动态渲染（`staff/inbound/index`）；串码方式由分类决定：手机 IMEI，非手机推荐序列号、无序列号须说明原因，平板可另填 IMEI，无序列号时可按数量入库（同批共用 `lot_id`，一件一条记录）
 - [x] 批量入库：连续扫码逐台行编辑（`staff/inbound/batch`，与单台共用 `inbound/form.js`）
 - [x] 库存：搜索/扫码查找、筛选、改价弹层、库存流水、分享开关（含批量代理转发）、手动/扫码出库、复检、盘点单（开单快照、边扫边勾、差异只记录不改库存，`staff/inventory/stocktake*`）、详情借还入口（`staff/inventory/*`）
 - [ ] 标签打印：标签数据接口与页面已完成，**蓝牙打印机对接未做**（`staff/inventory/label.js` 仍是 `TODO(codex)`，点击提示“打印机对接待实现”）
@@ -138,7 +140,7 @@ miniprogram/
 - [ ] 收银小票/收款码打印（发票首期不做，已定案）
 - [x] 经营统计：趋势图、维度拆分、库龄预警、代理收益对账（`staff/stats`）
 - [x] 员工与权限：新增员工、角色权限点勾选、字段可见性、审计筛选（`staff/staff/*`、`staff/audit`）
-- [x] 顾客端：搜索页（历史、成色/价格/电池/新旧筛选）、分类按型号精确筛选、详情检测报告与相似在售、咨询预约（`pages/*`、`packages/shop/*`）
+- [x] 顾客端：首页 16 个入口左右滑动（品牌入口限定手机分类，另有其他手机、平板、配件、耳机耳麦、其他设备）、搜索页（历史、成色/价格/电池/新旧筛选）、分类按型号精确筛选、详情检测报告与相似在售、咨询预约（`pages/*`、`packages/shop/*`）
 
 ### 阶段 B：业务扩展
 - [x] 维修：开单照片、报价权限、配件领用、节点时间线、收退款、取机（`staff/repair/*`）

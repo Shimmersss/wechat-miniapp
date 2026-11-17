@@ -7,6 +7,7 @@ const routes = [
   ["GET", "/staff", "list"],
   ["POST", "/staff", "create"],
   ["PATCH", "/staff/:id", "update"],
+  ["POST", "/staff/:id/bind-wechat", "bind"],
   ["POST", "/staff/:id/unbind", "unbind"],
   ["GET", "/roles", "roles.list"],
   ["PUT", "/roles/:key", "roles.update"],
@@ -23,6 +24,17 @@ exports.main = require("./shared/startup-timing")(
         if (a === "roles.update" && u.role !== "boss")
           fail(403, "仅老板可调整角色权限");
         const { d, p } = prepare(a, ctx.data, ctx.params);
+        if (a === "bind") {
+          const bound = await rpc("api_staff_bind_wechat", {
+            p_id: p.id,
+            p_user_id: d.userId,
+            p_version: d.version,
+            p_reason: d.reason,
+            p_user: u,
+            p_request_id: ctx.requestId,
+          });
+          return view(a, bound, u, d);
+        }
         const r = await rpc("api_staff_admin", {
           p_action: a,
           p_id: p.id || null,

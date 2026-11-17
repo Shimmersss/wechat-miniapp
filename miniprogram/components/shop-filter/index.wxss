@@ -15,7 +15,7 @@
 .down { border-top: 9rpx solid var(--c-ink-4); }
 .up.lit { border-bottom-color: var(--c-ink); }
 .down.lit { border-top-color: var(--c-ink); }
-.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14rpx; }
+.chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14rpx; }
 .chip {
   display: flex; align-items: center; justify-content: center; gap: 8rpx;
   height: 60rpx; border-radius: 30rpx; background: var(--c-surface);

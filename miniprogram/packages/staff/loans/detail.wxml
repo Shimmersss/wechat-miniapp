@@ -21,8 +21,8 @@
     <section-card title="设备">
       <view wx:for="{{detail.items}}" wx:key="id" class="list-item item">
         <view class="flex-1">
-          <view class="h3 ellipsis">{{item.name}}</view>
-          <view class="tiny muted">{{item.imei1 || item.imeiMasked}} · {{item.statusText}}</view>
+          <view class="h3 ellipsis">{{item.name}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></view>
+          <view class="tiny muted">{{f.code(item, true)}} · {{item.statusText}}</view>
         </view>
         <block wx:if="{{item.status === 'returned_recheck'}}">
           <button wx:if="{{item.unitStatus === 'in_stock'}}" class="btn btn-primary btn-sm" data-id="{{item.unitId}}" bindtap="onCloseItem" disabled="{{saving || pending}}">完结</button>
@@ -36,7 +36,7 @@
     <view wx:if="{{editor}}" class="card">
       <view class="row mb"><text class="h2">登记归还</text><text class="small muted" bindtap="onCloseReturn">取消</text></view>
       <view wx:for="{{editor.items}}" wx:key="unitId" class="return {{item.selected ? 'on' : ''}}">
-        <view class="row-start" data-index="{{index}}" bindtap="onToggleReturn"><view class="check {{item.selected ? 'on' : ''}}">{{item.selected ? '✓' : ''}}</view><view class="flex-1"><view class="h3 ellipsis">{{item.name}}</view><view class="tiny muted">{{item.imeiMasked}}</view></view></view>
+        <view class="row-start" data-index="{{index}}" bindtap="onToggleReturn"><view class="check {{item.selected ? 'on' : ''}}">{{item.selected ? '✓' : ''}}</view><view class="flex-1"><view class="h3 ellipsis">{{item.name}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></view><view class="tiny muted">{{f.code(item)}}</view></view></view>
         <block wx:if="{{item.selected}}">
           <view class="field mt"><view class="field-label required">外观与功能结论</view><textarea class="textarea" maxlength="2000" value="{{item.condition}}" data-index="{{index}}" data-field="condition" bindinput="onReturnInput" placeholder="如：外观无新增磕碰，开机正常" disabled="{{saving || pending}}" /></view>
           <view class="field"><view class="field-label">损坏描述（选填）</view><input class="input" maxlength="2000" value="{{item.damage}}" data-index="{{index}}" data-field="damage" bindinput="onReturnInput" disabled="{{saving || pending}}" /></view>
