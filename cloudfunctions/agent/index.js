@@ -131,6 +131,7 @@ exports.main = require("./shared/startup-timing")(
                     x.name +
                     " " +
                     x.storage +
+                    (x.ram ? " 运行内存 " + x.ram : "") +
                     " " +
                     x.color +
                     " ¥" +

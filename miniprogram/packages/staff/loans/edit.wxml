@@ -1,3 +1,4 @@
+<wxs src="../../../utils/filters.wxs" module="f" />
 <theme-shell>
 <view class="container">
   <view wx:if="{{result}}" class="card">
@@ -17,7 +18,7 @@
       <view class="row gap-sm"><input class="input flex-1" value="{{code}}" bindinput="onCode" bindconfirm="onAddCode" placeholder="设备编号 / 完整 IMEI" disabled="{{pending || saving || loading}}" /><button class="btn btn-soft btn-sm" bindtap="onAddCode" disabled="{{pending || saving || loading}}">添加</button><button class="btn btn-line btn-sm" bindtap="onScanUnit" disabled="{{pending || saving || loading}}">扫码</button></view>
       <button class="btn btn-line btn-block mt" bindtap="onPickUnits" disabled="{{pending || saving || loading}}">从库存选择（可多选）</button>
       <view wx:for="{{units}}" wx:key="id" class="list-item">
-        <view class="flex-1"><view class="h3 ellipsis">{{item.name}} {{item.storage}}</view><view class="tiny muted">{{item.imeiMasked}} · {{item.color}}</view></view>
+        <view class="flex-1"><view class="h3 ellipsis">{{item.name}} {{item.storage}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></view><view class="tiny muted">{{f.code(item)}} · {{item.color}}</view></view>
         <button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onRemoveUnit" disabled="{{pending || saving}}">移除</button>
       </view>
       <empty-state wx:if="{{!units.length}}" text="还没有选择设备" />
@@ -27,8 +28,12 @@
       <view wx:for="{{devices}}" wx:key="key" class="device">
         <view class="row mb"><text class="h3">第 {{index + 1}} 台</text><text wx:if="{{devices.length > 1}}" class="small muted" data-index="{{index}}" bindtap="onRemoveDevice">删除</text></view>
         <view class="field"><view class="field-label required">型号</view><button class="btn btn-line btn-block" data-index="{{index}}" bindtap="onChooseModel" disabled="{{pending || saving}}">{{item.model ? item.model.name : '从型号库选择'}}</button></view>
+        <view wx:if="{{item.identifierMode !== 'imei'}}" class="field"><view class="field-label required">序列号（SN）</view><view class="row gap-sm"><input class="input flex-1" maxlength="40" value="{{item.serialNo}}" data-index="{{index}}" data-field="serialNo" bindinput="onDeviceInput" placeholder="借入设备须登记序列号，归还时核对" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" data-field="serialNo" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view></view>
+        <block wx:else>
         <view class="field"><view class="field-label required">IMEI1</view><view class="row gap-sm"><input class="input flex-1" type="number" maxlength="15" value="{{item.imei1}}" data-index="{{index}}" data-field="imei1" bindinput="onDeviceInput" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view></view>
         <view class="field"><view class="field-label">IMEI2（选填）</view><input class="input" type="number" maxlength="15" value="{{item.imei2}}" data-index="{{index}}" data-field="imei2" bindinput="onDeviceInput" disabled="{{pending || saving}}" /></view>
+        </block>
+        <view wx:if="{{item.ramOptions.length}}" class="field"><view class="field-label">运行内存（选填）</view><picker range="{{item.ramOptions}}" data-index="{{index}}" bindchange="onRamPick" disabled="{{pending || saving || loading}}"><view class="picker">{{item.ram || '未填写'}}</view></picker></view>
         <view class="field"><view class="field-label">成色（选填）</view><input class="input" maxlength="60" value="{{item.condition}}" data-index="{{index}}" data-field="condition" bindinput="onDeviceInput" placeholder="如 99新" disabled="{{pending || saving}}" /></view>
         <view class="field"><view class="field-label">外观与功能说明（选填）</view><textarea class="textarea" maxlength="1000" value="{{item.description}}" data-index="{{index}}" data-field="description" bindinput="onDeviceInput" disabled="{{pending || saving}}" /></view>
       </view>

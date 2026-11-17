@@ -54,21 +54,26 @@ function validateValues(fields, values) {
   }
   return '';
 }
-/** 型号规格：容量、颜色由型号单独配置，覆盖分类模板中同名下拉字段的选项 */
-const SPEC_KEYS = ['storage', 'color'];
+/** 型号规格：存储容量、运行内存和颜色由型号单独配置，覆盖分类模板中同名下拉字段的选项 */
+const SPEC_KEYS = ['storage', 'color', 'ram'];
+const RAM_OPTIONS = ['1GB', '2GB', '3GB', '4GB', '6GB', '8GB', '10GB', '12GB', '16GB', '18GB', '20GB', '24GB', '32GB', '36GB'];
+const supportsRam = category => category === 'phone' || category === 'tablet';
 function validateSpecs(specs) {
   if (specs === undefined || specs === null) return '';
-  if (typeof specs !== 'object' || Array.isArray(specs) || Object.keys(specs).some(k => !SPEC_KEYS.includes(k))) return '型号规格只支持容量和颜色';
+  if (typeof specs !== 'object' || Array.isArray(specs) || Object.keys(specs).some(k => !SPEC_KEYS.includes(k))) return '型号规格只支持存储容量、运行内存和颜色';
   for (const key of SPEC_KEYS) {
     const list = specs[key];
     if (list === undefined) continue;
-    if (!Array.isArray(list) || list.length > 30 || list.some(v => typeof v !== 'string' || !v.trim() || v.trim().length > 30) || new Set(list.map(v => v.trim())).size !== list.length) return '容量、颜色各最多 30 项，每项 1～30 字且不能重复';
+    if (!Array.isArray(list) || list.length > 30 || list.some(v => typeof v !== 'string' || !v.trim() || v.trim().length > 30) || new Set(list.map(v => v.trim())).size !== list.length) return '型号规格各最多 30 项，每项 1～30 字且不能重复';
   }
   return '';
 }
 function normalizeSpecs(specs) {
   const result = {};
-  for (const key of SPEC_KEYS) result[key] = specs && Array.isArray(specs[key]) ? specs[key].map(v => v.trim()) : [];
+  for (const key of SPEC_KEYS) {
+    if (key === 'ram' && !Array.isArray(specs?.ram)) continue;
+    result[key] = Array.isArray(specs?.[key]) ? specs[key].map(v => v.trim()) : [];
+  }
   return result;
 }
 /** 返回应用型号规格后的字段；型号未配置的项沿用分类模板选项，默认值不在新选项内时去掉 */
@@ -82,4 +87,4 @@ function applySpecs(fields, specs) {
     return next;
   });
 }
-module.exports = { TYPES, TYPE_LABELS, SPEC_KEYS, validateFields, initialValues, validateValues, validateSpecs, normalizeSpecs, applySpecs };
+module.exports = { TYPES, TYPE_LABELS, SPEC_KEYS, RAM_OPTIONS, supportsRam, validateFields, initialValues, validateValues, validateSpecs, normalizeSpecs, applySpecs };

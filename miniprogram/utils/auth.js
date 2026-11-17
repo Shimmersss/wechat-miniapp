@@ -1,7 +1,7 @@
 /**
  * 登录与身份。
- * - 顾客/同行/代理：wx.login 静默登录，服务端按 openid 识别身份与渠道。
- * - 员工：独立账号 + 微信绑定 + 可选二次验证（框架文档 需求 1），登录后 user.role 为员工角色。
+ * - 顾客/同行/代理：需要账号的操作按需调用 wx.login，公开浏览允许匿名。
+ * - 员工：由服务端验证微信身份与在职员工绑定，登录后 user.role 为员工角色。
  * user 结构（服务端下发）：
  *   { id, nickname, avatar, role, permissions: string[], agentStatus, storeId, staffNo }
  */
@@ -36,6 +36,12 @@ function wxCode() {
   });
 }
 
+function ensureWechatSession() {
+  if (config.useMock || wx.getStorageSync(storageKeys.token))
+    return Promise.resolve();
+  return silentLogin();
+}
+
 /** 静默登录，多处并发调用时只发一次 */
 function silentLogin() {
   if (loginPromise) return loginPromise;
@@ -50,16 +56,16 @@ function silentLogin() {
   return loginPromise;
 }
 
-/** 员工登录：账号 + 短信验证码（二次验证可选），成功后与当前微信绑定 */
-function staffLogin(payload) {
+/** 云开发用微信身份登录，旧测试后端仍接收原短信登录请求 */
+async function staffLogin(payload) {
   const revision = ++sessionRevision;
   const api = require('../api/index');
-  return wxCode()
-    .then((code) => api.auth.staffLogin({ ...payload, code }))
-    .then((session) => {
-      if (revision !== sessionRevision) throw new Error('登录操作已失效，请重试');
-      return saveSession(session);
-    });
+  const code = await wxCode();
+  const session = config.staffWechatLogin
+    ? await api.auth.staffWechatLogin({ code, ...(config.useMock ? { mockRole: payload.mockRole } : {}) })
+    : await api.auth.staffLogin({ ...payload, code });
+  if (revision !== sessionRevision) throw new Error('登录操作已失效，请重试');
+  return saveSession(session);
 }
 
 function refreshMe() {
@@ -91,4 +97,4 @@ events.on('auth:expired', () => {
   events.emit('auth:changed', null);
 });
 
-module.exports = { getCachedUser, silentLogin, staffLogin, refreshMe, logout, saveSession };
+module.exports = { getCachedUser, silentLogin, ensureWechatSession, staffLogin, refreshMe, logout, saveSession };

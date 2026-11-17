@@ -21,8 +21,8 @@ const MODELS = [
   { id: 'm_magic7', category: 'phone', brand: 'honor', brandLabel: '荣耀', series: 'Magic 系列', name: '荣耀 Magic7 Pro', templateId: 't_phone', specs: { storage: ['256G', '512G'], color: ['黑色', '蓝色'] } },
   { id: 'm_ipadp', category: 'tablet', brand: 'apple', brandLabel: '苹果', series: 'iPad Pro', name: 'iPad Pro 13 英寸', templateId: 't_tablet', specs: { storage: ['256G', '512G', '1T'], color: ['银色', '黑色'] } },
   { id: 'm_matepad', category: 'tablet', brand: 'huawei', brandLabel: '华为', series: 'MatePad', name: 'MatePad Pro 12.2', templateId: 't_tablet', specs: { storage: ['256G', '512G'], color: ['白色', '黑色'] } },
-  { id: 'm_mbp14', category: 'laptop', brand: 'apple', brandLabel: '苹果', series: 'MacBook Pro', name: 'MacBook Pro 14 英寸', templateId: 't_laptop', specs: { storage: ['512G', '1T', '2T'], color: ['银色', '黑色'] } },
-  { id: 'm_watch10', category: 'wearable', brand: 'apple', brandLabel: '苹果', series: 'Apple Watch', name: 'Apple Watch Series 10', templateId: 't_wearable', specs: { storage: ['64G'], color: ['黑色', '银色'] } }
+  { id: 'm_mbp14', category: 'other', brand: 'apple', brandLabel: '苹果', series: 'MacBook Pro', name: 'MacBook Pro 14 英寸', templateId: 't_other', specs: { storage: ['512G', '1T', '2T'], color: ['银色', '黑色'] } },
+  { id: 'm_watch10', category: 'other', brand: 'apple', brandLabel: '苹果', series: 'Apple Watch', name: 'Apple Watch Series 10', templateId: 't_other', specs: { storage: ['64G'], color: ['黑色', '银色'] } }
 ];
 
 // [编号, 型号, 容量, 颜色, 成色, 电池, 新旧, 成本, 批发, 代理底价, 零售, 库龄, 开关(S店铺 P同行 A代理), 额外字段]
@@ -126,6 +126,15 @@ const STAFF = [
   { id: 'st8', userId: null, name: '已离职员工', phone: '13800000008', role: 'sales', wechatBound: false, status: 'disabled', version: 1, createdAt: '2026-09-07T02:00:00.000Z' }
 ];
 
+/** 串码按分类：手机 IMEI；平板序列号 + IMEI（蜂窝版）；其他非手机只登记序列号 */
+function identityOf(db, model, no) {
+  const mode = (db.categories.find(c => c.value === model.category) || {}).identifierMode || 'imei';
+  const serialNo = 'SEED' + String(no).padStart(6, '0');
+  if (mode === 'imei') return { imei1: imeiOf(no) };
+  if (mode === 'serial_imei') return { imei1: imeiOf(no), serialNo };
+  return { imei1: '', serialNo };
+}
+
 function buildUnit(db, row, receipt) {
   const [id, modelId, storage, color, grade, battery, condition, cost, wholesale, agentBase, retail, ageDays, flags, extra = {}] = row;
   const model = db.models.find(m => m.id === modelId);
@@ -137,7 +146,7 @@ function buildUnit(db, row, receipt) {
   };
   return {
     id, modelId, name: model.name, brand: model.brand, category: model.category, condition, storage, color, grade, battery, version: '国行',
-    cost, wholesale, agentBase, retail, imei1: imeiOf(no), imei2: '', status: 'in_stock', ageDays,
+    cost, wholesale, agentBase, retail, ...identityOf(db, model, no), imei2: '', status: 'in_stock', ageDays,
     images: [COVERS[no % COVERS.length]], videos: [],
     customerDesc: `${grade}，功能正常，店铺质保 90 天。`, peerDesc: `${grade}，全原无拆修。`, internalNote: `预置设备 ${id}。`,
     supplier, receiptImages: [receipt],

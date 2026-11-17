@@ -8,8 +8,8 @@
   </scroll-view>
   <scroll-view scroll-y class="main">
     <view class="chips mb">
-      <view class="chip {{condition === 'used' ? 'active' : ''}}" data-value="used" bindtap="onConditionTap">二手机</view>
-      <view class="chip {{condition === 'new' ? 'active' : ''}}" data-value="new" bindtap="onConditionTap">新机</view>
+      <view class="chip {{condition === 'used' ? 'active' : ''}}" data-value="used" bindtap="onConditionTap">{{categories[activeIndex].identifierMode === 'imei' ? '二手机' : '二手'}}</view>
+      <view class="chip {{condition === 'new' ? 'active' : ''}}" data-value="new" bindtap="onConditionTap">{{categories[activeIndex].identifierMode === 'imei' ? '新机' : '全新'}}</view>
     </view>
     <block wx:for="{{categories[activeIndex].brands}}" wx:for-item="brand" wx:key="value">
       <view class="brand-title">{{brand.label}}</view>
@@ -20,7 +20,7 @@
         </view>
       </block>
     </block>
-    <empty-state wx:if="{{categories.length && !categories[activeIndex].brands.length}}" text="该分类暂无型号" />
+    <empty-state wx:if="{{categories.length && !categories[activeIndex].brands.length}}" text="该分类暂无现货" />
   </scroll-view>
 </view>
 </theme-shell>

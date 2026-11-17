@@ -21,7 +21,6 @@ App({
     this.globalData.privacy = !!wx.getStorageSync('privacy');
     // 主题要在首屏渲染前定下来，避免闪一下浅色
     this.globalData.theme = theme.init();
-    auth.silentLogin().catch((err) => console.warn('[app] silent login failed', err));
   },
 
   onShow(options) {

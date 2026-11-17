@@ -2,7 +2,7 @@
 const { http } = require('../../utils/request');
 
 module.exports = {
-  /** { status?, keyword?, imei?, modelId?, ageingOver?, minPrice?, maxPrice?, page?, pageSize? } → { list, total, counts, summary:{ inStock, retailTotal, costTotal? } }；summary 为全库在库（in_stock）汇总，不随筛选变化，costTotal 仅成本可见角色返回；串码仅完整精确匹配 */
+  /** { status?, keyword?, imei?, modelId?, category?, lotId?, noSerial?, ageingOver?, minPrice?, maxPrice?, page?, pageSize? } → { list, total, counts, summary:{ inStock, retailTotal, costTotal? } }；summary 为全库在库（in_stock）汇总，不随筛选变化，costTotal 仅成本可见角色返回；串码仅完整精确匹配，keyword 也可按序列号精确匹配；lotId 为按数量入库的同批，noSerial 只看无 IMEI 也无序列号的设备 */
   list: (params) => http.get('/units', params),
   /** 单台档案；有借还权限且设备在未完结借还单中时带 loan{id,no,type} */
   detail: (id) => http.get(`/units/${id}`),

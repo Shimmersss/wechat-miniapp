@@ -6,8 +6,8 @@ global.wx = { getStorageSync: () => role };
 const mock = require('../miniprogram/mock');
 const call = (url, method = 'GET', data = {}) => mock.handle({ url, method, data });
 // 全部 TAC / IMEI 均为测试夹具，不代表真实机型数据库。
-function imei(serial) {
-  const prefix = '99000000' + String(serial).padStart(6, '0');
+function imei(serial, tac = '99000000') {
+  const prefix = tac + String(serial).padStart(6, '0');
   let sum = 0; [...prefix].forEach((v, i) => { let d = Number(v) * (i % 2 ? 2 : 1); sum += d > 9 ? d - 9 : d; });
   return prefix + (10 - sum % 10) % 10;
 }
@@ -24,7 +24,11 @@ test('分类与型号管理、分类模板与型号规格、核验映射、整�
   }
   role = 'boss';
   assert.equal((await call('/catalog/categories', 'POST', { label: '游戏掌机' })).code, 400);
-  const category = (await call('/catalog/categories', 'POST', { label: '游戏掌机', copyTemplateId: 't_phone' })).data;
+  // 新分类默认按序列号入库；这里沿用 IMEI 流程验证型号一致性与整批原子性
+  const category = (await call('/catalog/categories', 'POST', { label: '游戏掌机', copyTemplateId: 't_phone', identifierMode: 'imei' })).data;
+  assert.equal(category.identifierMode, 'imei');
+  assert.equal((await call('/catalog/categories', 'POST', { label: '相机', copyTemplateId: 't_other' })).data.identifierMode, 'serial');
+  assert.equal((await call('/catalog/categories', 'POST', { label: '无效方式', copyTemplateId: 't_other', identifierMode: 'barcode' })).code, 400);
   assert.ok(category.value); assert.ok(category.templateId); assert.notEqual(category.templateId, 't_phone');
   assert.equal((await call('/catalog/categories', 'POST', { label: ' 游戏掌机 ' })).code, 400);
   assert.equal((await call(`/catalog/categories/${category.value}`, 'PUT', { label: '掌机' })).code, 0);
@@ -60,7 +64,8 @@ test('分类与型号管理、分类模板与型号规格、核验映射、整�
   role = 'customer';
   const publicCategories = (await call('/shop/categories')).data;
   assert.equal(publicCategories.find(c => c.value === category.value).label, '掌机');
-  assert.match(JSON.stringify(publicCategories), /测试设备/); assert.doesNotMatch(JSON.stringify(publicCategories), /99000000/);
+  // 顾客目录只列有现货的型号：新型号还没入库，不应出现
+  assert.doesNotMatch(JSON.stringify(publicCategories), /测试设备/); assert.doesNotMatch(JSON.stringify(publicCategories), /99000000/);
   assert.equal((await call('/inbound/identify-model', 'POST', { imei: imei(1) })).code, 403);
   role = 'boss';
   const common = { modelId: model.id, templateVersion: template.version, condition: 'new', attributes: values(template.fields), cost: '200', retail: '300', wholesale: '260', agentBase: '260', flags: { showInShop: true, sharePeer: true, shareAgent: false } };
@@ -78,6 +83,11 @@ test('分类与型号管理、分类模板与型号规格、核验映射、整�
   const committed = await call('/inbound/batch', 'POST', { common, units: [{ imei1: imei(1) }, { imei1: imei(2), cost: '210', attributes: { battery: 88, grade: '95新' } }] });
   assert.equal(committed.code, 0); assert.equal(committed.data.created, 2); assert.equal(new Set(committed.data.ids).size, 2);
   assert.equal(db.units.length, before + 2);
+  role = 'customer';
+  const stockedCategories = JSON.stringify((await call('/shop/categories')).data);
+  assert.match(stockedCategories, /测试设备/, '入库并对外展示后进入顾客目录');
+  assert.doesNotMatch(stockedCategories, /99000000/);
+  role = 'boss';
   const second = db.units.find(u => u.imei1 === imei(2));
   assert.ok(db.auditLogs.some(a => a.action === '新增分类' && a.operator === '老板'));
   assert.ok(db.auditLogs.some(a => a.action === '入库' && a.operator === '老板'));
@@ -88,4 +98,82 @@ test('分类与型号管理、分类模板与型号规格、核验映射、整�
   assert.equal(unit.status, 'recheck'); assert.equal(unit.flags.showInShop, false);
   role = 'customer'; assert.equal((await call(`/shop/units/${unit.id}`)).code, 404);
   role = 'sales'; assert.equal((await call('/inbound/batch', 'POST', { common, units: [{ imei1: imei(4) }] })).code, 403);
+});
+
+test('手机和平板的运行内存独立于存储容量，批量可逐台覆盖且商品可搜索', async () => {
+  role = 'boss';
+  const modelData = { brandLabel: '测试品牌', series: '运行内存测试', specs: { storage: ['256G'], ram: ['8GB', '12GB'] } };
+  const phone = (await call('/models', 'POST', { ...modelData, category: 'phone', name: '运行内存测试手机' })).data;
+  const tablet = (await call('/models', 'POST', { ...modelData, category: 'tablet', name: '运行内存测试平板' })).data;
+  const forms = await Promise.all([phone, tablet].map(async m => (await call(`/models/${m.id}/form`)).data));
+  for (const form of forms) {
+    const ram = form.fields.find(f => f.key === 'ram');
+    assert.deepEqual(ram.options, ['8GB', '12GB']);
+    assert.equal(ram.required, false);
+    assert.deepEqual(form.fields.find(f => f.key === 'storage').options, ['256G']);
+  }
+  const common = {
+    modelId: phone.id, templateVersion: forms[0].version, condition: 'new',
+    attributes: { ...values(forms[0].fields), ram: '8GB' },
+    cost: '200', retail: '300', wholesale: '260', agentBase: '260',
+    flags: { showInShop: true, sharePeer: true, shareAgent: false }
+  };
+  const bad = await call('/inbound/batch', 'POST', { common, units: [{ imei1: imei(41, '99000001'), attributes: { ram: '16GB' } }] });
+  assert.equal(bad.code, 400);
+  const saved = await call('/inbound/batch', 'POST', { common, units: [{ imei1: imei(41, '99000001') }, { imei1: imei(42, '99000001'), attributes: { ram: '12GB' } }] });
+  assert.equal(saved.code, 0, saved.message);
+  const [first, second] = await Promise.all(saved.data.ids.map(id => call(`/units/${id}`)));
+  assert.equal(first.data.ram, '8GB');
+  assert.equal(second.data.ram, '12GB');
+  assert.equal(second.data.storage, '256G');
+  const supplier = (await call('/suppliers', 'GET', { active: true })).data.list[0];
+  const purchase = await call('/purchase-orders', 'POST', {
+    supplierId: supplier.id, expectedAt: '2027-01-01',
+    lines: [{ modelId: tablet.id, quantity: 1, unitCost: '100', attributes: { ram: '12GB' } }],
+  });
+  assert.equal(purchase.code, 0, purchase.message);
+  assert.equal(purchase.data.lines[0].attributes.ram, '12GB');
+  role = 'customer';
+  const filtered = await call('/shop/units', 'GET', { keyword: '12GB' });
+  const result = filtered.data.list.find(u => u.id === second.data.id);
+  assert.equal(result.ram, '12GB');
+  assert.equal(result.publicFields.find(f => f.key === 'ram').value, '12GB');
+  assert.ok(!filtered.data.list.some(u => u.id === first.data.id));
+});
+
+test('按品牌选系列、随型号新增系列、删除最后一个型号，以及引用保护', async () => {
+  role = 'boss';
+  const existing = db.models.find(m => m.category === 'phone' && m.brand === 'apple');
+  const series = () => call('/models/series', 'GET', { category: 'phone', brand: 'apple' });
+  assert.ok((await series()).data.includes(existing.series));
+  assert.equal((await call('/models/series', 'GET', { category: 'phone' })).code, 400);
+
+  const payload = { category: 'phone', brandId: 'apple', brandLabel: '苹果', series: 'Test Model Series' };
+  const first = (await call('/models', 'POST', {
+    ...payload, name: '系列测试一号', tacs: ['99000002'], tacSource: '自动化测试夹具'
+  })).data;
+  const second = (await call('/models', 'POST', {
+    ...payload, name: '系列测试二号', series: payload.series.toLowerCase()
+  })).data;
+  assert.equal(first.brand, 'apple');
+  assert.equal(second.series, first.series);
+  assert.ok((await series()).data.includes(payload.series));
+  const tabletSeries = await call('/models/series', 'GET', { category: 'tablet', brand: 'apple' });
+  assert.ok(!tabletSeries.data.includes(payload.series));
+
+  role = 'warehouse';
+  assert.equal((await call(`/models/${first.id}`, 'DELETE')).code, 403);
+  role = 'boss';
+  assert.deepEqual((await call(`/models/${first.id}`, 'DELETE')).data, { id: first.id, deleted: true });
+  assert.equal((await call('/inbound/identify-model', 'POST', { imei: imei(15, '99000002') })).data.matched, false);
+  assert.ok((await series()).data.includes(payload.series));
+  assert.equal((await call(`/models/${second.id}`, 'DELETE')).code, 0);
+  assert.ok(!(await series()).data.includes(payload.series));
+  assert.equal((await call(`/models/${second.id}/form`)).code, 404);
+  assert.ok(db.auditLogs.some(a => a.action === '删除型号' && a.detail === second.name));
+
+  const purchased = db.purchaseOrders.flatMap(po => po.lines).find(line => line.modelId);
+  assert.equal((await call(`/models/${purchased.modelId}`, 'DELETE')).code, 409);
+  const soldOrStocked = db.units.find(unit => unit.modelId);
+  assert.equal((await call(`/models/${soldOrStocked.modelId}`, 'DELETE')).code, 409);
 });

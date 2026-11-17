@@ -1,7 +1,8 @@
 /** 首页筛选的纯逻辑：品牌入口匹配、筛选条件转查询参数。价格和结果都以服务端为准。 */
-const { SHOP_BRANDS } = require('../constants/shop-brands');
+const { SHOP_BRANDS, PAGE_SIZE, PHONE_CATEGORY, findBrandEntry } = require('../constants/shop-brands');
 
-const EMPTY_FILTERS = { brand: '', modelId: '', modelName: '', condition: '', grade: '', batteryMin: '', priceMin: '', priceMax: '', sort: '' };
+// brandKey 是首页入口（见 constants/shop-brands.js），category 为分类入口或筛选抽屉选的分类
+const EMPTY_FILTERS = { brand: '', brandKey: '', category: '', modelId: '', modelName: '', condition: '', grade: '', batteryMin: '', priceMin: '', priceMax: '', sort: '' };
 
 const PRICE_RANGES = [
   { label: '不限价格', min: '', max: '' },
@@ -19,13 +20,36 @@ const BATTERY_OPTIONS = [
   { value: '80', label: '80%以上' }
 ];
 
-/** 品牌入口固定展示，有现货的品牌带上接口真实的品牌值；没现货的点进去显示空结果 */
-function brandTiles(homeBrands) {
-  const brands = (homeBrands || []).filter((b) => b.value !== 'all');
-  return SHOP_BRANDS.map((tile) => {
-    const hit = brands.find((b) => [b.value, b.label].some((v) => tile.names.includes(String(v).toLowerCase())));
-    return { key: tile.key, label: tile.label, value: hit ? hit.value : tile.key, image: `/assets/brands/${tile.key}.png` };
-  });
+/** 首页入口固定展示，按 8 个一页分组；品牌展开由服务端完成，前端只传入口 key */
+function brandTiles() {
+  const tiles = SHOP_BRANDS.map((tile) => ({ key: tile.key, label: tile.label, type: tile.type, image: `/assets/brands/${tile.key}.png` }));
+  const pages = [];
+  for (let i = 0; i < tiles.length; i += PAGE_SIZE) pages.push({ index: pages.length, tiles: tiles.slice(i, i + PAGE_SIZE) });
+  return pages;
+}
+
+/** 点首页入口后的筛选条件：再点一次取消；入口、品牌、分类、型号互斥 */
+function applyBrandTile(filters, key) {
+  const next = { ...filters, brand: '', brandKey: '', category: '', modelId: '', modelName: '' };
+  if (filters.brandKey === key || !findBrandEntry(key)) return withoutPhoneOnly(next);
+  return withoutPhoneOnly({ ...next, brandKey: key });
+}
+
+/** 当前条件限定的分类：入口优先，其次是筛选抽屉选的分类；空串表示不限 */
+function scopeCategory(filters) {
+  const entry = filters.brandKey ? findBrandEntry(filters.brandKey) : null;
+  if (entry) return entry.type === 'category' ? entry.category : PHONE_CATEGORY;
+  return filters.category || '';
+}
+
+/** 电池健康只对手机有意义；范围不含手机时隐藏并清掉电池条件 */
+function showBattery(filters) {
+  const category = scopeCategory(filters);
+  return !category || category === PHONE_CATEGORY;
+}
+
+function withoutPhoneOnly(filters) {
+  return showBattery(filters) ? filters : { ...filters, batteryMin: '' };
 }
 
 /** 去掉空值后作为 /shop/units 的查询参数；modelName 只用于显示 */
@@ -49,4 +73,4 @@ function filterCount(f) {
   return ['modelId', 'condition', 'grade', 'batteryMin'].filter((k) => f[k]).length + (f.priceMin !== '' || f.priceMax !== '' ? 1 : 0);
 }
 
-module.exports = { EMPTY_FILTERS, PRICE_RANGES, BATTERY_OPTIONS, brandTiles, toQuery, priceError, filterCount };
+module.exports = { EMPTY_FILTERS, PRICE_RANGES, BATTERY_OPTIONS, brandTiles, applyBrandTile, scopeCategory, showBattery, toQuery, priceError, filterCount };

@@ -2,6 +2,7 @@ const { fail } = require("./gateway");
 const { text, integer } = require("./stock-input");
 const { isPhone } = require("./validate");
 const { PERM, STAFF_ROLES, SENSITIVE_FIELDS } = require("./roles");
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const rules = {
   roles: STAFF_ROLES,
   permissions: Object.values(PERM),
@@ -10,13 +11,7 @@ const rules = {
 function prepare(a, input, params = {}) {
   const d = { ...input },
     p = { ...params };
-  if (
-    p.id &&
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      p.id,
-    )
-  )
-    fail(400, "员工编号无效");
+  if (p.id && !uuid.test(p.id)) fail(400, "员工编号无效");
   const allowed = (keys) => {
     if (
       !input ||
@@ -38,8 +33,10 @@ function prepare(a, input, params = {}) {
   if (a === "create") {
     allowed(["name", "phone", "roleKey", "reason"]);
     d.name = text(d.name, "姓名", 50);
-    d.phone = text(d.phone, "手机号", 11);
-    if (!isPhone(d.phone)) fail(400, "请填写11位手机号");
+    if (d.phone !== undefined) {
+      d.phone = text(d.phone, "手机号", 11);
+      if (!isPhone(d.phone)) fail(400, "请填写11位手机号");
+    }
     if (!STAFF_ROLES.includes(d.roleKey)) fail(400, "角色无效");
   }
   if (a === "update") {
@@ -50,9 +47,14 @@ function prepare(a, input, params = {}) {
     if (d.status !== undefined && !["active", "disabled"].includes(d.status))
       fail(400, "员工状态无效");
   }
-  if (["create", "update", "unbind", "roles.update"].includes(a))
+  if (a === "bind") {
+    allowed(["userId", "reason", "version"]);
+    d.userId = text(d.userId, "微信绑定编号", 36);
+    if (!uuid.test(d.userId)) fail(400, "微信绑定编号无效");
+  }
+  if (["create", "update", "bind", "unbind", "roles.update"].includes(a))
     d.reason = text(d.reason, "调整原因", 500);
-  if (["update", "unbind", "roles.update"].includes(a))
+  if (["update", "bind", "unbind", "roles.update"].includes(a))
     d.version = integer(d.version, "版本", 1, 2147483647);
   if (a === "roles.update") {
     if (!STAFF_ROLES.includes(p.key)) fail(404, "角色不存在");

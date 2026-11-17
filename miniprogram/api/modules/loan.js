@@ -7,7 +7,7 @@ module.exports={
  list:params=>http.get('/loans',params),
  /** → 当前版本、逐台状态/设备快照、归还检查时间线及内部交接凭证；完整串码按权限裁剪 */
  detail:id=>http.get(`/loans/${id}`),
- /** {requestKey,type,counterparty,phone,dueAt,reason,remark?,photos?,unitIds?:[id],devices?:[{modelId,imei1,imei2?,condition?,description?}]} → 单据；每单1～50台，出借用unitIds，借入用devices；未确认收费非零返回503 */
+ /** {requestKey,type,counterparty,phone,dueAt,reason,remark?,photos?,unitIds?:[id],devices?:[{modelId,imei1?,imei2?,serialNo?,ram?,condition?,description?}]} → 单据；每单1～50台，出借用unitIds，借入用devices；未确认收费非零返回503 */
  create:data=>http.post('/loans',data,{loading:true}),
  /** {requestKey,version,reason,items:[{unitId,condition,damage?,photos:[{fileId}]}]} → 部分/全部归还；出借回待复检，借入冲销；凭证必须internal */
  markReturned:(id,data)=>http.post(`/loans/${id}/return`,data,{loading:true}),

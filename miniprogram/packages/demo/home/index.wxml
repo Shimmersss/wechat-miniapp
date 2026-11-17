@@ -32,7 +32,7 @@
         </view>
         <view class="pbody">
           <view class="pn ellipsis">{{item.name}}</view>
-          <view class="ps ellipsis">{{item.storage}} · {{item.color}}<block wx:if="{{item.battery !== undefined}}"> · 电池 {{item.battery}}%</block></view>
+          <view class="ps ellipsis">{{item.storage}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text> · {{item.color}}<block wx:if="{{item.battery !== undefined}}"> · 电池 {{item.battery}}%</block></view>
           <view class="pf">
             <text class="pp num"><text class="yen">¥</text>{{f.money(item.price)}}</text>
             <text wx:if="{{item.warrantyDays}}" class="pg">质保 {{item.warrantyDays}} 天</text>

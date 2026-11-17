@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 已部署借还云函数 + 真实微信SDK验收。使用忽略目录中的测试账号；临时切换测试员工为库管，finally恢复原角色/状态及顾客会话。 */
+require("./lib/verification-guard").guard();
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..');process.chdir(root);
 const local='.local/cloudbase',login=JSON.parse(fs.readFileSync(local+'/live-login-args.json'))[0];

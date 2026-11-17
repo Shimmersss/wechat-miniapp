@@ -2,9 +2,9 @@ const {createPage}=require('../../utils/page');
 const api=require('../../api/index');
 const channel=require('../../utils/channel');
 const {ROUTES}=require('../../utils/router');
-const {EMPTY_FILTERS,brandTiles,toQuery}=require('../../utils/shop-filter');
+const {EMPTY_FILTERS,brandTiles,applyBrandTile,toQuery}=require('../../utils/shop-filter');
 createPage({
- data:{tiles:brandTiles(),filters:EMPTY_FILTERS,filterRaised:false,list:[],page:1,hasMore:true,loading:false,error:'',scoped:false},
+ data:{tilePages:brandTiles(),tilePage:0,filters:EMPTY_FILTERS,filterRaised:false,list:[],page:1,hasMore:true,loading:false,error:'',scoped:false},
  onLoad(){this._context=channel.getHeaderValue();return this.refresh();},
  onShow(){const source=channel.getHeaderValue();if(source!==this._context){this._context=source;this._units=(this._units||0)+1;this.setData({loading:false,filters:EMPTY_FILTERS,list:[]});return this.refresh();}},
  onHide(){const filter=this.selectComponent('#filter');if(filter)filter.close();},
@@ -12,7 +12,8 @@ createPage({
  onPullDownRefresh(){return this.refresh().finally(()=>wx.stopPullDownRefresh());},
  refresh(){this.setData({error:'',scoped:!!channel.getHeaderValue()});return Promise.all([this.loadHome(),this.loadUnits(true)]);},
  onReachBottom(){if(this.data.hasMore)this.loadUnits(false);},
- async loadHome(){const revision=this._home=(this._home||0)+1;try{const r=await api.shop.home();if(revision===this._home)this.setData({tiles:brandTiles(r.brands)});}catch(e){if(revision===this._home)this.setData({error:e.message});}},
+ /** 首页入口为固定常量；这里只确认首页接口可用（分享失效等错误要提示） */
+ async loadHome(){const revision=this._home=(this._home||0)+1;try{await api.shop.home();}catch(e){if(revision===this._home)this.setData({error:e.message});}},
  async loadUnits(reset){
  if(this.data.loading&&!reset)return;
  const revision=this._units=(this._units||0)+1,page=reset?1:this.data.page+1;
@@ -20,8 +21,11 @@ createPage({
  try{const r=await api.shop.units({...toQuery(this.data.filters),page,pageSize:20});if(revision!==this._units)return;const list=reset?r.list:this.data.list.concat(r.list);this.setData({list,page,hasMore:list.length<r.total});}
  catch(e){if(revision===this._units)this.setData({error:e.message});}finally{if(revision===this._units)this.setData({loading:false});}
  },
- /** 品牌入口再点一次取消；品牌和型号互斥，选品牌时清掉型号 */
- onBrandTap(e){const {value}=e.currentTarget.dataset,brand=this.data.filters.brand===value?'':value;this.setData({filters:{...this.data.filters,brand,modelId:'',modelName:''}});return this.loadUnits(true);},
+ /** 首页入口再点一次取消；入口、品牌、分类、型号互斥 */
+ onBrandTap(e){this.setData({filters:applyBrandTile(this.data.filters,e.currentTarget.dataset.key)});return this.loadUnits(true);},
+ /** 记住当前页，选中第 2 页入口后刷新也不跳回第 1 页 */
+ onTilePage(e){this.setData({tilePage:e.detail.current});},
+ onTileDot(e){this.setData({tilePage:Number(e.currentTarget.dataset.index)});},
  onFilterChange(e){this.setData({filters:e.detail});return this.loadUnits(true);},
  /** 面板展开时隐藏底栏；下拉面板先把筛选栏滚到吸顶位置，全屏层把层级提到搜索框之上 */
  onFilterOverlay(e){

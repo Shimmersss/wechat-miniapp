@@ -26,3 +26,8 @@
   border-radius: 999rpx; background: var(--c-well); color: var(--c-ink-2);
   box-shadow: inset 0 1rpx 2rpx var(--c-hair);
 }
+
+/* 无实拍图：入口配图占位，避免空白灰块 */
+.placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; }
+.placeholder-img { width: 168rpx; height: 168rpx; opacity: 0.9; }
+.placeholder-text { font-size: 22rpx; color: var(--c-muted); }

@@ -9,7 +9,8 @@
  */
 const api = require('../../api/index');
 const { CONDITION_TYPE, GRADE_OPTIONS } = require('../../constants/status');
-const { EMPTY_FILTERS, PRICE_RANGES, BATTERY_OPTIONS, toQuery, priceError, filterCount } = require('../../utils/shop-filter');
+const { EMPTY_FILTERS, PRICE_RANGES, BATTERY_OPTIONS, toQuery, priceError, filterCount, scopeCategory, showBattery } = require('../../utils/shop-filter');
+const { findBrandEntry, brandRank } = require('../../constants/shop-brands');
 
 Component({
   properties: { value: { type: Object, value: EMPTY_FILTERS } },
@@ -27,11 +28,12 @@ Component({
     categories: [],
     categoryIndex: 0,
     brandIndex: 0,
-    modelDraft: { id: '', name: '' }
+    modelDraft: { id: '', name: '' },
+    showBattery: true
   },
 
   observers: {
-    value(v) { this.setData({ count: filterCount(v) }); }
+    value(v) { this.setData({ count: filterCount(v), showBattery: showBattery(v) }); }
   },
 
   methods: {
@@ -104,7 +106,7 @@ Component({
     onReset() {
       const { open, value } = this.data;
       const keep = open === 'grade' ? { grade: '' } : open === 'price' ? { priceMin: '', priceMax: '' } : open === 'battery' ? { batteryMin: '' } : { modelId: '', modelName: '', condition: '', grade: '', batteryMin: '', priceMin: '', priceMax: '' };
-      this.setData({ draft: { ...this.data.draft, ...keep, sort: value.sort, brand: value.brand } });
+      this.setData({ draft: { ...this.data.draft, ...keep, sort: value.sort, brand: value.brand, brandKey: value.brandKey, category: value.category } });
       this.preview();
     },
 
@@ -126,10 +128,20 @@ Component({
       this.notifyOverlay();
       try {
         const categories = await api.shop.categories();
-        this.setData({ categories });
+        this.setData({ categories, ...this.modelPosition(categories, this.data.draft) });
       } catch (e) {
         wx.showToast({ title: e.message || '型号加载失败', icon: 'none' });
       }
+    },
+
+    /** 首页已选入口时，型号弹层定位到对应分类和品牌 */
+    modelPosition(categories, draft) {
+      const category = scopeCategory(draft);
+      const categoryIndex = Math.max(0, categories.findIndex((c) => c.value === category));
+      const entry = draft.brandKey ? findBrandEntry(draft.brandKey) : null;
+      const brands = (categories[categoryIndex] && categories[categoryIndex].brands) || [];
+      const brandIndex = entry && entry.type === 'brand' ? Math.max(0, brands.findIndex((b) => brandRank(b.value, b.label) === brandRank(entry.names[0]))) : 0;
+      return { categoryIndex, brandIndex };
     },
 
     onCategory(e) { this.setData({ categoryIndex: e.currentTarget.dataset.index, brandIndex: 0 }); },
@@ -149,10 +161,11 @@ Component({
 
     onResetModel() { this.setData({ modelDraft: { id: '', name: '' } }); },
 
-    /** 选型号后清掉品牌入口，避免两个条件互相矛盾 */
+    /** 选型号后清掉品牌和首页入口，避免两个条件互相矛盾 */
     onConfirmModel() {
       const { id, name } = this.data.modelDraft;
-      const draft = { ...this.data.draft, modelId: id, modelName: name, brand: id ? '' : this.data.draft.brand };
+      const keep = this.data.draft;
+      const draft = { ...keep, modelId: id, modelName: name, brand: id ? '' : keep.brand, brandKey: id ? '' : keep.brandKey, category: id ? '' : keep.category };
       this.setData({ draft, modelOpen: false });
       this.notifyOverlay();
       if (this.fromDrawer) return this.preview();

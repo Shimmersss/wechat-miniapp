@@ -52,9 +52,23 @@ const categories = [
     ]
   },
   { value: 'tablet', label: '平板', brands: [] },
-  { value: 'laptop', label: '笔记本', brands: [] },
-  { value: 'wearable', label: '穿戴设备', brands: [] }
+  { value: 'audio', label: '耳机耳麦', brands: [] },
+  { value: 'accessory', label: '配件', brands: [] },
+  { value: 'other', label: '其他设备', brands: [] }
 ];
+
+// 排序与串码方式，与迁移 20261116010000_device_categories.sql 的预置一致
+const CATEGORY_META = {
+  phone: { sortOrder: 10, identifierMode: 'imei' },
+  tablet: { sortOrder: 20, identifierMode: 'serial_imei', keys: ['version', 'networkLock', 'storage', 'ram', 'color', 'grade', 'peerGrade', 'activation', 'warrantyUntil', 'idLock', 'repairStatus', 'repairNote', 'refurbishment', 'store', 'system', 'allGreen', 'battery', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'] },
+  audio: { sortOrder: 30, identifierMode: 'serial', keys: ['color', 'grade', 'peerGrade', 'activation', 'repairStatus', 'repairNote', 'refurbishment', 'store', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'],
+    extra: [{ key: 'kitStatus', label: '配件情况', type: 'select', options: ['配件齐全', '缺少配件', '仅主机'], required: true, visibility: ['customer', 'peer'], filterable: true }] },
+  accessory: { sortOrder: 40, identifierMode: 'serial', keys: ['color', 'grade', 'store', 'shopWarranty', 'supplier', 'receipt'],
+    extra: [{ key: 'spec', label: '规格（功率、长度、接口等）', type: 'text', required: false, visibility: ['customer', 'peer'], filterable: false }] },
+  other: { sortOrder: 50, identifierMode: 'serial', keys: ['storage', 'color', 'grade', 'peerGrade', 'activation', 'warrantyUntil', 'repairStatus', 'repairNote', 'refurbishment', 'store', 'system', 'shopWarranty', 'warrantyLength', 'supplier', 'receipt'],
+    extra: [{ key: 'spec', label: '配置规格', type: 'text', required: false, visibility: ['customer', 'peer'], filterable: false }] }
+};
+categories.forEach(c => Object.assign(c, { sortOrder: CATEGORY_META[c.value].sortOrder, identifierMode: CATEGORY_META[c.value].identifierMode }));
 
 const dashboard = {
   sales: { count: 8, amount: 36580, profit: 4210, margin: 0.115, sellThrough: 0.182 },
@@ -108,11 +122,13 @@ const templates = [
 ];
 
 templates.forEach(t => t.fields.forEach(f => { f.filterable = f.type === 'select'; }));
-// 每个分类一套模板：手机用 t_phone，其他演示分类复制一份手机模板
+// 每个分类一套模板：手机用 t_phone，其他分类按字段清单从手机模板裁剪，补充字段放在供应商、凭证之前
 categories.forEach(c => {
   if (c.value === 'phone') { c.templateId = 't_phone'; return; }
-  const copy = JSON.parse(JSON.stringify(templates[0]));
-  templates.push({ ...copy, id: 't_' + c.value, category: c.value, name: c.label + '通用模板', version: 1 });
+  const meta = CATEGORY_META[c.value], copy = JSON.parse(JSON.stringify(templates[0]));
+  const pick = keys => keys.map(k => copy.fields.find(f => f.key === k)).filter(Boolean);
+  const fields = pick(meta.keys.filter(k => !['supplier', 'receipt'].includes(k))).concat(meta.extra || [], pick(['supplier', 'receipt']));
+  templates.push({ ...copy, fields, id: 't_' + c.value, category: c.value, name: c.label + '通用模板', version: 1 });
   c.templateId = 't_' + c.value;
 });
 const models = [

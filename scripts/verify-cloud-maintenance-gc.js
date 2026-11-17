@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 真实过期对象清理验收：只制造明确可丢弃的小夹具，验证引用/租约/保护与30天保留边界。 */
+require("./lib/verification-guard").guard();
 const fs = require("node:fs"),
   crypto = require("node:crypto"),
   assert = require("node:assert/strict");

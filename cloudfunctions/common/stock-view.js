@@ -2,7 +2,9 @@
 const { SENSITIVE_FIELDS, PERM } = require('./roles');
 const { fail } = require('./gateway');
 const canSee=(u,k)=>k==='agentBase'?['boss','manager','purchaser'].includes(u.role):!SENSITIVE_FIELDS[k]||u.visibleFields.includes(k);
-const mask=(v)=>`${v.slice(0,2)}****${v.slice(-4)}`;
+const mask=(v)=>v?`${v.slice(0,2)}****${v.slice(-4)}`:null;
+// 序列号与完整 IMEI 同级：无 fullImei 可见权限只给脱敏值
+const maskSerial=(v)=>v?`${v.slice(0,2)}****${v.slice(-3)}`:null;
 const maskCode=(u,v)=>!canSee(u,'fullImei')&&/^\d{15}$/.test(v)?mask(v):v;
 function unit(row,u) {
   const a=row.attributes||{}, fields=row.template_snapshot?.fields||[], attached=row.attached||[];
@@ -11,8 +13,8 @@ function unit(row,u) {
   const fileView=f=>{if(!f.resolved_url)fail(503,'附件链接尚未迁移到云开发');return {fileId:f.id,scope:f.scope,mime:f.mime,mediaType:f.mime.startsWith('video/')?'video':'image',url:f.resolved_url};};
   const publicFiles=attached.filter(f=>f.field_key==='publicImages');
   const receipt=[...new Map(attached.filter(f=>f.scope==='internal'&&visible(f)).map(f=>[f.id,f])).values()];
-  const r={id:row.id,modelId:row.model_id,name:row.name,brand:row.brand,category:row.category_id,status:row.status,ownership:row.ownership,condition:row.condition_type,imeiMasked:mask(row.imei1),storage:a.storage,color:a.color,grade:a.grade,battery:a.battery,version:a.version,retail:Number(row.retail),flags:row.share_flags,peerDesc:row.peer_desc,customerDesc:row.customer_desc,createdAt:row.created_at,ageDays:Math.max(0,Math.floor((Date.now()-new Date(row.created_at).getTime())/86400000)),images:publicFiles.filter(f=>f.mime.startsWith('image/')).map(f=>fileView(f).url),publicImages:publicFiles.map(fileView),priceVersion:row.price_version};
-  if(canSee(u,'fullImei')){r.imei1=row.imei1;r.imei2=row.imei2;}
+  const r={id:row.id,modelId:row.model_id,name:row.name,brand:row.brand,category:row.category_id,status:row.status,ownership:row.ownership,condition:row.condition_type,imeiMasked:mask(row.imei1),serialMasked:maskSerial(row.serial_no),noSerialReason:row.no_serial_reason||null,identifierMode:row.identifier_mode||'imei',lotId:row.lot_id||null,storage:a.storage,ram:a.ram,color:a.color,grade:a.grade,battery:a.battery,version:a.version,retail:Number(row.retail),flags:row.share_flags,peerDesc:row.peer_desc,customerDesc:row.customer_desc,createdAt:row.created_at,ageDays:Math.max(0,Math.floor((Date.now()-new Date(row.created_at).getTime())/86400000)),images:publicFiles.filter(f=>f.mime.startsWith('image/')).map(f=>fileView(f).url),publicImages:publicFiles.map(fileView),priceVersion:row.price_version};
+  if(canSee(u,'fullImei')){r.imei1=row.imei1;r.imei2=row.imei2;r.serialNo=row.serial_no;}
   if(canSee(u,'cost'))r.cost=Number(row.cost);
   if(canSee(u,'supplier')){r.supplier=row.supplier_name||'';r.supplierId=row.supplier_id;}
   if(canSee(u,'internalNote'))r.internalNote=row.internal_note;
@@ -31,7 +33,7 @@ function purchase(row,u) {
   if(canSee(u,'supplier')){r.supplier=row.supplier_name||'';r.supplierId=row.supplier_id;}
   if(canSee(u,'cost')){r.amount=Number(row.amount);r.freight=Number(row.freight);}
   if(row.lines)r.lines=row.lines.map(l=>({id:l.id,modelId:l.model_id,modelName:l.name,templateId:l.template_id,attributes:l.expected_attributes,quantity:l.quantity,received:l.received_count,accepted:l.accepted_count,rejected:l.rejected_count,remaining:l.quantity-l.received_count,...(canSee(u,'cost')?{unitCost:Number(l.unit_cost)}:{})}));
-  if(row.exceptions)r.exceptions=row.exceptions.map(a=>({id:a.id,lineId:a.purchase_line_id,modelId:a.model_id,modelName:a.name,imeiMasked:mask(a.imei1),...(canSee(u,'fullImei')?{imei1:a.imei1,imei2:a.imei2}:{}),reason:a.reason,resolution:a.resolution,observedModel:a.attributes?._observedModel||''}));
+  if(row.exceptions)r.exceptions=row.exceptions.map(a=>({id:a.id,lineId:a.purchase_line_id,modelId:a.model_id,modelName:a.name,imeiMasked:mask(a.imei1),serialMasked:maskSerial(a.serial_no),noSerialReason:a.no_serial_reason||null,...(canSee(u,'fullImei')?{imei1:a.imei1,imei2:a.imei2,serialNo:a.serial_no}:{}),reason:a.reason,resolution:a.resolution,observedModel:a.attributes?._observedModel||''}));
   return r;
 }
 function record(row,u,detail=true) {
@@ -40,7 +42,7 @@ function record(row,u,detail=true) {
   for(const x of row.resolutions)resolutions.set(`${x.target_type}:${x.target}`,{resolution:x.resolution,label:labels[x.resolution],note:x.note,operator:x.operator||'',time:x.created_at});
   const settled=k=>resolutions.has(k)&&resolutions.get(k).resolution!=='pending';
   const result={id:row.id,time:row.created_at,operator:row.operator||'',scope:row.scope,sessionId:row.session_id||null,expectedCount:r.expectedCount,scannedCount:r.scannedCount,matched:r.matched,missingCount:r.missingIds.length,extraCount:r.extra.length,changedCount:(r.changed||[]).length,openCount:r.missingIds.filter(id=>!settled('unit:'+id)).length+r.extra.filter((_,i)=>!settled('extra:'+i)).length};
-  if(detail)Object.assign(result,{missingIds:r.missingIds,matchedIds:r.matchedIds||[],missing:row.missing.map(x=>({...unit(x,u),resolution:resolutions.get('unit:'+x.id)||null})),changed:(r.changed||[]).map(c=>{const x=row.changedUnits.find(x=>x.id===c.unitId);return {id:x.id,name:x.name,imeiMasked:mask(x.imei1),from:c.from,to:c.to};}),extra:r.extra.map((e,i)=>({key:String(i),code:maskCode(u,e.code),unitId:e.unitId||null,reason:e.reason,resolution:resolutions.get('extra:'+i)||null}))});
+  if(detail)Object.assign(result,{missingIds:r.missingIds,matchedIds:r.matchedIds||[],missing:row.missing.map(x=>({...unit(x,u),resolution:resolutions.get('unit:'+x.id)||null})),changed:(r.changed||[]).map(c=>{const x=row.changedUnits.find(x=>x.id===c.unitId);return {id:x.id,name:x.name,imeiMasked:mask(x.imei1),serialMasked:maskSerial(x.serial_no),from:c.from,to:c.to};}),extra:r.extra.map((e,i)=>({key:String(i),code:maskCode(u,e.code),unitId:e.unitId||null,reason:e.reason,resolution:resolutions.get('extra:'+i)||null}))});
   return result;
 }
 function sale(row,u,detail=false) {
@@ -84,4 +86,4 @@ function view(action,r,p,u) {
   if(r && Object.hasOwn(r,'rows'))return paged(r.rows);
   return r;
 }
-module.exports={view,canSee,unit,purchase,record,sale};
+module.exports={view,canSee,unit,purchase,record,sale,mask,maskSerial};

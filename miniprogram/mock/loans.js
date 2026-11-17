@@ -3,7 +3,8 @@ const {
   ROLE_PERMISSIONS,
   SENSITIVE_FIELDS,
 } = require("../constants/roles");
-const { isImei, isPhone } = require("../utils/validate");
+const { isImei, isPhone, normalizeSerial, serialError } = require("../utils/validate");
+const { applySpecs, validateValues } = require("../utils/template");
 module.exports = function (
   db,
   { fail, currentRole, requirePermission, paginate, clone, uploadedFiles },
@@ -128,7 +129,9 @@ module.exports = function (
       return {
         ...i,
         unitStatus: u.status,
-        imeiMasked: i.imei1.slice(0, 2) + "****" + i.imei1.slice(-4),
+        imeiMasked: i.imei1 ? i.imei1.slice(0, 2) + "****" + i.imei1.slice(-4) : null,
+        serialMasked: i.serialNo ? i.serialNo.slice(0, 2) + "****" + i.serialNo.slice(-3) : null,
+        serialNo: SENSITIVE_FIELDS.fullImei.includes(currentRole()) ? i.serialNo : undefined,
         imei1: SENSITIVE_FIELDS.fullImei.includes(currentRole())
           ? i.imei1
           : undefined,
@@ -287,7 +290,7 @@ module.exports = function (
               timeline: [],
             },
             seen = new Set();
-          for (const v of input) {
+          for (let v of input) {
             let u;
             if (d.type === "loan_out") {
               requirePermission(PERM.INVENTORY_VIEW);
@@ -316,12 +319,31 @@ module.exports = function (
                 "modelId",
                 "imei1",
                 "imei2",
+                "serialNo",
+                "ram",
                 "condition",
                 "description",
               ]);
               const m =
                 db.models.find((m) => m.id === v.modelId) ||
                 fail(400, "型号不存在");
+              const fields = applySpecs(db.templates.find(t => t.id === m.templateId)?.fields || [], m.specs);
+              const ram = v.ram;
+              if (ram !== undefined) {
+                const field = fields.find(f => f.key === 'ram');
+                if (!field || typeof ram !== 'string' || !ram.trim()) fail(400, '运行内存无效');
+                const error = validateValues([field], { ram });
+                if (error) fail(400, error);
+              }
+              // 非手机借入登记序列号，同型号下相同序列号视为同一台
+              const mode = (db.categories.find((c) => c.value === m.category) || {}).identifierMode || "imei";
+              if (mode !== "imei") {
+                const error = serialError(v.serialNo);
+                if (error) fail(400, error);
+                v = { modelId: v.modelId, serialNo: normalizeSerial(v.serialNo), condition: v.condition, description: v.description };
+                if (seen.has("SN:" + v.serialNo)) fail(400, "借入序列号重复");
+                seen.add("SN:" + v.serialNo);
+              } else if (!v.imei1) fail(400, "请填写 IMEI1");
               for (const code of [v.imei1, v.imei2].filter(Boolean)) {
                 if (!isImei(code) || seen.has(code))
                   fail(400, "串码无效或重复");
@@ -335,28 +357,32 @@ module.exports = function (
                 )
                   fail(409, "设备正在外部维修");
               }
-              u = db.units.find((u) =>
-                [u.imei1, u.imei2].some(
-                  (code) => code && [v.imei1, v.imei2].includes(code),
-                ),
-              );
+              u = v.serialNo
+                ? db.units.find((u) => u.modelId === v.modelId && u.serialNo === v.serialNo)
+                : db.units.find((u) =>
+                    [u.imei1, u.imei2].some(
+                      (code) => code && [v.imei1, v.imei2].includes(code),
+                    ),
+                  );
               if (u) {
                 if (
                   u.status !== "returned" ||
                   u.ownership !== "borrowed" ||
                   u.modelId !== v.modelId ||
-                  u.imei1 !== v.imei1 ||
+                  (u.imei1 || "") !== (v.imei1 || "") ||
                   (u.imei2 || "") !== (v.imei2 || "")
                 )
                   fail(409, "串码已用于其他业务");
                 u.status = "borrowed_in";
+                if (ram !== undefined) { u.ram = ram; u.attributes = { ...u.attributes, ram }; }
               } else {
                 u = {
                   id: uid(),
                   name: m.name,
                   modelId: m.id,
-                  imei1: v.imei1,
+                  imei1: v.imei1 || "",
                   imei2: v.imei2 || "",
+                  serialNo: v.serialNo || "",
                   ownership: "borrowed",
                   status: "borrowed_in",
                   condition: v.condition || "used",
@@ -369,8 +395,9 @@ module.exports = function (
                     sharePeer: false,
                     shareAgent: false,
                   },
-                  attributes: {},
-                  templateSnapshot: { fields: [] },
+                  ram,
+                  attributes: ram === undefined ? {} : { ram },
+                  templateSnapshot: { fields },
                   images: [],
                   ageDays: 0,
                 };
@@ -385,6 +412,8 @@ module.exports = function (
               name: u.name,
               imei1: u.imei1,
               imei2: u.imei2 || "",
+              serialNo: u.serialNo || "",
+              ram: u.ram,
               ownership: d.type === "loan_out" ? "own" : "borrowed",
               status: "active",
             });

@@ -9,11 +9,11 @@ const events = require('../../../utils/events');
 createPage({
   requireStaff: true, permission: PERM.INVENTORY_VIEW,
   data: { list: [], page: 1, hasMore: true, loading: false, error: '', keyword: '', counts: {}, total: 0,
-    canInbound: false, canStocktake: false, canSell: false, canShare: false, summary: null, picking: false, pickMode: '', pickFor: '', saving: false, selected: {}, selectedCount: 0, filterOpen: false, model: null, ageingOver: '', minPrice: '', maxPrice: '',
+    canInbound: false, canStocktake: false, canSell: false, canShare: false, summary: null, picking: false, pickMode: '', pickFor: '', saving: false, selected: {}, selectedCount: 0, filterOpen: false, model: null, lotId: '', ageingOver: '', minPrice: '', maxPrice: '',
     filters: [{ value: '', label: '全部' }, ...['in_stock','recheck','locked','repairing','loaned_out','borrowed_in','sold','returned'].map(value => ({ value, label: UNIT_STATUS[value].label }))], activeFilter: '' },
   onLoad(query) {
     const pickFor = (query.pick === 'pos' && can(this.data.user, PERM.SALES_CREATE)) || (query.pick === 'loan' && can(this.data.user, PERM.LOAN_MANAGE)) ? query.pick : '';
-    this.setData({ statusMap: UNIT_STATUS, activeFilter: pickFor ? 'in_stock' : query.status || '', ageingOver: query.ageingOver || '', canInbound: can(this.data.user, PERM.INBOUND), canStocktake: can(this.data.user, PERM.STOCKTAKE), canSell: can(this.data.user, PERM.SALES_CREATE), canShare: can(this.data.user, PERM.SHARE), picking: !!pickFor, pickMode: pickFor ? 'sell' : '', pickFor });
+    this.setData({ statusMap: UNIT_STATUS, activeFilter: pickFor ? 'in_stock' : query.status || '', ageingOver: query.ageingOver || '', lotId: query.lotId || '', canInbound: can(this.data.user, PERM.INBOUND), canStocktake: can(this.data.user, PERM.STOCKTAKE), canSell: can(this.data.user, PERM.SALES_CREATE), canShare: can(this.data.user, PERM.SHARE), picking: !!pickFor, pickMode: pickFor ? 'sell' : '', pickFor });
     this.offModel = events.on('inventory:model-selected', model => {
       const pages = getCurrentPages(); if (pages[pages.length - 2] === this) { this.setData({ model }); this.load(true); }
     });
@@ -27,7 +27,7 @@ createPage({
     const revision = this.revision = (this.revision || 0) + 1, page = reset ? 1 : this.data.page + 1;
     this.setData({ loading: true, error: '' });
     try {
-      const res = await api.inventory.list({ keyword: this.data.keyword.trim(), modelId: this.data.model ? this.data.model.id : undefined, status: this.data.activeFilter || undefined,
+      const res = await api.inventory.list({ keyword: this.data.keyword.trim(), modelId: this.data.model ? this.data.model.id : undefined, lotId: this.data.lotId || undefined, status: this.data.activeFilter || undefined,
         ageingOver: this.data.ageingOver === '' ? undefined : this.data.ageingOver, minPrice: this.data.minPrice === '' ? undefined : this.data.minPrice, maxPrice: this.data.maxPrice === '' ? undefined : this.data.maxPrice, page, pageSize: 20 });
       if (this.destroyed || revision !== this.revision) return;
       const list = reset ? res.list : this.data.list.concat(res.list);
@@ -35,6 +35,8 @@ createPage({
     } catch (e) { if (!this.destroyed && revision === this.revision) this.setData({ error: e.message }); }
     finally { if (!this.destroyed && revision === this.revision) this.setData({ loading: false }); }
   },
+  /** 同批按数量入库的设备：收银时可在此全选或逐件勾选 */
+  onClearLot() { this.setData({ lotId: '' }); return this.load(true); },
   onKeyword(e) { this.setData({ keyword: e.detail.value }); },
   onSearch() { return this.load(true); },
   async onScan() { try { const keyword = unitCode(await scan()); this.setData({ keyword }); return this.load(true); } catch (_) {} },
@@ -49,7 +51,7 @@ createPage({
     if (minPrice !== '' && maxPrice !== '' && Number(minPrice) > Number(maxPrice)) return this.$toast('最低价不能高于最高价');
     this.setData({ filterOpen: false }); return this.load(true);
   },
-  onResetFilter() { this.setData({ model: null, ageingOver: '', minPrice: '', maxPrice: '', keyword: '', activeFilter: '' }); return this.load(true); },
+  onResetFilter() { this.setData({ model: null, lotId: '', ageingOver: '', minPrice: '', maxPrice: '', keyword: '', activeFilter: '' }); return this.load(true); },
   onItemTap(e) {
     const { id, status } = e.currentTarget.dataset;
     if (!this.data.picking) return this.$go(ROUTES.INVENTORY_DETAIL, { id });

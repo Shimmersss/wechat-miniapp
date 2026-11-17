@@ -1,6 +1,7 @@
 <wxs module="f" src="../../../utils/filters.wxs" />
 <theme-shell>
 <view class="container {{picking ? 'picking' : 'has-staff-tabbar'}}">
+  <view wx:if="{{lotId}}" class="notice">正在查看同批按数量入库的设备，共 {{total}} 件<button class="btn btn-line btn-sm" bindtap="onClearLot">查看全部</button></view>
   <view wx:if="{{summary && !picking}}" class="card summary">
     <view class="summary-label">在库</view>
     <view class="summary-main"><text class="summary-num">{{summary.inStock}}</text><text class="summary-unit">台</text></view>
@@ -28,8 +29,8 @@
   <view class="small muted mb">符合筛选 {{total}} 台；状态标签为全库数量。{{model ? '型号：' + model.name : ''}}</view>
   <view wx:if="{{error}}" class="notice">{{error}}<button class="btn btn-line btn-sm mt-sm" bindtap="onSearch">重试</button></view>
   <view wx:for="{{list}}" wx:key="id" class="card unit {{item.ageDays > 30 ? 'age-warning' : ''}} {{picking && selected[item.id] ? 'picked' : ''}} {{picking && item.status !== 'in_stock' ? 'unpickable' : ''}}" bindtap="onItemTap" data-id="{{item.id}}" data-status="{{item.status}}">
-    <view class="row"><view wx:if="{{picking}}" class="check {{selected[item.id] ? 'on' : ''}}">{{selected[item.id] ? '✓' : ''}}</view><text class="h3 ellipsis flex-1">{{item.name}} {{item.storage}}</text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
-    <view class="small muted mt-sm">{{item.imeiMasked || f.maskImei(item.imei1)}} · {{item.color}} · {{item.grade}}</view>
+    <view class="row"><view wx:if="{{picking}}" class="check {{selected[item.id] ? 'on' : ''}}">{{selected[item.id] ? '✓' : ''}}</view><text class="h3 ellipsis flex-1">{{item.name}} {{item.storage}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></text><status-pill text="{{f.label(statusMap, item.status)}}" tone="{{f.tone(statusMap, item.status)}}" /></view>
+    <view class="small muted mt-sm">{{f.code(item)}} · {{item.color}} · {{item.grade}}{{item.lotId ? ' · 同批入库' : ''}}</view>
     <view class="row mt-sm"><text class="small {{item.ageDays > 30 ? 'price' : 'muted'}}">库龄 {{item.ageDays}} 天{{item.ageDays > 30 ? ' · 超 30 天' : ''}}</text><text class="small">零 ¥{{f.maskMoney(item.retail, privacy)}}</text></view>
     <view wx:if="{{pickMode === 'agent'}}" class="small mt-sm {{item.flags.shareAgent ? 'agent-on' : 'muted'}}">{{item.flags.shareAgent ? '已开启代理转发' : '未开启代理转发'}}</view>
     <view class="tiny muted mt-sm">成本 {{item.cost !== undefined ? '¥' + f.maskMoney(item.cost, privacy) : '无权限查看'}} · 批发 {{item.wholesale !== undefined ? '¥' + f.maskMoney(item.wholesale, privacy) : '无权限查看'}}</view>

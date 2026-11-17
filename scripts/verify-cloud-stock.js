@@ -5,6 +5,7 @@
  * 运行 node scripts/verify-cloud-stock.js。使用已登录 tcb/mcporter、functions.env。
  * 创建带随机标识的验证员工/分类/型号/单机；保留数据和审计作为验证证据，不自动删除。
  */
+require("./lib/verification-guard").guard();
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');

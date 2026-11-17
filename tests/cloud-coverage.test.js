@@ -28,7 +28,7 @@ test("公开分类只保留分类/品牌/系列/型号白名单，空分类保�
   const result = categories({
     categories: [
       { value: "phone", label: "手机", private: "secret" },
-      { value: "tablet", label: "平板" },
+      { value: "tablet", label: "平板", identifierMode: "serial_imei" },
     ],
     models: [
       {
@@ -55,6 +55,7 @@ test("公开分类只保留分类/品牌/系列/型号白名单，空分类保�
     {
       value: "phone",
       label: "手机",
+      identifierMode: "imei",
       brands: [
         {
           value: "brand",
@@ -66,7 +67,15 @@ test("公开分类只保留分类/品牌/系列/型号白名单，空分类保�
         },
       ],
     },
-    { value: "tablet", label: "平板", brands: [] },
+    { value: "tablet", label: "平板", identifierMode: "serial_imei", brands: [] },
   ]);
   assert.equal(JSON.stringify(result).includes("secret"), false);
+});
+test("公开分类：手机品牌按首页入口顺序排，未列入的品牌排最后", () => {
+  const model = (id, brand, label) => ({ id, category_id: "phone", brand, brand_label: label, series: "S", name: id });
+  const result = categories({
+    categories: [{ value: "phone", label: "手机" }],
+    models: [model("m1", "meizu", "魅族"), model("m2", "redmi", "红米"), model("m3", "苹果", "苹果")],
+  });
+  assert.deepEqual(result[0].brands.map((b) => b.value), ["苹果", "redmi", "meizu"]);
 });

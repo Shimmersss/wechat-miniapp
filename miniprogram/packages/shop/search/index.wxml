@@ -2,7 +2,7 @@
 <view class="container">
   <view class="search-bar">
     <image class="search-icon" src="/assets/icons/search-gray.svg" />
-    <input class="search-input" value="{{input}}" placeholder="搜索品牌 / 型号 / 内存 / 颜色" confirm-type="search" focus="{{!modelId && !keyword}}" bindinput="onInput" bindconfirm="onSearch" />
+    <input class="search-input" value="{{input}}" placeholder="搜索品牌 / 型号 / 存储 / 运行内存 / 颜色" confirm-type="search" focus="{{!modelId && !keyword}}" bindinput="onInput" bindconfirm="onSearch" />
     <text wx:if="{{input}}" class="search-clear" bindtap="onClearInput">清除</text>
   </view>
 

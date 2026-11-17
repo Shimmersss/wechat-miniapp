@@ -35,6 +35,22 @@ function maskImei(imei) {
   return s.slice(0, 2) + '****' + s.slice(-4);
 }
 
+/**
+ * 设备串码显示：手机显示 IMEI（脱敏）；非手机显示序列号；都没有时显示“无序列号”。
+ * full=true 且接口返回了完整值（已按权限裁剪）时显示完整值。
+ */
+function code(unit, full) {
+  if (!unit) return '';
+  if (full && unit.imei1 && (unit.imei1 + '').indexOf('*') < 0) return unit.imei1;
+  if (unit.imeiMasked) return unit.imeiMasked;
+  if (unit.imei1) return maskImei(unit.imei1);
+  if (full && unit.serialNo) return 'SN ' + unit.serialNo;
+  if (unit.serialMasked) return 'SN ' + unit.serialMasked;
+  if (unit.serialNo) return 'SN ' + unit.serialNo;
+  if (unit.noSerialReason || unit.identifierMode === 'serial' || unit.identifierMode === 'serial_imei') return '无序列号';
+  return '';
+}
+
 function label(map, key) {
   return (map && map[key] && map[key].label) || key || '--';
 }
@@ -57,6 +73,7 @@ module.exports = {
   maskMoney: maskMoney,
   percent: percent,
   maskImei: maskImei,
+  code: code,
   label: label,
   tone: tone,
   time: time

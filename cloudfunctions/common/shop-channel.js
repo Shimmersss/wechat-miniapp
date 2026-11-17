@@ -58,7 +58,7 @@ async function list(ctx, user) {
   if (q.keyword) {
     const kw = text(q.keyword, "搜索", 100).toLowerCase();
     rows = rows.filter((r) =>
-      [r.name, r.storage, r.color].some((v) =>
+      [r.name, r.storage, r.ram, r.color].some((v) =>
         String(v).toLowerCase().includes(kw),
       ),
     );

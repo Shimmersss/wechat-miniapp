@@ -3,6 +3,7 @@
  * 运行前按wechatide skill完成Codex授权；本机live-login-args.json含测试员工phone/code。
  * 通过后台Promise避免自动化桥等待超时；每个分段仍是实际云函数调用。
  */
+require("./lib/verification-guard").guard();
 const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');

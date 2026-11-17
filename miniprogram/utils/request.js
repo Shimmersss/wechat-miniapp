@@ -46,9 +46,11 @@ function handleError(err, showError) {
  * @param {object} [options.data]
  * @param {boolean} [options.loading]   是否显示 loading
  * @param {boolean} [options.showError] 失败时是否自动 toast，默认 true
+ * @param {boolean} [options.optionalSession] 公开接口在会话失效时重试一次匿名请求
+ * @param {boolean} [options.requireSession] 需要账号的操作在调用前按需建立会话
  */
 function request(options) {
-  const { url, method = 'GET', data: rawData = {}, loading = false, showError = true, header } = options;
+  const { url, method = 'GET', data: rawData = {}, loading = false, showError = true, header, optionalSession, requireSession } = options;
   const data = method === 'GET' ? clean(rawData) : rawData;
   if (loading) wx.showLoading({ title: '加载中', mask: true });
 
@@ -61,23 +63,20 @@ function request(options) {
       })
       .finally(() => loading && wx.hideLoading());
 
-  if (config.useMock) {
-    const mock = require('../mock/index');
-    return done(mock.handle({ url, method, data, header: buildHeaders(header) }).then(unwrap));
-  }
+  function send(headers) {
+    if (config.useMock) {
+      const mock = require('../mock/index');
+      return mock.handle({ url, method, data, header: headers }).then(unwrap);
+    }
+    if (config.useCloud) return callCloud({ url, method, data, headers });
 
-  if (config.useCloud) {
-    return done(callCloud({ url, method, data, headers: buildHeaders(header) }));
-  }
-
-  return done(
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       wx.request({
         url: config.baseUrl + url,
         method,
         data,
         timeout: config.timeout,
-        header: buildHeaders(header),
+        header: headers,
         success: (res) => {
           if (res.statusCode >= 400) {
             const message = res.data && res.data.message;
@@ -91,8 +90,23 @@ function request(options) {
         },
         fail: reject
       });
-    })
-  );
+    });
+  }
+
+  return done((async () => {
+    if (requireSession) await require('./auth').ensureWechatSession();
+    const headers = buildHeaders(header);
+    try {
+      return await send(headers);
+    } catch (err) {
+      const invalidSession = err.code === 401;
+      const sessionUnavailable = err.code === 503 && err.message === '会话服务暂不可用';
+      if (!optionalSession || !headers.Authorization || (!invalidSession && !sessionUnavailable)) throw err;
+      if (invalidSession && headers.Authorization === `Bearer ${wx.getStorageSync(storageKeys.token)}`) handleError(err, false);
+      const { Authorization, ...guestHeaders } = headers;
+      return send(guestHeaders);
+    }
+  })());
 }
 
 // 已迁移到云开发的接口：路径第一段 → 云函数名。未登记的路径直接报错，不回退旧服务器
@@ -118,6 +132,38 @@ function callCloud({ url, method, data, headers }) {
   const segments = path.split('/').filter(Boolean);
   const name = CLOUD_FUNCTIONS[segments.slice(0, 2).join('/')] || CLOUD_FUNCTIONS[segments[0]];
   if (!name) return Promise.reject(new ApiError(501, '该功能尚未迁移到云开发'));
+  if (config.env === 'trial' && !config.cloudHttpBaseUrl)
+    return Promise.reject(new ApiError(503, '当前体验包未配置后端地址，请联系管理员更新体验版'));
+  const params = { ...(query ? parseQuery(query) : {}), ...(data || {}) };
+  if (config.cloudHttpBaseUrl) {
+    const base = config.cloudHttpBaseUrl.replace(/\/+$/, '');
+    if (!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(base))
+      return Promise.reject(new ApiError(503, '云开发 HTTPS 地址配置无效'));
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: base + '/xiamu-' + name,
+        method: 'POST',
+        data: { path, method, data: params },
+        header: headers,
+        timeout: config.timeout,
+        success: (res) => {
+          try {
+            resolve(unwrap(res.data));
+          } catch (e) {
+            reject(e);
+          }
+        },
+        fail: (err) => {
+          const detail = err?.errMsg || '';
+          if (/domain list|合法域名/i.test(detail))
+            return reject(new ApiError(-1, '云开发网关未加入小程序的 request 合法域名'));
+          if (/timeout|timed out/i.test(detail))
+            return reject(new ApiError(-1, '连接云开发网关超时，请稍后重试'));
+          reject(err);
+        }
+      });
+    });
+  }
   if (!cloudReady) {
     // cloudEnv 为空时用小程序关联的默认环境；填了就显式指定。
     // 环境 ID 不写死在代码里，由 config 的 develop.cloudEnv 提供，本机覆盖。
@@ -126,7 +172,6 @@ function callCloud({ url, method, data, headers }) {
     );
     cloudReady = true;
   }
-  const params = { ...(query ? parseQuery(query) : {}), ...(data || {}) };
   return new Promise((resolve, reject) => {
     wx.cloud.callFunction({
       name,
@@ -138,7 +183,12 @@ function callCloud({ url, method, data, headers }) {
           reject(e);
         }
       },
-      fail: reject
+      fail: (err) => {
+        const detail = err?.errMsg || '';
+        if (/environment|invalid env|权限|环境|授权/i.test(detail))
+          return reject(new ApiError(-1, '小程序无法访问当前云环境，请检查云开发配置'));
+        reject(err);
+      }
     });
   });
 }

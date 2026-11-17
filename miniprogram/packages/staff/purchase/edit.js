@@ -25,7 +25,7 @@ createPage({
       if (detail.status !== 'pending_ship') throw new Error('已发货采购单不能修改');
       if (detail.supplierId === undefined || detail.freight === undefined || detail.lines.some(l => l.unitCost === undefined)) throw new Error('当前账号不能读取完整采购信息');
       const templates = await Promise.all(detail.lines.map(l => api.template.modelForm(l.modelId)));
-      this.setData({ supplierName: detail.supplier, form: { supplierId: detail.supplierId, expectedAt: detail.expectedAt, freight: String(detail.freight), remark: detail.remark }, lines: detail.lines.map((l, index) => ({ ...l, key: 'purchase_line_' + ++sequence, specFields: templates[index].fields.filter(f => ['storage', 'color', 'version'].includes(f.key)).map(f => ({ ...f, required: false })) })) });
+      this.setData({ supplierName: detail.supplier, form: { supplierId: detail.supplierId, expectedAt: detail.expectedAt, freight: String(detail.freight), remark: detail.remark }, lines: detail.lines.map((l, index) => ({ ...l, key: 'purchase_line_' + ++sequence, specFields: templates[index].fields.filter(f => ['storage', 'ram', 'color', 'version'].includes(f.key)).map(f => ({ ...f, required: false })) })) });
     } catch (e) { this.setData({ error: e.message }); }
     finally { this.setData({ loading: false }); }
   },
@@ -47,7 +47,7 @@ createPage({
       if (this.destroyed || revision !== this.modelRevision) return;
       const index = this.data.lines.findIndex(l => l.key === key);
       if (index < 0) return;
-      const specFields = template.fields.filter(f => ['storage', 'color', 'version'].includes(f.key)).map(f => ({ ...f, required: false }));
+      const specFields = template.fields.filter(f => ['storage', 'ram', 'color', 'version'].includes(f.key)).map(f => ({ ...f, required: false }));
       this.setData({ ['lines[' + index + ']']: { ...this.data.lines[index], modelId: model.id, modelName: model.name, specFields, attributes: {} } });
     } catch (e) { this.$toast(e.message); }
     finally { if (!this.destroyed && revision === this.modelRevision) this.setData({ loading: false }); }

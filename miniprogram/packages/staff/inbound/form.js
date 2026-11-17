@@ -1,21 +1,32 @@
-/** 单台与批量共用同一份型号模板；每台保留 IMEI 与覆盖值。 */
+/**
+ * 单台与批量共用同一份型号模板；每台保留串码与覆盖值。
+ * 串码方式由型号所属分类决定（identifierMode）：
+ * - imei：手机，IMEI1 必填、IMEI2 选填，可扫码识别型号；
+ * - serial：非手机，推荐填序列号，没有时说明原因；单台页无序列号时可按数量入库；
+ * - serial_imei：同 serial，另可选填 IMEI（蜂窝版平板）。
+ */
 const api = require('../../../api/index');
 const { PERM } = require('../../../constants/roles');
 const { ROUTES } = require('../../../utils/router');
 const events = require('../../../utils/events');
-const { scanImei } = require('../../../utils/scan');
-const { isImei } = require('../../../utils/validate');
+const { scanImei, scanSerial } = require('../../../utils/scan');
+const { isImei, normalizeSerial, serialError, noSerialReasonError } = require('../../../utils/validate');
+const { NO_SERIAL_REASONS, QUANTITY_LIMIT, CONDITION_TYPE, CONDITION_TYPE_DEVICE } = require('../../../constants/status');
 const { initialValues, validateValues } = require('../../../utils/template');
 const { upload } = require('../../../utils/request');
 const auth = require('../../../utils/auth');
 const drafts = require('./draft');
 let sequence = 0;
-function row() { return { key: `row_${++sequence}`, imei1: '', imei2: '', state: '', message: '', matchModelId: '', expanded: false, attributes: {}, cost: '' }; }
+function identityReset() { const blank = row(); return Object.fromEntries(IDENTITY_KEYS.map(k => [k, blank[k]])); }
+function row() { return { key: `row_${++sequence}`, imei1: '', imei2: '', serialNo: '', noSerial: false, noSerialReason: '', state: '', message: '', matchModelId: '', expanded: false, attributes: {}, cost: '' }; }
+/** 行内串码相关字段，模式切换时清空 */
+const IDENTITY_KEYS = ['imei1', 'imei2', 'serialNo', 'noSerial', 'noSerialReason', 'state', 'message', 'matchModelId'];
+const serialMode = mode => mode === 'serial' || mode === 'serial_imei';
 module.exports = function inboundPage(batch) {
   return {
     requireStaff: true, permission: PERM.INBOUND,
     data: {
-      batch, model: null, modelLoading: false, templateId: '', templateVersion: 0, templateFields: [], parameterFields: [], imageFields: [], rowFields: [], attributes: {},
+      batch, model: null, modelLoading: false, identifierMode: 'imei', conditionOptions: CONDITION_TYPE, reasonPresets: NO_SERIAL_REASONS, quantity: '1', quantityLimit: QUANTITY_LIMIT, batchNoSerial: false, batchReason: '', templateId: '', templateVersion: 0, templateFields: [], parameterFields: [], imageFields: [], rowFields: [], attributes: {},
       hasDraft: false, restoringDraft: false, checkingSubmission: false,
       rows: [row()], costPresets: [], submitting: false, uploading: false, fieldUploads: 0, descriptionPresets: { peer: [], customer: [] },
       form: { condition: 'used', inspectionConfirmed: false, cost: '', wholesale: '', retail: '', agentBase: '', targetProfit: '', peerDesc: '', customerDesc: '', internalNote: '', publicImages: [], flags: { showInShop: true, sharePeer: true, shareAgent: false } }
@@ -71,14 +82,18 @@ module.exports = function inboundPage(batch) {
         this.priceRevision = (this.priceRevision || 0) + 1;
         this.priceTouched = saved.priceTouched;
         this.activeDraftSavedAt = saved.savedAt;
-        restoredRows = values.rows.map(savedRow => ({ ...row(), ...savedRow }));
+        const sameMode = (saved.identifierMode || 'imei') === templatePatch.identifierMode;
+        restoredRows = values.rows.map(savedRow => ({ ...row(), ...savedRow, ...(sameMode ? {} : identityReset()) }));
         this.setData({
           ...templatePatch,
+          quantity: sameMode && saved.quantity ? String(saved.quantity) : '1',
+          batchNoSerial: sameMode && !!saved.batchNoSerial,
+          batchReason: sameMode ? saved.batchReason || '' : '',
           rows: restoredRows,
           attributes: values.attributes,
           form: { ...this.data.form, ...saved.form, inspectionConfirmed: false },
         });
-        notice = values.changed ? '模板已更新，请补核参数' : '草稿已恢复，请重新确认实机验收';
+        notice = !sameMode ? '分类串码方式已变化，请重新填写串码' : values.changed ? '模板已更新，请补核参数' : '草稿已恢复，请重新确认实机验收';
         if (fileFailed) notice += '，部分附件暂不可预览';
       } catch (error) {
         notice = error.message || '草稿恢复失败，请重试';
@@ -89,7 +104,7 @@ module.exports = function inboundPage(batch) {
       if (this.destroyed) return;
       if (notice) this.$toast(notice);
       // 批量草稿在提交时分组校验。
-      if (!batch && restoredRows[0]?.imei1) this.checkRow(restoredRows[0].key, false);
+      if (!batch && (restoredRows[0]?.imei1 || restoredRows[0]?.serialNo || restoredRows[0]?.noSerial)) this.checkRow(restoredRows[0].key, false);
     },
     onDeleteDraft() {
       if (this.draftBusy() || !this.draftAvailable()) return;
@@ -120,9 +135,11 @@ module.exports = function inboundPage(batch) {
         templateFields: fields,
         parameterFields: fields.filter(field => field.type !== 'image'),
         imageFields: fields.filter(field => field.type === 'image'),
-        rowFields: fields.filter(field => ['battery', 'grade', 'refurbishment'].includes(field.key)),
+        rowFields: fields.filter(field => ['battery', 'grade', 'refurbishment', 'ram'].includes(field.key)),
         descriptionPresets: template?.descriptionPresets || { peer: [], customer: [] },
         costPresets,
+        identifierMode: template?.identifierMode || model?.identifierMode || 'imei',
+        conditionOptions: serialMode(template?.identifierMode || model?.identifierMode) ? CONDITION_TYPE_DEVICE : CONDITION_TYPE,
       };
     },
     selectModel(model) {
@@ -132,8 +149,13 @@ module.exports = function inboundPage(batch) {
       this.setData({ modelLoading: true });
       return Promise.all([api.template.modelForm(model.id), api.inbound.costPresets({ modelId: model.id })]).then(([template, costPresets]) => {
         if (this.destroyed || revision !== this.modelRevision) return;
-        const rows = this.data.rows.map(r => ({ ...r, attributes: {} }));
-        this.setData({ ...this.templateData(model, template, costPresets), attributes: initialValues(template.fields), rows });
+        const patch = this.templateData(model, template, costPresets);
+        const modeChanged = patch.identifierMode !== this.data.identifierMode;
+        // 串码方式变化时清空已填串码，避免手机 IMEI 带进非手机设备
+        const rows = this.data.rows.map(r => ({ ...r, attributes: {}, ...(modeChanged ? identityReset() : {}) }));
+        // 序列号查重按型号进行，换型号后要重新校验
+        const recheck = serialMode(patch.identifierMode) ? rows.map(r => ({ ...r, state: '', message: '' })) : rows;
+        this.setData({ ...patch, attributes: initialValues(template.fields), rows: recheck, ...(modeChanged ? { quantity: '1', batchNoSerial: false, batchReason: '' } : {}) });
       }).catch(e => this.$toast(e.message)).finally(() => { if (!this.destroyed && revision === this.modelRevision) this.setData({ modelLoading: false }); });
     },
     onCondition(e) { if (!this.data.submitting) this.setData({ 'form.condition': e.currentTarget.dataset.value }); },
@@ -156,7 +178,7 @@ module.exports = function inboundPage(batch) {
       const index = this.data.rows.findIndex(r => r.key === key);
       if (index < 0 || this.data.submitting) return;
       const patch = { [`rows[${index}].${field}`]: e.detail.value };
-      if (field === 'imei1') Object.assign(patch, { [`rows[${index}].state`]: '', [`rows[${index}].message`]: '', [`rows[${index}].matchModelId`]: '' });
+      if (['imei1', 'serialNo', 'noSerialReason'].includes(field)) Object.assign(patch, { [`rows[${index}].state`]: '', [`rows[${index}].message`]: '', [`rows[${index}].matchModelId`]: '' });
       this.setData(patch);
     },
     onImeiBlur(e) { this.checkRow(e.currentTarget.dataset.row); },
@@ -168,6 +190,8 @@ module.exports = function inboundPage(batch) {
     },
     checkRow(key, promptModel = true) {
       const current = this.data.rows.find(r => r.key === key); if (!current) return;
+      if (current.state === 'ok') return Promise.resolve();
+      if (serialMode(this.data.identifierMode)) return this.checkSerialRow(key);
       const imei = current.imei1;
       if (!isImei(imei)) { this.setRow(key, { state: 'invalid', message: 'IMEI1 需为有效的 15 位串码' }); return Promise.resolve(); }
       if (this.data.rows.some(r => r.key !== key && (r.imei1 === imei || r.imei2 === imei))) { this.setRow(key, { state: 'dup', message: '与本批其他设备串码重复' }); return Promise.resolve(); }
@@ -180,10 +204,11 @@ module.exports = function inboundPage(batch) {
         if (!latest || latest.imei1 !== imei || checks.get(key)?.promise !== promise || this.destroyed) return;
         if (!check.unique) return this.setRow(key, { state: 'dup', message: '串码已存在，不能重复入库' });
         this.setRow(key, { state: 'ok', message: result.matched ? `识别型号：${result.model.name}，请核对实机` : `串码校验通过。 ${result.message || '型号请手动选择'}`, matchModelId: result.matched ? result.model.id : '' });
-        if (promptModel && !this.data.checkingSubmission && result.matched && (!this.data.model || this.data.model.id !== result.model.id)) {
-          wx.showModal({ title: '识别到型号', content: `${result.model.name}\n${result.message}\n是否使用该型号并重新加载公共参数？`, success: r => {
+        const suggestedModel = result.matched ? result.model : result.candidate?.model;
+        if (promptModel && !this.data.checkingSubmission && suggestedModel && this.data.model?.id !== suggestedModel.id) {
+          wx.showModal({ title: result.matched ? '识别到型号' : '候选型号', content: `${suggestedModel.name}\n${result.message}\n是否使用该型号并重新加载公共参数？`, success: r => {
             const latest = this.data.rows.find(r => r.key === key);
-            if (r.confirm && latest && latest.imei1 === imei) this.selectModel(result.model);
+            if (r.confirm && latest && latest.imei1 === imei) this.selectModel(suggestedModel);
           } });
         }
       }).catch(e => {
@@ -196,8 +221,81 @@ module.exports = function inboundPage(batch) {
       checks.set(key, { imei, promise });
       return promise;
     },
+    /** 非手机：有序列号查同型号重复；无序列号核对原因；蜂窝版平板的 IMEI 仍查全局唯一 */
+    checkSerialRow(key) {
+      const current = this.data.rows.find(r => r.key === key); if (!current) return Promise.resolve();
+      const { model, identifierMode, batchNoSerial, batchReason } = this.data;
+      const noSerial = current.noSerial || (batch && batchNoSerial);
+      const imei = identifierMode === 'serial_imei' ? String(current.imei1 || '').trim() : '';
+      if (imei && !isImei(imei)) { this.setRow(key, { state: 'invalid', message: 'IMEI 需为有效的 15 位串码' }); return Promise.resolve(); }
+      if (noSerial) {
+        if (!imei) {
+          const error = noSerialReasonError(batch && batchNoSerial ? batchReason : current.noSerialReason);
+          if (error) { this.setRow(key, { state: 'invalid', message: error }); return Promise.resolve(); }
+        }
+        if (!imei) { this.setRow(key, { state: 'ok', message: '无序列号，入库后以设备标签识别' }); return Promise.resolve(); }
+      }
+      const serial = noSerial ? '' : normalizeSerial(current.serialNo);
+      if (!serial && !imei) { this.setRow(key, { state: 'invalid', message: '请填写序列号；没有序列号请打开“没有序列号”并说明原因' }); return Promise.resolve(); }
+      if (serial) {
+        const error = serialError(serial);
+        if (error) { this.setRow(key, { state: 'invalid', message: error }); return Promise.resolve(); }
+        if (this.data.rows.some(r => r.key !== key && !r.noSerial && normalizeSerial(r.serialNo) === serial)) { this.setRow(key, { state: 'dup', message: '与本批其他设备序列号重复' }); return Promise.resolve(); }
+        if (!model) { this.setRow(key, { state: 'invalid', message: '请先选择型号，序列号按型号查重' }); return Promise.resolve(); }
+      }
+      if (imei && this.data.rows.some(r => r.key !== key && r.imei1 === imei)) { this.setRow(key, { state: 'dup', message: '与本批其他设备 IMEI 重复' }); return Promise.resolve(); }
+      const checks = this.rowChecks ||= new Map();
+      const signature = `${model ? model.id : ''}|${serial}|${imei}`;
+      const previous = checks.get(key);
+      if (previous?.signature === signature) return previous.promise;
+      this.setRow(key, { state: 'checking', message: '正在校验…', serialNo: serial || current.serialNo });
+      const promise = Promise.all([
+        serial ? api.inbound.checkSerial({ modelId: model.id, serialNo: serial }) : Promise.resolve({ unique: true }),
+        imei ? api.inbound.checkImei({ imei }) : Promise.resolve({ unique: true })
+      ]).then(([bySerial, byImei]) => {
+        const latest = this.data.rows.find(r => r.key === key);
+        if (!latest || checks.get(key)?.promise !== promise || this.destroyed) return;
+        if (!bySerial.unique) return this.setRow(key, { state: 'dup', message: '同型号下该序列号已入库' });
+        if (!byImei.unique) return this.setRow(key, { state: 'dup', message: 'IMEI 已存在，不能重复入库' });
+        this.setRow(key, { state: 'ok', message: serial ? '序列号校验通过' : 'IMEI 校验通过（未填序列号）' });
+      }).catch(e => {
+        if (checks.get(key)?.promise === promise) this.setRow(key, { state: 'invalid', message: e.message || '校验失败，请重试' });
+      }).finally(() => {
+        if (checks.get(key)?.promise === promise) checks.delete(key);
+      });
+      checks.set(key, { signature, promise });
+      return promise;
+    },
+    onSerialBlur(e) { this.checkRow(e.currentTarget.dataset.row); },
+    onNoSerialChange(e) {
+      if (this.data.submitting) return;
+      const key = e.currentTarget.dataset.row, value = !!e.detail.value;
+      this.setRow(key, { noSerial: value, ...(value ? { serialNo: '' } : { noSerialReason: '' }), state: '', message: '' });
+      if (!value && !batch) this.setData({ quantity: '1' });
+    },
+    onReasonPreset(e) {
+      if (this.data.submitting) return;
+      const { row: key, value } = e.currentTarget.dataset;
+      const text = value === '其他' ? '' : value;
+      if (key === 'batch') { this.setData({ batchReason: text }); this.resetRowStates(); return; }
+      this.setRow(key, { noSerialReason: text, state: '', message: '' });
+    },
+    onBatchNoSerial(e) {
+      if (this.data.submitting) return;
+      const value = !!e.detail.value;
+      this.setData({ batchNoSerial: value, ...(value ? {} : { batchReason: '' }), rows: this.data.rows.map(r => ({ ...r, ...(value ? { serialNo: '', noSerial: false, noSerialReason: '' } : {}), state: '', message: '' })) });
+    },
+    onBatchReason(e) { if (!this.data.submitting) { this.setData({ batchReason: e.detail.value }); this.resetRowStates(); } },
+    resetRowStates() { this.setData({ rows: this.data.rows.map(r => ({ ...r, state: '', message: '' })) }); },
+    onQuantity(e) { if (!this.data.submitting) this.setData({ quantity: String(e.detail.value || '').replace(/\D/g, '').slice(0, 3) }); },
+    /** 按数量入库只在单台页、非手机、未填序列号和 IMEI 时可用 */
+    quantityAllowed() {
+      const first = this.data.rows[0];
+      return !batch && serialMode(this.data.identifierMode) && first && first.noSerial && !String(first.imei1 || '').trim();
+    },
     onScan(e) {
       if (this.data.submitting) return;
+      if (serialMode(this.data.identifierMode)) return this.scanSerialInto(e.currentTarget.dataset.row);
       let key = e.currentTarget.dataset.row;
       scanImei().then(({ imei }) => {
         if (!key) {
@@ -206,6 +304,18 @@ module.exports = function inboundPage(batch) {
           else { if (this.data.rows.length >= 100) return this.$toast('每批最多 100 台'); const next = row(); key = next.key; this.setData({ rows: this.data.rows.concat(next) }); }
         }
         this.setRow(key, { imei1: imei, state: '', matchModelId: '' }); this.checkRow(key);
+      }).catch(() => null);
+    },
+    scanSerialInto(key) {
+      if (batch && this.data.batchNoSerial) return this.$toast('已选择本批都没有序列号');
+      return scanSerial().then(({ serialNo }) => {
+        if (!key) {
+          const empty = this.data.rows.find(r => !r.serialNo && !r.noSerial);
+          if (empty) key = empty.key;
+          else { if (this.data.rows.length >= 100) return this.$toast('每批最多 100 台'); const next = row(); key = next.key; this.setData({ rows: this.data.rows.concat(next) }); }
+        }
+        this.setRow(key, { serialNo, noSerial: false, noSerialReason: '', state: '', message: '' });
+        return this.checkRow(key);
       }).catch(() => null);
     },
     onAddRow() { if (!this.data.submitting && this.data.rows.length < 100) this.setData({ rows: this.data.rows.concat(row()) }); },
@@ -270,28 +380,49 @@ module.exports = function inboundPage(batch) {
       const { model, templateVersion, templateFields, attributes, rows, form } = this.data;
       if (!model) return this.$toast('请先选择型号');
       if (!form.inspectionConfirmed) return this.$toast('请先确认已完成逐台实机验收');
+      const { identifierMode, batchNoSerial, batchReason } = this.data;
       const seen = new Set();
       const units = [];
       for (let i = 0; i < rows.length; i++) {
         const current = rows[i], label = batch ? `第 ${i + 1} 台：` : '';
-        if (current.state !== 'ok' || !isImei(current.imei1)) return this.$toast(label + (current.message || '请完成串码校验'));
-        if (current.matchModelId && current.matchModelId !== model.id) return this.$toast(`${label}识别型号与所选不一致，请核验`);
-        for (const code of [current.imei1, current.imei2].filter(Boolean)) { if (!isImei(code) || seen.has(code)) return this.$toast(`${label}串码无效或批内重复`); seen.add(code); }
+        if (current.state !== 'ok') return this.$toast(label + (current.message || '请完成串码校验'));
+        let identity;
+        if (serialMode(identifierMode)) {
+          const noSerial = current.noSerial || (batch && batchNoSerial);
+          const imei = identifierMode === 'serial_imei' ? String(current.imei1 || '').trim() : '';
+          const serial = noSerial ? '' : normalizeSerial(current.serialNo);
+          if (imei && (!isImei(imei) || seen.has(imei))) return this.$toast(`${label}IMEI 无效或批内重复`);
+          if (serial && (serialError(serial) || seen.has('SN:' + serial))) return this.$toast(`${label}序列号无效或批内重复`);
+          if (imei) seen.add(imei);
+          if (serial) seen.add('SN:' + serial);
+          const reason = String(batch && batchNoSerial ? batchReason : current.noSerialReason).trim();
+          if (!serial && !imei && noSerialReasonError(reason)) return this.$toast(label + noSerialReasonError(reason));
+          identity = { ...(serial ? { serialNo: serial } : {}), ...(imei ? { imei1: imei } : {}), ...(!serial && !imei ? { noSerialReason: reason } : {}) };
+        } else {
+          if (!isImei(current.imei1)) return this.$toast(label + (current.message || '请完成串码校验'));
+          if (current.matchModelId && current.matchModelId !== model.id) return this.$toast(`${label}识别型号与所选不一致，请核验`);
+          for (const code of [current.imei1, current.imei2].filter(Boolean)) { if (!isImei(code) || seen.has(code)) return this.$toast(`${label}串码无效或批内重复`); seen.add(code); }
+          identity = { imei1: current.imei1, imei2: current.imei2 };
+        }
         const values = { ...attributes, ...current.attributes }, error = validateValues(templateFields, values);
         if (error) return this.$toast(label + error);
         const cost = current.cost === '' ? form.cost : current.cost;
         if ([cost, form.retail, form.wholesale, form.agentBase].some(v => String(v).trim() === '' || !Number.isFinite(Number(v)) || Number(v) < 0)) return this.$toast(`${label}请填写有效成本与三价`);
-        units.push({ imei1: current.imei1, imei2: current.imei2, attributes: values, cost });
+        units.push({ ...identity, attributes: values, cost });
       }
+      const quantity = this.quantityAllowed() ? Number(this.data.quantity || 0) : 1;
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > QUANTITY_LIMIT) return this.$toast(`入库数量需为 1～${QUANTITY_LIMIT}`);
       this.setData({ submitting: true });
-      wx.showModal({ title: batch ? '确认批量入库' : '确认单台入库', content: `${model.name}\n共 ${units.length} 台 · 总成本 ¥${units.reduce((sum, u) => sum + Number(u.cost), 0).toFixed(2)}\n整备中的设备将进入复检状态，暂不可售。`, success: res => {
+      const count = batch ? units.length : quantity;
+      const total = batch ? units.reduce((sum, u) => sum + Number(u.cost), 0) : Number(units[0].cost) * quantity;
+      wx.showModal({ title: batch ? '确认批量入库' : quantity > 1 ? '确认按数量入库' : '确认单台入库', content: `${model.name}\n共 ${count} 件 · 总成本 ¥${total.toFixed(2)}\n整备中的设备将进入复检状态，暂不可售。`, success: res => {
         if (!res.confirm) { this.setData({ submitting: false }); return; }
         const common = { ...form, modelId: model.id, templateVersion, attributes };
-        const request = batch ? api.inbound.createBatch({ common, units }) : api.inbound.createUnit({ ...common, ...units[0] });
+        const request = batch ? api.inbound.createBatch({ common, units }) : api.inbound.createUnit({ ...common, ...units[0], ...(quantity > 1 ? { quantity } : {}) });
         request.then(result => {
           this.clearDraft(true);
-          this.setData({ rows: [row()], attributes: initialValues(templateFields), 'form.publicImages': [], 'form.inspectionConfirmed': false });
-          wx.showModal({ title: '入库成功', content: `已保存 ${batch ? result.created : 1} 台设备与模板快照`, showCancel: false });
+          this.setData({ rows: [row()], quantity: '1', batchNoSerial: false, batchReason: '', attributes: initialValues(templateFields), 'form.publicImages': [], 'form.inspectionConfirmed': false });
+          wx.showModal({ title: '入库成功', content: `已保存 ${result.created || 1} 件设备与模板快照`, showCancel: false });
         }).catch(e => this.$toast(e.message)).finally(() => this.setData({ submitting: false }));
       }, fail: () => this.setData({ submitting: false }) });
     }

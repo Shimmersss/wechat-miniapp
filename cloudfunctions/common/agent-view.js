@@ -40,6 +40,7 @@ function unit(r) {
     id: r.id,
     name: v.name,
     storage: v.storage,
+    ram: v.ram,
     color: v.color,
     grade: v.grade,
     cover: v.cover,
@@ -59,6 +60,7 @@ function order(r, internal, u) {
     name: r.unit_snapshot?.name || "",
     storage:
       r.unit_snapshot?.attributes?.storage || r.unit_snapshot?.storage || "",
+    ram: r.unit_snapshot ? publicView(r.unit_snapshot, "agent").ram : undefined,
     status: r.lock_status,
     requestStatus: r.request_status,
     sharePrice: Number(r.share_price),
@@ -114,7 +116,7 @@ function share(r) {
       "?s=" +
       r.link.id,
     title: one
-      ? first.name + " " + first.storage + " ¥" + first.price
+      ? [first.name, first.storage, first.ram && "运行内存 " + first.ram, "¥" + first.price].filter(Boolean).join(" ")
       : "夏目数码 · " + units.length + "台精选设备",
     ...(one ? { price: first.price } : {}),
     imageUrl: first.cover,

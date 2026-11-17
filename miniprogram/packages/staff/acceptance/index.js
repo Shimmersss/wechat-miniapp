@@ -1,8 +1,9 @@
 const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
 const { PERM } = require('../../../constants/roles');
-const { scanImei } = require('../../../utils/scan');
-const { isImei } = require('../../../utils/validate');
+const { scanImei, scanSerial } = require('../../../utils/scan');
+const { isImei, normalizeSerial, serialError, noSerialReasonError } = require('../../../utils/validate');
+const { NO_SERIAL_REASONS, CONDITION_TYPE, CONDITION_TYPE_DEVICE } = require('../../../constants/status');
 const { initialValues, validateValues } = require('../../../utils/template');
 const { confirmSensitive } = require('../../../utils/confirm');
 const { upload } = require('../../../utils/request');
@@ -52,10 +53,13 @@ createPage({
       const receipt = { key: 'receipt', label: '收货凭证（内部）', type: 'image', visibility: ['internal'], required: true, filterable: false };
       const attributes = existing ? copy(existing.attributes) : { ...initialValues(fields), ...line.attributes, receipt: [] };
       const editor = existing ? copy(existing) : { key: 'accept_row_' + ++sequence, lineId, modelId: line.modelId, modelName: line.modelName, templateVersion: template.version,
-        imei1: exception ? (exception.imei1 || '') : '', imei2: exception ? (exception.imei2 || '') : '', condition: 'used', result: exception ? 'pass' : '', remark: '', observedModel: '',
+        imei1: exception ? (exception.imei1 || '') : '', imei2: exception ? (exception.imei2 || '') : '', serialNo: exception ? (exception.serialNo || '') : '', noSerial: !!(exception && exception.noSerialReason), noSerialReason: exception ? (exception.noSerialReason || '') : '', condition: 'used', result: exception ? 'pass' : '', remark: '', observedModel: '',
         attributes, retail: '', wholesale: '', agentBase: '', checksConfirmed: false, publicImages: [], peerDesc: '', customerDesc: '', internalNote: '' };
       editor.templateVersion = template.version;
-      this.setData({ editor, fields, receiptFields: [receipt] }, () => wx.pageScrollTo({ selector: '#acceptance-editor', duration: 200 }));
+      // 串码方式由型号所属分类决定：手机录 IMEI；非手机录序列号或说明原因，平板可另填 IMEI
+      editor.identifierMode = template.identifierMode || 'imei';
+      const device = editor.identifierMode !== 'imei';
+      this.setData({ editor, fields, receiptFields: [receipt], reasonPresets: NO_SERIAL_REASONS, conditionOptions: device ? CONDITION_TYPE_DEVICE : CONDITION_TYPE }, () => wx.pageScrollTo({ selector: '#acceptance-editor', duration: 200 }));
     } catch (e) { this.setData({ error: e.message }); } finally { this.setData({ loading: false }); }
   },
   onEdit(e) { if (!this.locked() && !this.data.editor) { const item = this.data.items.find(i => i.key === e.currentTarget.dataset.key); if (item) return this.openEditor(item.lineId, item); } },
@@ -64,9 +68,11 @@ createPage({
   onEditorInput(e) {
     if (this.locked() || !this.data.editor) return;
     const field = e.currentTarget.dataset.field;
-    if (this.data.exceptionId && ['imei1', 'imei2'].includes(field)) return;
+    if (this.data.exceptionId && ['imei1', 'imei2', 'serialNo', 'noSerialReason'].includes(field)) return;
     this.setData({ ['editor.' + field]: e.detail.value });
   },
+  onNoSerial(e) { if (!this.locked() && !this.data.exceptionId) this.setData({ 'editor.noSerial': !!e.detail.value, ...(e.detail.value ? { 'editor.serialNo': '' } : { 'editor.noSerialReason': '' }) }); },
+  onReasonPreset(e) { if (!this.locked() && !this.data.exceptionId) this.setData({ 'editor.noSerialReason': e.currentTarget.dataset.value === '其他' ? '' : e.currentTarget.dataset.value }); },
   onResult(e) { if (!this.locked() && !this.data.exceptionId) this.setData({ 'editor.result': e.currentTarget.dataset.value }); },
   onCondition(e) { if (!this.locked()) this.setData({ 'editor.condition': e.currentTarget.dataset.value }); },
   onAttribute(e) { if (!this.data.submitting && !this.data.pending && this.data.editor) this.setData({ ['editor.attributes.' + e.detail.key]: e.detail.value }); },
@@ -74,6 +80,10 @@ createPage({
   async onScan(e) {
     if (this.locked() || !this.data.editor || this.data.exceptionId) return;
     try {
+      if (e.currentTarget.dataset.field === 'serialNo') {
+        const { serialNo } = await scanSerial();
+        return this.setData({ 'editor.serialNo': serialNo, 'editor.noSerial': false, 'editor.noSerialReason': '' });
+      }
       const scanned = await scanImei();
       if (!scanned.valid) return this.$toast('IMEI 格式或校验位错误');
       this.setData({ ['editor.' + (e.currentTarget.dataset.field || 'imei1')]: scanned.imei });
@@ -93,7 +103,16 @@ createPage({
   editorError() {
     const e = this.data.editor, seen = new Set();
     if (!e || !['pass', 'fail'].includes(e.result)) return '请选择验收通过或异常';
-    if ((!this.data.exceptionId && !isImei(e.imei1)) || (e.imei1 && !isImei(e.imei1)) || (e.imei2 && !isImei(e.imei2))) return '请填写有效的 IMEI1 / IMEI2';
+    if ((e.identifierMode || 'imei') === 'imei') {
+      if ((!this.data.exceptionId && !isImei(e.imei1)) || (e.imei1 && !isImei(e.imei1)) || (e.imei2 && !isImei(e.imei2))) return '请填写有效的 IMEI1 / IMEI2';
+    } else if (!this.data.exceptionId) {
+      if (e.imei2) return 'IMEI2 只用于手机';
+      if (e.imei1 && (e.identifierMode !== 'serial_imei' || !isImei(e.imei1))) return e.identifierMode === 'serial_imei' ? '请填写有效的 IMEI' : '该分类不登记 IMEI，请填写序列号';
+      if (e.noSerial) { if (!e.imei1 && noSerialReasonError(e.noSerialReason)) return noSerialReasonError(e.noSerialReason); }
+      else if (serialError(e.serialNo)) return e.serialNo ? serialError(e.serialNo) : '请填写序列号；没有序列号请打开“没有序列号”并说明原因';
+      const serial = e.noSerial ? '' : normalizeSerial(e.serialNo);
+      if (serial && this.data.items.some(i => i.key !== e.key && i.modelId === e.modelId && !i.noSerial && normalizeSerial(i.serialNo) === serial)) return '本批次同型号序列号重复';
+    }
     for (const code of [e.imei1, e.imei2].filter(Boolean)) { if (seen.has(code) || this.data.items.some(i => i.key !== e.key && [i.imei1, i.imei2].includes(code))) return '本批次串码重复'; seen.add(code); }
     if (!e.attributes.receipt || !e.attributes.receipt.length) return '请上传内部收货凭证';
     if (e.result === 'fail') return e.remark.trim() ? '' : '请填写异常原因';
@@ -115,7 +134,11 @@ createPage({
   onInput(e) { if (!this.locked()) this.setData({ [e.currentTarget.dataset.field]: e.detail.value }); },
   itemPayload(item) {
     const { lineId, modelId, templateVersion, attributes, imei1, imei2, condition, result, remark, observedModel, retail, wholesale, agentBase, publicImages, customerDesc, peerDesc, internalNote } = item;
-    return { lineId, modelId, templateVersion, attributes: copy(attributes), imei1, imei2, condition, result, remark, observedModel, retail, wholesale, agentBase, publicImages: copy(publicImages),
+    const device = (item.identifierMode || 'imei') !== 'imei';
+    const identity = device
+      ? { ...(imei1 ? { imei1 } : {}), ...(item.noSerial ? (imei1 ? {} : { noSerialReason: String(item.noSerialReason).trim() }) : { serialNo: normalizeSerial(item.serialNo) }) }
+      : { imei1, imei2 };
+    return { lineId, modelId, templateVersion, attributes: copy(attributes), ...identity, condition, result, remark, observedModel, retail, wholesale, agentBase, publicImages: copy(publicImages),
       receiptImages: copy(attributes.receipt), customerDesc, peerDesc, internalNote, flags: { showInShop: false, sharePeer: false, shareAgent: false } };
   },
   async onSubmit() {

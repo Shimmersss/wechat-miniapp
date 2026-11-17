@@ -6,12 +6,15 @@ const { resolveFiles } = require("./shared/stock-files");
 const { currentUser } = require("./shared/identity");
 const sharedChannel = require("./shared/shop-channel");
 const { SENSITIVE_FIELDS } = require("./shared/roles");
+const { expandBrandKey } = require("./shared/shop-brands");
 
 // 公开参数里永远不展示的字段（与 share-service.js publicView 一致）
 const FORBIDDEN = new Set([
   ...Object.keys(SENSITIVE_FIELDS),
   "imei1",
   "imei2",
+  "serialNo",
+  "noSerialReason",
   "receipt",
   "supplier",
   "internalNote",
@@ -52,6 +55,7 @@ function publicView(u, audience) {
     category: u.category_id,
     condition: u.condition_type,
     storage: value("storage") || "",
+    ram: value("ram"),
     color: value("color") || "",
     grade: value("grade") || "",
     battery: value("battery"),
@@ -74,6 +78,9 @@ function publicView(u, audience) {
     price: Number(u.price),
     priceType: audience === "peer" ? "wholesale" : "retail",
     imeiMasked: u.imei_masked,
+    serialMasked: u.serial_masked || null,
+    // 按数量入库的同批设备在列表里折叠为一张卡片，lotCount 为在售件数
+    lotCount: u.lot_count ? Number(u.lot_count) : null,
     warrantyDays:
       warranty !== undefined && warranty !== "" ? Number(warranty) : null,
     publicFields: fields
@@ -125,12 +132,20 @@ async function units(ctx) {
   if (q.sort && !["price_asc", "price_desc"].includes(q.sort))
     fail(400, "排序方式无效");
   const opt = (v, label, max) => (v ? text(v, label, max) : undefined);
+  // 首页入口只传 key，品牌别名由服务端展开，不接受客户端传品牌数组
+  let entry = {};
+  if (q.brandKey) {
+    entry = expandBrandKey(text(q.brandKey, "品牌入口", 30));
+    if (!entry) fail(400, "品牌入口无效");
+  }
   const res = await rpc("api_shop_units", {
     p: {
       flag: peer ? "sharePeer" : "showInShop",
       audience: peer ? "peer" : "customer",
       brand: opt(q.brand, "品牌", 50),
-      category: opt(q.category, "分类", 60),
+      category: entry.category || opt(q.category, "分类", 60),
+      brandNames: entry.brandNames,
+      excludeBrandNames: entry.excludeBrandNames,
       modelId: opt(q.modelId, "型号", 60),
       condition: q.condition || undefined,
       keyword: opt(q.keyword, "搜索", 100),

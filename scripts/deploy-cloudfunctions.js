@@ -1,31 +1,44 @@
 #!/usr/bin/env node
 /**
- * 部署云函数：node scripts/deploy-cloudfunctions.js [函数名...]（不传则部署全部）
+ * 部署云函数：node scripts/deploy-cloudfunctions.js --env-id <环境ID> [函数名...]
  *
  * - 先同步 cloudfunctions/common 到各函数 shared/。
- * - 环境变量（API Key、OTP 密钥等）读本机 .local/cloudbase/functions.env，不进版本库。
+ * - 环境变量读本机 .local/cloudbase/functions.env，可用 --env-file 指定另一份私有配置。
  * - cloudbaserc.json 生成在系统临时目录，部署完删除，避免密钥落进仓库。
- * - 环境 ID 用 tcb 当前绑定的环境（tcb env use），不写进被跟踪文件。
+ * - 环境 ID 必须与配置中的 CLOUDBASE_ENV_ID 一致。不使用 tcb 全局默认环境。
  */
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 const os = require("node:os");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
+const { parseArgs } = require("node:util");
 
 const root = path.resolve(__dirname, "..");
 const fnRoot = path.join(root, "cloudfunctions");
-const envFile = path.join(root, ".local/cloudbase/functions.env");
+const { values, positionals } = parseArgs({
+  options: { "env-id": { type: "string" }, "env-file": { type: "string" } },
+  allowPositionals: true,
+});
+const envId = values["env-id"];
+if (!envId || !/^[a-z0-9-]+$/.test(envId))
+  throw new Error("请通过 --env-id 显式指定目标云环境");
+const envFile = values["env-file"]
+  ? path.resolve(values["env-file"])
+  : path.join(root, ".local/cloudbase/functions.env");
 
 // 各函数需要的环境变量；只下发必要的，缩小密钥暴露面
 const FUNCTION_ENV = {
   auth: [
     "NODE_ENV",
     "SESSION_HOURS",
+    "STAFF_WECHAT_ONLY",
     "OTP_DEV_CODE",
     "OTP_HASH_KEY",
     "SMS_PROVIDER",
     "SMS_DAILY_LIMIT",
+    "WX_APP_ID",
+    "WX_APP_SECRET",
     "CLOUDBASE_API_KEY",
   ],
   shop: ["NODE_ENV", "CLOUDBASE_API_KEY"],
@@ -84,9 +97,26 @@ function readEnv() {
   return out;
 }
 
-execFileSync("node", [path.join(__dirname, "sync-cloudfunctions.js")], {
-  stdio: "inherit",
-});
+const privateEnv = readEnv();
+if (privateEnv.CLOUDBASE_ENV_ID !== envId)
+  throw new Error("目标云环境与私有配置的 CLOUDBASE_ENV_ID 不一致");
+const dataEnvId = privateEnv.CLOUDBASE_DATA_ENV_ID || envId;
+if (!/^[a-z0-9-]+$/.test(dataEnvId))
+  throw new Error("CLOUDBASE_DATA_ENV_ID 格式无效");
+
+// 服务端 API Key 是带环境声明的 JWT。部署前先识别填错环境或使用前端 Key 的情况。
+const keyParts = privateEnv.CLOUDBASE_API_KEY?.split(".");
+if (keyParts?.length === 3) {
+  let claims;
+  try {
+    claims = JSON.parse(Buffer.from(keyParts[1], "base64url").toString("utf8"));
+  } catch {
+    throw new Error("CLOUDBASE_API_KEY 格式无效");
+  }
+  if (claims?.project_id !== dataEnvId || claims.role !== "service_role")
+    throw new Error("请配置数据环境的服务端 API Key");
+}
+
 const env = {
   APPOINTMENT_DAYS: "30",
   APPOINTMENT_SLOTS: JSON.stringify(
@@ -101,7 +131,9 @@ const env = {
   REPAIR_INTERNAL_COST_POLICY: "capitalize",
   WHOLESALE_DISCOUNT: "0",
   STORAGE_TIMEOUT_MS: "12000",
-  ...readEnv(),
+  OTP_DEV_CODE: "",
+  STAFF_WECHAT_ONLY: "0",
+  ...privateEnv,
 };
 // CLI会展开JSON数组环境变量，使用字符串编码保留原预约时段配置。
 env.APPOINTMENT_SLOTS_B64 =
@@ -115,22 +147,20 @@ const maintenanceTrigger = () =>
     .update("timer-v1")
     .digest("hex")
     .slice(0, 32);
-const names = process.argv.slice(2).length
-  ? process.argv.slice(2)
-  : Object.keys(FUNCTION_ENV);
-const envId = execFileSync("tcb", ["env", "list", "--json"], {
-  encoding: "utf8",
-});
-const current = JSON.parse(envId.slice(envId.indexOf("{")))?.data?.[0]?.EnvId;
-if (!current) throw new Error("tcb 未登录或没有可用环境");
+const names = positionals.length ? positionals : Object.keys(FUNCTION_ENV);
 
 const work = fs.mkdtempSync(path.join(os.tmpdir(), "xiamu-fn-"));
 try {
   const functions = names.map((name) => {
     if (!FUNCTION_ENV[name]) throw new Error(`未登记的函数：${name}`);
-    const vars = {};
+    const vars = { CLOUDBASE_DATA_ENV_ID: dataEnvId };
+    if (env.XIAMU_HTTP_API === "1" && !["agent-expiry", "cloud-maintenance"].includes(name))
+      vars.XIAMU_HTTP_API = "1";
     for (const key of FUNCTION_ENV[name]) {
-      if (env[key] === undefined)
+      if (name === "auth" && env.STAFF_WECHAT_ONLY === "1" &&
+        ["OTP_DEV_CODE", "OTP_HASH_KEY", "SMS_PROVIDER", "SMS_DAILY_LIMIT"].includes(key))
+        continue;
+      if (env[key] === undefined || (key === "CLOUDBASE_API_KEY" && !env[key]))
         throw new Error(`${name} 缺少环境变量 ${key}`);
       vars[key] = env[key];
     }
@@ -166,10 +196,13 @@ try {
       envVariables: vars,
     };
   });
+  execFileSync(process.execPath, [path.join(__dirname, "sync-cloudfunctions.js")], {
+    stdio: "inherit",
+  });
   fs.writeFileSync(
     path.join(work, "cloudbaserc.json"),
     JSON.stringify(
-      { envId: current, functionRoot: fnRoot, functions },
+      { envId, functionRoot: fnRoot, functions },
       null,
       2,
     ),

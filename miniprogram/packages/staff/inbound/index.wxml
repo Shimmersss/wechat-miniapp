@@ -7,20 +7,42 @@
     <button class="btn btn-soft btn-sm" bindtap="onRestoreDraft" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">恢复草稿</button>
   </view>
   <view class="card">
-    <view class="reference-row"><text class="row-label">设备类型</text><view class="chips"><view aria-role="button" class="type-chip {{form.condition === 'used' ? 'selected' : ''}}" data-value="used" bindtap="onCondition">二手机</view><view aria-role="button" class="type-chip {{form.condition === 'new' ? 'selected' : ''}}" data-value="new" bindtap="onCondition">新机</view></view></view>
+    <view class="reference-row"><text class="row-label">设备类型</text><view class="chips"><view wx:for="{{conditionOptions}}" wx:key="value" aria-role="button" class="type-chip {{form.condition === item.value ? 'selected' : ''}}" data-value="{{item.value}}" bindtap="onCondition">{{item.label}}</view></view></view>
     <view class="reference-row"><text class="row-label">设备型号</text><text class="h3 flex-1">{{model ? model.name : '扫码识别或选择型号'}}</text><button class="btn btn-line btn-sm choose-model" bindtap="onChooseModel" disabled="{{submitting || modelLoading}}">{{modelLoading ? '加载中' : '切换'}}</button></view>
-    <button class="btn btn-soft btn-sm scan-identify" data-row="{{rows[0].key}}" bindtap="onScan" disabled="{{submitting}}">扫码识别型号</button>
+    <button wx:if="{{identifierMode === 'imei'}}" class="btn btn-soft btn-sm scan-identify" data-row="{{rows[0].key}}" bindtap="onScan" disabled="{{submitting}}">扫码识别型号</button>
     <view wx:if="{{model}}" class="tiny muted mt-sm">{{model.brandLabel}} / {{model.series}} · 模板 v{{templateVersion}}</view>
     <view wx:if="{{batch}}" class="reference-row"><text class="row-label">入库数量</text><text class="h3 flex-1">{{rows.length}} 台</text><button class="btn btn-soft btn-sm" bindtap="onAddRow" disabled="{{submitting || rows.length >= 100}}">增加一台</button></view>
   </view>
   <view wx:if="{{model}}" class="card"><view class="h2">{{batch ? '公共参数' : '设备参数'}}</view><template-fields fields="{{parameterFields}}" values="{{attributes}}" bindchange="onAttributeChange" bindbusy="onFieldBusy" disabled="{{submitting}}" /></view>
   <view class="card">
-    <view class="row mb"><text class="h2">{{batch ? '逐台设置 IMEI' : 'IMEI1 扫码识别'}}</text><button wx:if="{{batch}}" class="btn btn-dark btn-sm scan-next" bindtap="onScan" disabled="{{submitting}}">扫码追加</button></view>
+    <view class="row mb"><text class="h2">{{identifierMode === 'imei' ? (batch ? '逐台设置 IMEI' : 'IMEI1 扫码识别') : (batch ? '逐台设置序列号' : '序列号（SN）')}}</text><button wx:if="{{batch}}" class="btn btn-dark btn-sm scan-next" bindtap="onScan" disabled="{{submitting || (identifierMode !== 'imei' && batchNoSerial)}}">扫码追加</button></view>
+    <block wx:if="{{identifierMode !== 'imei' && batch}}">
+      <view class="list-item"><text>本批都没有序列号</text><switch checked="{{batchNoSerial}}" bindchange="onBatchNoSerial" disabled="{{submitting}}" /></view>
+      <view wx:if="{{batchNoSerial}}" class="reason-box">
+        <view class="chips"><view wx:for="{{reasonPresets}}" wx:key="*this" class="chip {{batchReason === item ? 'active' : ''}}" data-row="batch" data-value="{{item}}" bindtap="onReasonPreset">{{item}}</view></view>
+        <input class="input mt-sm" maxlength="100" placeholder="无序列号原因（2～100字，整批共用）" value="{{batchReason}}" bindinput="onBatchReason" disabled="{{submitting}}" />
+      </view>
+    </block>
     <view wx:for="{{rows}}" wx:for-item="unit" wx:key="key" class="unit-row">
       <view wx:if="{{batch}}" class="row mb"><text class="h3">第 {{index + 1}} 台</text><button class="btn btn-line btn-sm" data-row="{{unit.key}}" bindtap="onRemoveRow" disabled="{{submitting || rows.length === 1}}">移除</button></view>
-      <view class="row gap-sm"><input class="input flex-1 imei-input" type="number" maxlength="15" placeholder="IMEI1（必填）" value="{{unit.imei1}}" data-row="{{unit.key}}" data-field="imei1" bindinput="onRowInput" bindblur="onImeiBlur" disabled="{{submitting}}" /><button class="btn btn-dark btn-sm" data-row="{{unit.key}}" bindtap="onScan" disabled="{{submitting}}">扫码</button></view>
-      <view class="tiny mt-sm {{unit.state === 'ok' ? 'gold' : 'muted'}}">{{unit.message || '扫码可查询已核验型号；未命中请手选，容量颜色请核对实机'}}</view>
-      <input class="input mt-sm" type="number" maxlength="15" placeholder="IMEI2（选填）" value="{{unit.imei2}}" data-row="{{unit.key}}" data-field="imei2" bindinput="onRowInput" disabled="{{submitting}}" />
+      <block wx:if="{{identifierMode === 'imei'}}">
+        <view class="row gap-sm"><input class="input flex-1 imei-input" type="number" maxlength="15" placeholder="IMEI1（必填）" value="{{unit.imei1}}" data-row="{{unit.key}}" data-field="imei1" bindinput="onRowInput" bindblur="onImeiBlur" disabled="{{submitting}}" /><button class="btn btn-dark btn-sm" data-row="{{unit.key}}" bindtap="onScan" disabled="{{submitting}}">扫码</button></view>
+        <view class="tiny mt-sm {{unit.state === 'ok' ? 'gold' : 'muted'}}">{{unit.message || '扫码可查询已核验型号；未命中请手选，存储容量、运行内存和颜色请核对实机'}}</view>
+        <input class="input mt-sm" type="number" maxlength="15" placeholder="IMEI2（选填）" value="{{unit.imei2}}" data-row="{{unit.key}}" data-field="imei2" bindinput="onRowInput" disabled="{{submitting}}" />
+      </block>
+      <block wx:else>
+        <block wx:if="{{!(batch && batchNoSerial)}}">
+          <view wx:if="{{!unit.noSerial}}" class="row gap-sm"><input class="input flex-1 serial-input" maxlength="40" placeholder="SN 码（推荐填写）" value="{{unit.serialNo}}" data-row="{{unit.key}}" data-field="serialNo" bindinput="onRowInput" bindblur="onSerialBlur" disabled="{{submitting}}" /><button class="btn btn-dark btn-sm" data-row="{{unit.key}}" bindtap="onScan" disabled="{{submitting}}">扫码</button></view>
+          <view class="list-item"><text>没有序列号</text><switch checked="{{unit.noSerial}}" data-row="{{unit.key}}" bindchange="onNoSerialChange" disabled="{{submitting}}" /></view>
+          <view wx:if="{{unit.noSerial}}" class="reason-box">
+            <view class="chips"><view wx:for="{{reasonPresets}}" wx:for-item="reason" wx:key="*this" class="chip {{unit.noSerialReason === reason ? 'active' : ''}}" data-row="{{unit.key}}" data-value="{{reason}}" bindtap="onReasonPreset">{{reason}}</view></view>
+            <input class="input mt-sm" maxlength="100" placeholder="无序列号原因（2～100字）" value="{{unit.noSerialReason}}" data-row="{{unit.key}}" data-field="noSerialReason" bindinput="onRowInput" bindblur="onSerialBlur" disabled="{{submitting}}" />
+          </view>
+        </block>
+        <input wx:if="{{identifierMode === 'serial_imei'}}" class="input mt-sm" type="number" maxlength="15" placeholder="IMEI（选填，蜂窝版填写）" value="{{unit.imei1}}" data-row="{{unit.key}}" data-field="imei1" bindinput="onRowInput" bindblur="onImeiBlur" disabled="{{submitting}}" />
+        <view class="tiny mt-sm {{unit.state === 'ok' ? 'gold' : 'muted'}}">{{unit.message || '同一型号下序列号不能重复；没有序列号请说明原因'}}</view>
+        <view wx:if="{{!batch && unit.noSerial && !unit.imei1}}" class="reference-row"><text class="row-label">入库数量</text><input class="value-input flex-1" type="number" maxlength="3" placeholder="1～{{quantityLimit}}" value="{{quantity}}" bindinput="onQuantity" disabled="{{submitting}}" /><text class="tiny muted">件，同批共用参数与价格</text></view>
+      </block>
       <button wx:if="{{batch && model}}" class="btn btn-soft btn-sm mt" data-row="{{unit.key}}" bindtap="onToggleRow">{{unit.expanded ? '收起单台差异' : '编辑单台差异'}}</button><view wx:if="{{batch && model && unit.expanded}}" class="overrides"><view class="row mt"><text class="tiny muted">单台差异（留空沿用公共参数）</text><button class="btn btn-soft btn-sm" data-row="{{unit.key}}" bindtap="onResetOverrides" disabled="{{submitting}}">恢复公共值</button></view><template-fields fields="{{rowFields}}" values="{{unit.attributes}}" data-row="{{unit.key}}" bindchange="onRowAttribute" bindbusy="onFieldBusy" disabled="{{submitting}}" /><view class="reference-row"><text class="row-label">单台成本</text><input class="value-input flex-1" type="digit" placeholder="沿用公共成本" value="{{unit.cost}}" data-row="{{unit.key}}" data-field="cost" bindinput="onRowInput" disabled="{{submitting}}" /></view></view>
     </view>
   </view>
@@ -43,7 +65,7 @@
   <view class="footer-space"></view>
   <view class="footer-bar">
     <button class="btn btn-line" bindtap="onSaveDraft" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">存草稿</button>
-    <button class="btn btn-primary submit-inbound" bindtap="onSubmit" loading="{{submitting || checkingSubmission}}" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">{{batch ? '批量入库（' + rows.length + '台）' : '确认单台入库'}}</button>
+    <button class="btn btn-primary submit-inbound" bindtap="onSubmit" loading="{{submitting || checkingSubmission}}" disabled="{{submitting || modelLoading || uploading || fieldUploads > 0 || restoringDraft || checkingSubmission}}">{{batch ? '批量入库（' + rows.length + '台）' : (identifierMode !== 'imei' && rows[0].noSerial && !rows[0].imei1 && quantity > 1 ? '按数量入库（' + quantity + '件）' : '确认单台入库')}}</button>
   </view>
 </view>
 </theme-shell>

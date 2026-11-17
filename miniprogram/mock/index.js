@@ -19,8 +19,9 @@ const createLoans=require('./loans');
 const createAgents=require('./agents');
 const createStaffAdmin=require('./staff-admin');
 const loadSeed=require('./test-seed');
-const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM } = require('../constants/roles');
+const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM, STAFF_ROLES } = require('../constants/roles');
 const { REPAIR_FLOW } = require('../constants/status');
+const { PHONE_CATEGORY, brandRank } = require('../constants/shop-brands');
 
 const { isImei } = require('../utils/validate');
 const { validateFields, validateValues, applySpecs, normalizeSpecs } = require('../utils/template');
@@ -53,13 +54,24 @@ function asRole(role, fn) {
 }
 
 function makeUser(role) {
+  const staff = db.staff.find(s => s.status === 'active' && s.userId === `mock_${role}`);
   return {
     id: `mock_${role}`,
     nickname: ROLE_LABELS[role] || '访客',
     role,
     permissions: ROLE_PERMISSIONS[role] || [],
-    agentStatus: role === 'agent' ? 'active' : undefined
+    agentStatus: role === 'agent' ? 'active' : undefined,
+    staffNo: STAFF_ROLES.includes(role) ? staff?.id || `mock_staff_${role}` : undefined
   };
+}
+
+const maskImei = v => (v ? `${String(v).slice(0, 2)}****${String(v).slice(-4)}` : null);
+const maskSerial = v => (v ? `${String(v).slice(0, 2)}****${String(v).slice(-3)}` : null);
+/** 设备所属分类的串码方式，与服务端 categories.identifier_mode 一致 */
+function unitMode(u) {
+  const model = db.models.find(m => m.id === u.modelId);
+  const category = db.categories.find(c => c.value === ((model && model.category) || u.category));
+  return (category && category.identifierMode) || 'imei';
 }
 
 function canSee(field) {
@@ -77,7 +89,7 @@ function publicUnit(u, {channel = currentRole() === 'peer' ? 'peer' : 'customer'
   const attribute = key => shown(key) ? ((u.attributes || {})[key] !== undefined ? u.attributes[key] : u[key]) : undefined;
   const battery=attribute('battery');
   const warranty = shown('shopWarranty') && u.attributes ? u.attributes.shopWarranty : undefined;
-  return {publicFields,id:u.id,modelId:u.modelId,name:u.name,brand:u.brand,storage:attribute('storage')||'',color:attribute('color')||'',grade:attribute('grade')||'',battery:battery===undefined?undefined:Number(String(battery).replace('%','')),version:attribute('version'),images:u.images||[],videos:u.videos||[],cover:(u.images||[])[0]||'',desc:channel==='peer'?u.peerDesc:u.customerDesc,price:price===undefined?(channel==='peer'?u.wholesale:u.retail):price,priceType:channel==='peer'?'wholesale':channel==='agent'?'agent':'retail',imeiMasked:u.imei1.slice(0,2)+'****'+u.imei1.slice(-4),warrantyDays:warranty!==undefined&&warranty!==''?Number(warranty):null};
+  return {publicFields,id:u.id,modelId:u.modelId,name:u.name,brand:u.brand,storage:attribute('storage')||'',ram:attribute('ram'),color:attribute('color')||'',grade:attribute('grade')||'',battery:battery===undefined?undefined:Number(String(battery).replace('%','')),version:attribute('version'),images:u.images||[],videos:u.videos||[],cover:(u.images||[])[0]||'',desc:channel==='peer'?u.peerDesc:u.customerDesc,price:price===undefined?(channel==='peer'?u.wholesale:u.retail):price,priceType:channel==='peer'?'wholesale':channel==='agent'?'agent':'retail',imeiMasked:maskImei(u.imei1),serialMasked:maskSerial(u.serialNo),lotCount:u.lotCount||null,warrantyDays:warranty!==undefined&&warranty!==''?Number(warranty):null};
 }
 
 /** 员工视图：按角色裁剪敏感字段 */
@@ -91,8 +103,12 @@ function staffUnit(u) {
   if (!canSee('internalNote')) delete out.internalNote;
   if (!canSee('wholesalePrice')) delete out.wholesale;
   if (!['boss', 'manager', 'purchaser'].includes(currentRole())) delete out.agentBase;
-  out.imeiMasked = `${u.imei1.slice(0, 2)}****${u.imei1.slice(-4)}`;
-  if (!canSee('fullImei')) { out.imei1 = out.imeiMasked; delete out.imei2; }
+  out.imeiMasked = maskImei(u.imei1);
+  out.serialMasked = maskSerial(u.serialNo);
+  out.identifierMode = unitMode(u);
+  out.noSerialReason = u.noSerialReason || null;
+  out.lotId = u.lotId || null;
+  if (!canSee('fullImei')) { out.imei1 = out.imeiMasked; delete out.imei2; delete out.serialNo; }
   out.priceVersion = u.priceVersion || 1;
   out.availableActions = u.status === 'recheck' && (ROLE_PERMISSIONS[currentRole()] || []).includes(PERM.ACCEPTANCE) ? ['recheck'] : [];
   out.publicImages = clone(u.publicImages || (u.images || []).map((url, i) => ({fileId: '', url, mediaType: 'image'})));
@@ -117,14 +133,15 @@ function requirePermission(...permissions) {
 function getTemplate(id) {
   return db.templates.find(t => t.id === id) || fail(404, '模板不存在');
 }
-/** 入库表单：分类模板当前版本叠加型号的容量、颜色选项 */
+/** 入库表单：分类模板当前版本叠加型号的规格选项 */
 function modelForm(modelId) {
   const model = db.models.find(m => m.id === modelId) || fail(404, '型号不存在');
   const template = getTemplate(model.templateId), specs = normalizeSpecs(model.specs);
-  return { ...template, fields: applySpecs(template.fields, specs), modelId: model.id, modelName: model.name, specs };
+  const category = db.categories.find(c => c.value === model.category);
+  return { ...template, fields: applySpecs(template.fields, specs), modelId: model.id, modelName: model.name, specs, identifierMode: (category && category.identifierMode) || 'imei' };
 }
 
-const inboundRoutes = createInboundRoutes(db, { fail, requirePermission, clone, getTemplate, modelForm, getOperator: () => ROLE_LABELS[currentRole()] });
+const inboundRoutes = createInboundRoutes(db, { fail, requirePermission, clone, getTemplate, modelForm, unitMode, getOperator: () => ROLE_LABELS[currentRole()] });
 function validatePurchaseFiles(input, scope, trustedIds = new Set()) {
   if (!Array.isArray(input) || input.length > 9) fail(400, '图片列表无效');
   return input.map(f => {
@@ -142,6 +159,11 @@ const shopShare = createShopShare(db, {fail, currentRole, requirePermission, pag
 const customerRequests=createCustomerRequests(db,{fail,currentRole,requirePermission,paginate,clone,shopShare,publicUnit,agents:agentsMock});
 const repairMock=createRepair(db,{fail,currentRole,requirePermission,paginate,clone,uploadedFiles});
 const loanMock=createLoans(db,{fail,currentRole,requirePermission,paginate,clone,uploadedFiles});
+function mockStaffLogin({ mockRole = 'boss' }) {
+  if (!STAFF_ROLES.includes(mockRole)) fail(400, '模拟员工角色无效');
+  wx.setStorageSync(ROLE_KEY, mockRole);
+  return { token: 'mock-staff-token', user: makeUser(mockRole) };
+}
 /** 已关联销售单的收款凭证 */
 const salesReceipt = id => (db.salesTransactions || []).some(o => (o.receipts || []).some(f => f.fileId === id));
 const routes = [
@@ -159,11 +181,8 @@ const routes = [
   ...createCatalogRoutes(db, { fail, requirePermission, clone, templateHistory, getOperator: () => ROLE_LABELS[currentRole()] }),
   // ---------- auth ----------
   ['POST', '/auth/wx-login', () => ({ token: 'mock-token', user: makeUser(currentRole()) })],
-  ['POST', '/auth/staff-login', (d) => {
-    const role = d.mockRole || 'boss';
-    wx.setStorageSync(ROLE_KEY, role);
-    return { token: 'mock-staff-token', user: makeUser(role) };
-  }],
+  ['POST', '/auth/staff-wechat-login', mockStaffLogin],
+  ['POST', '/auth/staff-login', mockStaffLogin],
   ['POST', '/auth/sms-code', () => ({ sent: true })],
   ['POST', '/auth/sms-captcha', () => fail(400, '模拟登录不需要图片验证')],
   ['GET', '/auth/me', () => makeUser(currentRole())],
@@ -174,17 +193,18 @@ const routes = [
 
   // ---------- shop ----------
   ...shopShare.routes,
-  ['GET', '/shop/categories', () => db.categories.map(c => {
-    // 型号返回 { id, name }，分类页据此按型号精确筛选；种子里没有建档的型号 id 为 null
-    const brands = clone(c.brands || []).map(b => ({ ...b, series: b.series.map(s => ({ ...s, models: s.models.map(name => { const m = db.models.find(m => m.name === name); return { id: m ? m.id : null, name }; }) })) }));
-    db.models.filter(m => m.category === c.value).forEach(m => {
+  ['GET', '/shop/categories', () => db.categories.slice().sort((a, b) => (a.sortOrder || 100) - (b.sortOrder || 100)).map(c => {
+    // 与线上一致：只列出有在库且对外展示设备的型号（型号库有两千多个，空型号不进顾客目录）
+    const stocked = new Set(db.units.filter(u => u.status === 'in_stock' && u.flags && (u.flags.showInShop || u.flags.sharePeer)).map(u => u.modelId));
+    const brands = [];
+    db.models.filter(m => m.category === c.value && stocked.has(m.id)).forEach(m => {
       let b = brands.find(b => b.value === m.brand);
       if (!b) { b = { value: m.brand, label: m.brandLabel, series: [] }; brands.push(b); }
       let series = b.series.find(s => s.label === m.series);
       if (!series) { series = { label: m.series, models: [] }; b.series.push(series); }
       if (!series.models.some(x => x.name === m.name)) series.models.push({ id: m.id, name: m.name });
     });
-    return { value: c.value, label: c.label, brands };
+    return { value: c.value, label: c.label, identifierMode: c.identifierMode || 'imei', brands: c.value === PHONE_CATEGORY ? brands.sort((a, b) => brandRank(a.value, a.label) - brandRank(b.value, b.label)) : brands };
   })],
   ...customerRequests.routes,
 
@@ -214,16 +234,28 @@ const routes = [
   ...inboundRoutes,
 
   // ---------- templates ----------
+  ['GET', '/models/brands', (d) => {
+    requirePermission(PERM.TEMPLATE_MANAGE, PERM.INBOUND, PERM.PURCHASE_MANAGE, PERM.ACCEPTANCE, PERM.INVENTORY_VIEW);
+    const map = new Map();
+    db.models.filter(m => !d.category || m.category === d.category).forEach(m => {
+      const item = map.get(m.brand) || { brand: m.brand, brandLabel: m.brandLabel || m.brand, count: 0 };
+      item.count += 1; map.set(m.brand, item);
+    });
+    return [...map.values()].sort((a, b) => a.brandLabel.localeCompare(b.brandLabel));
+  }],
   ['GET', '/models/tree', (d) => {
     requirePermission(PERM.TEMPLATE_MANAGE, PERM.INBOUND, PERM.PURCHASE_MANAGE, PERM.ACCEPTANCE, PERM.INVENTORY_VIEW);
     const brands = [];
-    db.models.filter(m => !d.category || m.category === d.category).forEach(m => {
+    const keyword = String(d.keyword || '').trim().toLowerCase();
+    db.models.filter(m => (!d.category || m.category === d.category) && (!d.brand || m.brand === d.brand)
+      && (!keyword || m.name.toLowerCase().includes(keyword) || String(m.series || '').toLowerCase().includes(keyword))).slice(0, keyword ? 200 : undefined).forEach(m => {
       let brand = brands.find(b => b.id === m.brand);
       if (!brand) { brand = { name: m.brandLabel || m.brand, id: m.brand, series: [] }; brands.push(brand); }
       let series = brand.series.find(s => s.name === m.series);
       if (!series) { series = { name: m.series, models: [] }; brand.series.push(series); }
       const { tacs, tacSource, ...model } = m;
-      series.models.push(clone((ROLE_PERMISSIONS[currentRole()] || []).includes(PERM.TEMPLATE_MANAGE) ? m : model));
+      const mode = (db.categories.find(c => c.value === m.category) || {}).identifierMode || 'imei';
+      series.models.push(clone({ ...((ROLE_PERMISSIONS[currentRole()] || []).includes(PERM.TEMPLATE_MANAGE) ? m : model), identifierMode: mode }));
     });
     return brands;
   }],

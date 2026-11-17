@@ -1,5 +1,7 @@
+const { RAM_OPTIONS } = require("../utils/template");
+
 /**
- * 手机分类模板。容量、颜色在此只是通用选项，具体型号在型号资料里配置自己的容量和颜色。
+ * 手机分类模板。存储容量、运行内存和颜色的通用选项可按型号单独覆盖。
  * 发布后以各分类模板版本为准；已入库设备保留入库时的快照。
  */
 function fields() {
@@ -9,6 +11,7 @@ function fields() {
     select('version', '版本型号', ['国行', '港澳台版', '美版', '日版', '韩版', '其他海外版'], true),
     { ...select('networkLock', '网络锁', ['无锁', '有锁'], true), default: '无锁' },
     select('storage', '存储容量', ['64G', '128G', '256G', '512G', '1T', '2T'], true),
+    select('ram', '运行内存', RAM_OPTIONS.slice()),
     select('color', '机身颜色', ['黑色', '白色', '银色', '金色', '蓝色', '紫色', '绿色', '红色', '粉色', '橙色', '其他'], true),
     select('grade', '成色', ['准新', '99新', '98新', '97新', '95新', '9成新'], true),
     select('peerGrade', '同行标准', ['L1-靓机', 'L2-小花靓', 'Y1-小花', 'Y2-南宁花'], false, ['peer']),

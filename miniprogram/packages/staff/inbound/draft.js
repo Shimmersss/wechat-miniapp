@@ -29,16 +29,21 @@ function fieldValues(fields, values) {
   ]));
 }
 
-function snapshot({ model, templateId, templateVersion, templateFields, rowFields, attributes, rows, form }, priceTouched) {
+function snapshot({ model, templateId, templateVersion, templateFields, rowFields, attributes, rows, form, identifierMode, quantity, batchNoSerial, batchReason }, priceTouched) {
   return {
     savedAt: Date.now(),
+    // 旧草稿没有以下字段，恢复时按手机模式处理
+    identifierMode: identifierMode || 'imei',
+    quantity: quantity || '1',
+    batchNoSerial: !!batchNoSerial,
+    batchReason: batchReason || '',
     model: model ? { id: model.id, name: model.name } : null,
     templateId,
     templateVersion,
     fieldTypes: Object.fromEntries(templateFields.map(({ key, type }) => [key, type])),
     attributes: fieldValues(templateFields, attributes),
-    rows: rows.map(({ imei1, imei2, cost, attributes }) => ({
-      imei1, imei2, cost, attributes: fieldValues(rowFields, attributes),
+    rows: rows.map(({ imei1, imei2, serialNo, noSerial, noSerialReason, cost, attributes }) => ({
+      imei1, imei2, serialNo: serialNo || '', noSerial: !!noSerial, noSerialReason: noSerialReason || '', cost, attributes: fieldValues(rowFields, attributes),
     })),
     form: { ...Object.fromEntries(formFields.map(key => [key, form[key]])), publicImages: fileRefs(form.publicImages) },
     priceTouched: { ...priceTouched },

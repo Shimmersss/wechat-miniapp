@@ -181,6 +181,7 @@ function authHarness(env) {
             secret: (n) => env[n] || gateway.fail(503, "missing test setting"),
             rpc: async (fn, p) => {
               calls.push({ fn, ...p });
+              if (fn === "api_staff_wechat_login") return { user: { role: "sales" } };
               if (p.p_action === "reserve") return { reserved: true };
               if (p.p_action === "begin")
                 return {
@@ -206,6 +207,19 @@ function authHarness(env) {
   );
   return { main: exports.main, calls };
 }
+test("员工微信模式关闭短信入口，员工登录只使用平台身份", async () => {
+  const { main, calls } = authHarness({ STAFF_WECHAT_ONLY: "1" });
+  const call = (path, data) => main({ path, method: "POST", data }, {});
+  for (const path of ["/auth/sms-code", "/auth/sms-captcha", "/auth/staff-login"])
+    assert.equal((await call(path, {})).code, 410);
+  assert.equal(calls.length, 0);
+  const session = await call("/auth/staff-wechat-login", { openid: "forged", role: "boss" });
+  assert.equal(session.code, 0);
+  assert.equal(session.data.user.role, "sales");
+  assert.equal(calls[0].fn, "api_staff_wechat_login");
+  assert.equal(calls[0].p_openid, "platform-only");
+  assert.match(calls[0].p_token_hash, /^[a-f0-9]{64}$/);
+});
 test("production始终忽略固定码，开发显式cloudbase也走平台；客户端身份与证明字段不能覆盖平台上下文", async () => {
   for (const env of [
     { NODE_ENV: "production", SMS_PROVIDER: "development" },

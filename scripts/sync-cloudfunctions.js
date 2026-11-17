@@ -17,6 +17,7 @@ const sources = [
   path.join(root, "miniprogram/constants/roles.js"),
   path.join(root, "miniprogram/constants/status.js"),
   path.join(root, "miniprogram/constants/customer-requests.js"),
+  path.join(root, "miniprogram/constants/shop-brands.js"),
   path.join(root, "miniprogram/utils/template.js"),
   path.join(root, "miniprogram/utils/validate.js"),
 ];

@@ -15,9 +15,21 @@ module.exports=function(db,{fail,currentRole,requirePermission,paginate,clone}){
  function roleView(key){return{key,label:ROLE_LABELS[key],permissions:key==='boss'?ALL:ROLE_PERMISSIONS[key].slice(),visibleFields:fieldsOf(key),editable:key!=='boss',staffCount:staff.filter(s=>s.role===key&&s.status==='active').length,version:versions[key]||1};}
  return[
  ['GET','/staff',d=>{manager();let rows=staff.slice();if(d.status)rows=rows.filter(s=>s.status===d.status);if(d.roleKey)rows=rows.filter(s=>s.role===d.roleKey);if(d.keyword)rows=rows.filter(s=>(s.name+s.phone).includes(d.keyword));return paginate(rows.map(view),d);}],
- ['POST','/staff',d=>{manager();const why=reason(d);if(!d.name||!String(d.name).trim())fail(400,'请填写姓名');if(!isPhone(d.phone))fail(400,'请填写11位手机号');if(!STAFF_ROLES.includes(d.roleKey))fail(400,'角色无效');if(d.roleKey==='boss'&&currentRole()!=='boss')fail(403,'仅老板可添加老板账号');if(staff.some(s=>s.phone===d.phone))fail(409,'该手机号已是员工');const s={id:'st_'+Date.now()+'_'+ ++seq,userId:null,name:String(d.name).trim(),phone:d.phone,role:d.roleKey,wechatBound:false,status:'active',version:1,createdAt:new Date().toISOString()};staff.push(s);note('新增员工',s.id,why);return view(s);}],
+ ['POST','/staff',d=>{manager();const why=reason(d);if(!d.name||!String(d.name).trim())fail(400,'请填写姓名');if(d.phone!==undefined&&!isPhone(d.phone))fail(400,'请填写11位手机号');if(!STAFF_ROLES.includes(d.roleKey))fail(400,'角色无效');if(d.roleKey==='boss'&&currentRole()!=='boss')fail(403,'仅老板可添加老板账号');if(d.phone&&staff.some(s=>s.phone===d.phone))fail(409,'该手机号已是员工');const s={id:'st_'+Date.now()+'_'+ ++seq,userId:null,name:String(d.name).trim(),phone:d.phone||null,role:d.roleKey,wechatBound:false,status:'active',version:1,createdAt:new Date().toISOString()};staff.push(s);note('新增员工',s.id,why);return view(s);}],
  ['PATCH','/staff/:id',(d,h,p)=>{manager();const why=reason(d),s=find(p.id);if((s.version||1)!==d.version)fail(409,'员工资料已更新，请刷新');const role=d.roleKey===undefined?s.role:d.roleKey,status=d.status===undefined?s.status:d.status;if(!STAFF_ROLES.includes(role))fail(400,'角色无效');if(!['active','disabled'].includes(status))fail(400,'员工状态无效');if(currentRole()!=='boss'&&(s.role==='boss'||role==='boss'))fail(403,'仅老板可修改老板账号或授予老板角色');if(self(s)&&(role!==s.role||status!=='active'))fail(400,'不能停用或更改自己的角色');if(s.role==='boss'&&s.status==='active'&&(role!=='boss'||status!=='active')&&staff.filter(x=>x.role==='boss'&&x.status==='active').length<=1)fail(409,'至少保留一名在职老板');const changed=status!==s.status;if(d.name!==undefined)s.name=String(d.name).trim();Object.assign(s,{role,status,version:(s.version||1)+1});note(changed?(status==='active'?'恢复员工':'停用员工'):'调整员工资料或角色',s.id,why);return view(s);}],
  ['POST','/staff/:id/unbind',(d,h,p)=>{manager();const why=reason(d),s=find(p.id);if((s.version||1)!==d.version)fail(409,'员工资料已更新，请刷新');if(!s.wechatBound)fail(409,'该员工尚未绑定微信');if(self(s))fail(400,'不能解绑自己的微信');if(s.role==='boss'&&currentRole()!=='boss')fail(403,'仅老板可解绑老板账号');Object.assign(s,{wechatBound:false,userId:null,version:(s.version||1)+1});note('解绑员工微信',s.id,why);return view(s);}],
+ ['POST','/staff/:id/bind-wechat',(d,h,p)=>{
+  manager();
+  const why=reason(d),s=find(p.id);
+  if(s.role==='boss'&&currentRole()!=='boss')fail(403,'仅老板可绑定老板账号');
+  if((s.version||1)!==d.version)fail(409,'员工资料已更新，请刷新');
+  if(s.wechatBound||s.status!=='active')fail(409,'只能为在职且未绑定微信的员工绑定');
+  if(!/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(d.userId))fail(400,'微信绑定编号无效');
+  if(staff.some(x=>x.userId===d.userId))fail(409,'该微信已绑定其他员工');
+  Object.assign(s,{wechatBound:true,userId:d.userId,version:(s.version||1)+1});
+  note('绑定员工微信',s.id,why);
+  return view(s);
+ }],
  ['GET','/roles',()=>{manager();return{list:STAFF_ROLES.map(roleView),canEdit:currentRole()==='boss'};}],
  ['PUT','/roles/:key',(d,h,p)=>{
   manager();if(currentRole()!=='boss')fail(403,'仅老板可调整角色权限');const why=reason(d),key=p.key;if(!STAFF_ROLES.includes(key))fail(404,'角色不存在');if(key==='boss')fail(400,'老板角色固定拥有全部权限，不能编辑');

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 访问设备主键优化：真实PG执行计划 + 已部署微信SDK边界/重试验证，仅新增三条隔离访问事件，不改员工身份。 */
+require("./lib/verification-guard").guard();
 const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto"),

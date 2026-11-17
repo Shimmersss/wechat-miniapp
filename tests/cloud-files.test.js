@@ -1,5 +1,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
+// 这些用例固定验证微信原生云函数调用，不依赖本机真机网关配置。
+require('../miniprogram/config').cloudHttpBaseUrl='';
 const {upload}=require('../miniprogram/utils/request');
 const withTiming=require('../cloudfunctions/common/startup-timing');
 function wxMock({status=200,finishCode=0,processing=false,foreignBuffer=false}={}){

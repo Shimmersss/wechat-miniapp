@@ -1,11 +1,10 @@
 /** 云开发默认短信/图片验证码公共 API。短信验证标识与核验 token 不返回客户端；图片 challenge 返回本人用于作答。 */
-const { fail, hmac, secret } = require("./gateway");
+const { dataEnvironment, fail, hmac, secret } = require("./gateway");
 function device(openid) {
   return hmac(secret("OTP_HASH_KEY"), "sms-device:" + openid);
 }
 async function request(path, data, openid, captchaToken) {
-  const env = process.env.TCB_ENV || process.env.SCF_NAMESPACE;
-  if (!env) fail(503, "短信服务缺少环境配置");
+  const env = dataEnvironment();
   let response, body;
   try {
     response = await fetch(

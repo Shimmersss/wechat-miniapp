@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** 真实微信SDK与59页回归。角色/夹具变更在finally恢复；请求只观测，不模拟网络或业务结果。 */
+require("./lib/verification-guard").guard();
 const fs = require("node:fs"),
   crypto = require("node:crypto"),
   assert = require("node:assert/strict");

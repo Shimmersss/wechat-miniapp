@@ -4,10 +4,12 @@ const { http } = require('../../utils/request');
 module.exports = {
   /** { status?, roleKey?, keyword?, page } → 分页 [{ id, name, phone, roleKey, roleLabel, status, wechatBound, lastLoginAt, version }] */
   list: (params) => http.get('/staff', params),
-  /** { name, phone, roleKey, reason }；员工用该手机号短信登录后绑定微信；非老板不能添加老板 */
+  /** { name, phone?, roleKey, reason }；非老板不能添加老板 */
   create: (data) => http.post('/staff', data, { loading: true }),
   /** { name?, roleKey?, status?: active|disabled, reason, version }；不能停用/降级自己，至少保留一名在职老板 */
   update: (id, data) => http.patch(`/staff/${id}`, data, { loading: true }),
+  /** { userId, reason, version }；绑定员工本人从登录页复制的编号 */
+  bindWechat: (id, data) => http.post(`/staff/${id}/bind-wechat`, data, { loading: true }),
   /** { reason, version }：解绑微信，原微信会话立即失效 */
   unbind: (id, data) => http.post(`/staff/${id}/unbind`, data, { loading: true }),
   /** → { list:[{ key, label, permissions, visibleFields, editable, staffCount, version }], canEdit } */

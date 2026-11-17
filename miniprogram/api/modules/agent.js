@@ -6,9 +6,9 @@ const { http } = require('../../utils/request');
 
 module.exports = {
   /** 申请成为代理 { name, phone, region, inviteCode?, agreed:true } → 本人代理资料；员工账号不能申请 */
-  apply: (data) => http.post('/agent/applications', data, { loading: true }),
+  apply: (data) => http.post('/agent/applications', data, { loading: true, requireSession: true }),
   /** → { status: none|pending|active|rejected|disabled, name, phone, region, markupMax?, inviteCode?, inviterName?, reviewRemark? } */
-  me: () => http.get('/agent/me'),
+  me: () => http.get('/agent/me', undefined, { requireSession: true }),
   /** → { todayVisitors, todayViews, todayShares, lockedOrders, soldOrders, pendingAmount, settledAmount, markupMax } */
   overview: () => http.get('/agent/overview'),
   /** 可转发库存（门店勾选“允许代理转发”的在库设备）{ keyword?, page } → 分页 [{ id, name, storage, color, grade, cover, retail, markup, markupMax, sharePrice, aboveRetail }] */

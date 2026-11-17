@@ -1,6 +1,6 @@
 const { fail } = require('./gateway');
 const { validateFields, validateSpecs, normalizeSpecs } = require('./template');
-const { isImei } = require('./validate');
+const { isImei, normalizeSerial, serialError, noSerialReasonError } = require('./validate');
 const { UNIT_STATUS, PURCHASE_STATUS, STOCKTAKE_SCOPE, STOCKTAKE_DEFAULT_SCOPE, CARRIERS } = require('./status');
 function text(v, label, max=100, optional=false) {
   if (optional && (v === undefined || v === '')) return '';
@@ -35,13 +35,29 @@ function prepare(action, input, params, user) {
       d.descriptionPresets=Object.fromEntries(['peer','customer'].map(k=>[k,v[k].map(s=>s.trim())]));
     }
   }
+  if (/categories\.(create|update)/.test(action) && d.identifierMode!==undefined) choice(d.identifierMode,['imei','serial','serial_imei'],'串码方式');
   if (/models\.(create|update)/.test(action)) {
     ['name','brandLabel','series','category'].forEach(k=>text(d[k],k,k==='name'?100:k==='category'?60:50));
+    if (d.brandId !== undefined) d.brandId = text(d.brandId, '品牌', 50);
     const err=validateSpecs(d.specs); if(err) fail(400,err);
     if (d.specs!==undefined) d.specs=normalizeSpecs(d.specs);
     const tacs=d.tacs||[];
     if(!Array.isArray(tacs)||tacs.length>100||tacs.some(t=>typeof t!=='string'||!/^\d{8}$/.test(t))||new Set(tacs).size!==tacs.length) fail(400,'TAC 必须为不重复的八位数字');
     d.tacs=tacs; if(tacs.length) text(d.tacSource,'TAC 核验来源',200);
+  }
+  if (action === 'models.series') {
+    d.category = text(d.category, '分类', 60);
+    d.brand = text(d.brand, '品牌', 50);
+  }
+  if (action === 'models.delete') p.id = text(p.id, '型号', 60);
+  if (action === 'models.list' || action === 'models.brands') {
+    if (d.category !== undefined) d.category = text(d.category, '分类', 60);
+    if (d.brand !== undefined && d.brand !== '') d.brand = text(d.brand, '品牌', 50); else delete d.brand;
+    if (d.keyword !== undefined && d.keyword !== '') d.keyword = text(d.keyword, '搜索内容', 50); else delete d.keyword;
+  }
+  if (action === 'models.identify') {
+    d.imei = text(d.imei, 'IMEI', 15);
+    if (!isImei(d.imei)) fail(400, 'IMEI 格式或校验位无效');
   }
   if (/suppliers\.(create|update)/.test(action) && d.active!==undefined && typeof d.active!=='boolean') fail(400,'供应商状态无效');
   if(action==='suppliers.list' && d.active!==undefined) choice(String(d.active),['true','false'],'供应商状态');
@@ -67,7 +83,16 @@ function prepare(action, input, params, user) {
     for(const row of action==='inbound.single'?[d]:d.units) {
       const x={...common,...row};
       for(const v of [x.imei1,x.imei2].filter(Boolean)) {if(!isImei(v))fail(400,'IMEI 格式或校验位无效'); if(seen.has(v))fail(400,'本次提交存在重复串码');seen.add(v);}
+      // 序列号与原因的最终校验在库内按分类串码方式完成；这里先拦格式和本批重复
+      if(x.serialNo!==undefined&&x.serialNo!==''){if(typeof x.serialNo!=='string')fail(400,'序列号格式无效');const err=serialError(x.serialNo);if(err)fail(400,err);const sn='SN:'+normalizeSerial(x.serialNo);if(seen.has(sn))fail(400,'本次提交存在重复序列号');seen.add(sn);}
+      if(x.noSerialReason!==undefined&&x.noSerialReason!==''){if(typeof x.noSerialReason!=='string')fail(400,'无序列号原因格式无效');const err=noSerialReasonError(x.noSerialReason);if(err)fail(400,err);}
     }
+    if(action==='inbound.single'&&d.quantity!==undefined) d.quantity=integer(d.quantity,'入库数量',1,100);
+    if(action==='inbound.batch'&&common.quantity!==undefined) fail(400,'批量入库不支持按数量入库');
+  }
+  if(action==='inbound.checkSerial') {
+    d.modelId=text(d.modelId,'型号',60);d.serialNo=text(d.serialNo,'序列号',40);
+    const err=serialError(d.serialNo);if(err)fail(400,err);
   }
   if(action==='units.list') {
     if(d.status)choice(d.status,Object.keys(UNIT_STATUS),'库存状态');
@@ -75,6 +100,9 @@ function prepare(action, input, params, user) {
     for(const k of ['minPrice','maxPrice']) if(d[k]!==undefined)d[k]=money(d[k]);
     if(d.minPrice!==undefined&&d.maxPrice!==undefined&&Number(d.minPrice)>Number(d.maxPrice))fail(400,'最低价不能高于最高价');
     if(d.keyword){d.keyword=text(d.keyword,'搜索内容',100);if(/^\d+$/.test(d.keyword)&&d.keyword.length!==15&&!user.visibleFields.includes('fullImei'))fail(400,'串码查询请扫描完整 IMEI');}
+    if(d.lotId!==undefined&&(typeof d.lotId!=='string'||!/^[0-9a-f-]{36}$/i.test(d.lotId)))fail(400,'批次标识无效');
+    if(d.noSerial!==undefined){if(!['true',true].includes(d.noSerial))fail(400,'筛选参数无效');d.noSerial=true;}
+    if(d.category!==undefined)d.category=text(d.category,'分类',60);
   }
   if(action==='units.price') {
     const keys=['retail','wholesale','agentBase'].filter(k=>d[k]!==undefined);
