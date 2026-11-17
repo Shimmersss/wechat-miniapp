@@ -31,3 +31,6 @@
 .placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; }
 .placeholder-img { width: 168rpx; height: 168rpx; opacity: 0.9; }
 .placeholder-text { font-size: 22rpx; color: var(--c-muted); }
+
+.info-tags { display: flex; gap: 8rpx; overflow: hidden; white-space: nowrap; margin: 12rpx 0; }
+.info-tags text { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 20rpx; color: var(--c-ink-2); background: var(--c-bg); border-radius: var(--radius-sm); padding: 4rpx 8rpx; }

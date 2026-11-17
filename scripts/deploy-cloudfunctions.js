@@ -98,8 +98,9 @@ function readEnv() {
 }
 
 const privateEnv = readEnv();
-if (privateEnv.CLOUDBASE_ENV_ID !== envId)
-  throw new Error("目标云环境与私有配置的 CLOUDBASE_ENV_ID 不一致");
+const gatewayFile = path.join(root, '.local/cloudbase/single-env-gateway.json');
+require('./lib/deployment-target').verifyTarget(envId, privateEnv,
+  fs.existsSync(gatewayFile) ? JSON.parse(fs.readFileSync(gatewayFile, 'utf8')) : null);
 const dataEnvId = privateEnv.CLOUDBASE_DATA_ENV_ID || envId;
 if (!/^[a-z0-9-]+$/.test(dataEnvId))
   throw new Error("CLOUDBASE_DATA_ENV_ID 格式无效");

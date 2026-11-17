@@ -36,6 +36,9 @@ test("维修mock真实保存/权限/确认/配件扣料/取机/收退款，不�
   });
   assert.equal(r.code, 0, r.message);
   let o = r.data;
+  // 存量旧单仍支持原报价/配件链路。
+  require("../miniprogram/mock/data").repairTransactions.find(x=>x.id===o.id).status="pending_check";
+  o.status="pending_check";
   role = "customer";
   assert.equal((await call("/repair-orders/" + o.id)).code, 403);
   role = "purchaser";
@@ -226,7 +229,7 @@ test("维修看板mock：未完结单在前，同列新单在前，不被大量�
   const newer = await create("看板排序新单");
   const board = await call("/repair-orders/board");
   assert.equal(board.code, 0, board.message);
-  const pending = board.data.columns.pending_check.map((o) => o.id);
+  const pending = board.data.columns.repairing.map((o) => o.id);
   assert.equal(pending[0], newer.id);
   assert.ok(pending.includes(older.id));
   assert.ok(board.data.hasMore);

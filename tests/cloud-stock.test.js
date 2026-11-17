@@ -13,6 +13,7 @@ Module._load = function (name, ...args) {
 const { createHandler } = require('../cloudfunctions/common/gateway');
 const { unit, view } = require('../cloudfunctions/common/stock-view');
 const { prepare } = require('../cloudfunctions/common/stock-input');
+const { suggest } = require('../cloudfunctions/common/pricing-suggest');
 const { ROLE_PERMISSIONS, defaultVisibleFields } = require('../miniprogram/constants/roles');
 Module._load = load;
 const user = role => ({ id: 'user', staffNo: 'staff', role, permissions: ROLE_PERMISSIONS[role], visibleFields: defaultVisibleFields(role) });
@@ -69,4 +70,13 @@ test('无附件读取权时不返回内部文件标识和存储路径', () => {
   const result = unit({ ...row, attached: [{ id: 'private-proof', owner_id: 'other', scope: 'internal', stored_name: 'secret/object', field_key: 'receipt', mime: 'image/png' }] }, user('sales'));
   assert.equal(JSON.stringify(result).includes('private-proof'), false);
   assert.equal(JSON.stringify(result).includes('secret/object'), false);
+});
+
+test('真实云函数定价按分精确计算，支持独立利润及旧折扣规则', () => {
+ assert.deepEqual(suggest({cost:'0.10',retailProfit:'0.20'}),{retail:0.3,retailProfit:0.2});
+ assert.deepEqual(suggest({cost:4000,wholesaleProfit:300}),{wholesale:4300,wholesaleProfit:300,agentBase:4300,agentProfit:300});
+ assert.equal(suggest({cost:4000,targetProfit:600},'300').wholesale,4300);
+ assert.equal(suggest({cost:4000,wholesaleProfit:300,agentProfit:0}).agentBase,4000);
+ assert.throws(()=>suggest({cost:'999999999999.99',retailProfit:'.01'}),/金额/);
+ assert.throws(()=>prepare('pricing.suggest',{cost:100,retailProfit:-1},{},user('boss')),/金额/);
 });

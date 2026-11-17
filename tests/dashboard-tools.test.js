@@ -10,16 +10,16 @@ const keys = list => list.map(t => t.key);
 test('每个工具都有图标，入口按角色权限过滤', () => {
   const dir = path.join(__dirname, '../miniprogram/packages/staff/dashboard/tools');
   tools.TOOLS.forEach(t => assert.ok(fs.existsSync(path.join(dir, t.key + '.svg')), t.key));
-  assert.equal(forRole('boss').length, 15);
-  assert.equal(forRole('manager').length, 14);
-  assert.deepEqual(keys(forRole('engineer')), ['inventory', 'repair', 'parts']);
+  assert.equal(forRole('boss').length, 14);
+  assert.equal(forRole('manager').length, 13);
+  assert.deepEqual(keys(forRole('engineer')), ['inventory', 'repair']);
   assert.ok(!keys(forRole('sales')).includes('agentSettle'));
 });
 
 test('默认布局：工具不超过 8 个全部常用，超过时放 7 个并留更多', () => {
   const boss = tools.resolveLayout(forRole('boss'), null);
   assert.equal(boss.pinned.length, 7);
-  assert.equal(boss.more.length, 8);
+  assert.equal(boss.more.length, 7);
   const sales = tools.resolveLayout(forRole('sales'), null);
   assert.equal(sales.pinned.length, 5);
   assert.equal(sales.more.length, 0);
@@ -42,13 +42,26 @@ test('拖动换位：位置换算不越界，顺序不丢工具', () => {
   assert.equal(tools.indexAt(3, 5, 6), 5);
 });
 
-test('待办角标按工具汇总，零项不显示，库龄预警不计入', () => {
+test('待办角标按工具汇总，零项不显示，库龄预警不计入，超期维修不重复计数', () => {
   const todos = [
-    { key: 'repairOverdue', count: 2 }, { key: 'repairConfirm', count: 1 }, { key: 'repairParts', count: 0 },
+    { key: 'repairOverdue', count: 1 }, { key: 'repairActive', count: 6 }, { key: 'inboundDraft', count: 0 },
     { key: 'customerRequests', count: 120 }, { key: 'ageing', count: 30 }
   ];
-  assert.deepEqual(tools.toolBadges(todos), { repair: '3', consult: '99+' });
-  assert.deepEqual(keys(tools.pendingTodos(todos)), ['repairOverdue', 'repairConfirm', 'customerRequests', 'ageing']);
+  assert.deepEqual(tools.toolBadges(todos), { repair: '6', consult: '99+' });
+  assert.deepEqual(keys(tools.pendingTodos(todos)), ['repairOverdue', 'repairActive', 'customerRequests', 'ageing']);
+  // 只有超期计数时（如旧服务端未返回维修中），仍按超期显示
+  assert.deepEqual(tools.toolBadges([{ key: 'repairOverdue', count: 2 }]), { repair: '2' });
+});
+
+test('待办总数：超期维修含在维修中，库龄预警不计入', () => {
+  const { total } = require('../miniprogram/utils/dashboard-todos');
+  assert.equal(total([
+    { key: 'customerRequests', count: 4 }, { key: 'agentApplications', count: 2 }, { key: 'agentEarnings', count: 1 },
+    { key: 'loanOverdue', count: 1 }, { key: 'repairOverdue', count: 1 }, { key: 'repairActive', count: 6 },
+    { key: 'ageing', count: 30 }
+  ]), 14);
+  assert.equal(total([{ key: 'repairOverdue', count: 2 }]), 2);
+  assert.equal(total([]), 0);
 });
 
 test('问候语随时间变化，日期显示星期', () => {

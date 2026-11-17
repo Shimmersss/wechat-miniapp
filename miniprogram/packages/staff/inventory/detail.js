@@ -119,7 +119,6 @@ createPage({
     if (!['pass', 'fail'].includes(editor.result)) return this.$toast('请选择复检结论');
     const error = validateValues(editor.fields.filter(f => editor.dirty.includes(f.key)), editor.values);
     if (error) return this.$toast(error);
-    if (editor.result === 'pass' && editor.values.refurbishment === '正在整备') return this.$toast('请先确认整备完成');
     const attributes = Object.fromEntries(editor.dirty.map(key => [key, editor.values[key]]));
     this.setData({ mutating: true });
     try {

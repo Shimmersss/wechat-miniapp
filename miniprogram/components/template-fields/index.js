@@ -1,12 +1,35 @@
 const { upload } = require('../../utils/request');
 Component({
   properties: { fields: Array, values: Object, disabled: Boolean },
-  data: { uploading: false },
+  data: { uploading: false, custom: {} },
+  observers: {
+    'fields, values': function(fields, values) {
+      const custom = {};
+      (fields || []).forEach(f => {
+        const value = (values || {})[f.key];
+        if (f.allowCustom && f.type === 'select') custom[f.key] = value ? !(f.options || []).includes(value) : !!this.data.custom[f.key];
+      });
+      this.setData({ custom });
+    }
+  },
   methods: {
     change(e) {
       if (this.data.disabled) return;
       const { key, value } = e.currentTarget.dataset;
+      if (value !== undefined) this.setData({ [`custom.${key}`]: false });
       this.triggerEvent('change', { key, value: value === undefined ? e.detail.value : value });
+    },
+    chooseCustom(e) {
+      if (this.data.disabled) return;
+      const key = e.currentTarget.dataset.key;
+      this.setData({ [`custom.${key}`]: true });
+      this.triggerEvent('change', { key, value: '' });
+    },
+    customInput(e) {
+      if (!this.data.disabled) this.triggerEvent('change', { key: e.currentTarget.dataset.key, value: e.detail.value });
+    },
+    customBlur(e) {
+      if (!this.data.disabled) this.triggerEvent('change', { key: e.currentTarget.dataset.key, value: e.detail.value.trim() });
     },
     chooseImage(e) {
       if (this.data.disabled || this.data.uploading) return;

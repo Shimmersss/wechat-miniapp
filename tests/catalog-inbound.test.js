@@ -95,8 +95,8 @@ test('分类与型号管理、分类模板与型号规格、核验映射、整�
   const repairing = await call('/inbound/units', 'POST', { ...common, imei1: imei(3), attributes: { ...common.attributes, refurbishment: '正在整备' } });
   assert.equal(repairing.code, 0);
   const unit = db.units.find(u => u.id === repairing.data.id);
-  assert.equal(unit.status, 'recheck'); assert.equal(unit.flags.showInShop, false);
-  role = 'customer'; assert.equal((await call(`/shop/units/${unit.id}`)).code, 404);
+  assert.equal(unit.status, 'in_stock'); assert.equal(unit.flags.showInShop, true);
+  role = 'customer'; assert.equal((await call(`/shop/units/${unit.id}`)).code, 0);
   role = 'sales'; assert.equal((await call('/inbound/batch', 'POST', { common, units: [{ imei1: imei(4) }] })).code, 403);
 });
 

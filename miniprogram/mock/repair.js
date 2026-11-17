@@ -23,6 +23,8 @@ module.exports = function (
     all = () =>
       [PERM.REPAIR_ASSIGN, PERM.REPAIR_QUOTE, PERM.REPAIR_CASH].some(has),
     closed = (s) => ["completed", "cancelled"].includes(s);
+  // TODO(confirm): 未填预计日期时暂按开单超过7天算超期。
+  const overdue = o => !closed(o.status) && (o.expectedAt || new Date((Date.parse(o.createdAt)||Date.now())+7*86400000+28800000).toISOString().slice(0,10)) < new Date(Date.now()+28800000).toISOString().slice(0,10);
   const signature = (v) => JSON.stringify(canonical(v));
   function canonical(v) {
     return Array.isArray(v)
@@ -188,11 +190,7 @@ module.exports = function (
       canCash: has(PERM.REPAIR_CASH),
       canRefund: has(PERM.REPAIR_CASH) && has(PERM.REFUND),
       canExpense: has(PERM.REPAIR_CASH) && cost(),
-      overdue:
-        !closed(o.status) &&
-        !!o.expectedAt &&
-        o.expectedAt <
-          new Date(Date.now() + 28800000).toISOString().slice(0, 10),
+      overdue: overdue(o),
     });
     return out;
   }
@@ -290,6 +288,7 @@ module.exports = function (
         confirm: ["confirmed", "quoteVersion"],
         issue: ["partId", "quantity"],
         return_parts: ["issueId", "quantity"],
+        close: ["amount", "cost", "method", "confirmed", "proof", "note"],
         payment: ["kind", "amount", "method", "confirmed", "proof"],
         transition: [
           "to",
@@ -363,15 +362,11 @@ module.exports = function (
     return orders.filter(
       (o) =>
         (all() || o.engineerId === actor()) &&
-        (!d.status || d.status === o.status) &&
+        (!d.status || (d.status === "active" && !closed(o.status)) || d.status === o.status) &&
         (!d.engineerId || d.engineerId === o.engineerId) &&
         (!d.keyword || (o.no + o.model + o.customer).includes(d.keyword)) &&
         (d.waitingParts !== "true" || o.waitingParts) &&
-        (d.overdue !== "true" ||
-          (!closed(o.status) &&
-            !!o.expectedAt &&
-            o.expectedAt <
-              new Date(Date.now() + 28800000).toISOString().slice(0, 10))),
+        (d.overdue !== "true" || overdue(o)),
     );
   };
   function partView(p) {
@@ -479,9 +474,9 @@ module.exports = function (
           ),
           p = paginate(rows, { ...d, pageSize: 200 }),
           columns = Object.fromEntries(
-            [...REPAIR_FLOW, "cancelled"].map((k) => [k, []]),
+            ["pending_check","checking","pending_confirm","repairing","pending_pickup","completed","cancelled"].map((k) => [k, []]),
           );
-        p.list.forEach((o) => columns[o.status].push(view(o)));
+        p.list.forEach((o) => (columns[o.status] || columns.repairing).push(view(o)));
         return {
           columns,
           total: rows.length,
@@ -690,7 +685,7 @@ module.exports = function (
             fault: d.fault,
             engineerId,
             expectedAt: d.expectedAt || null,
-            status: "pending_check",
+            status: "repairing",
             version: 1,
             diagnosis: "",
             quote: null,
@@ -852,6 +847,19 @@ module.exports = function (
       "/repair-orders/:id/parts/return",
       (d, h, p) => mutate(d, p, "return_parts", write, (o) => move(o, d, true)),
     ],
+    ["POST", "/repair-orders/:id/close", (d,h,p) => mutate(d,p,"close",cash,o => {
+      if (closed(o.status)) fail(409,"维修单已结束");
+      if (d.confirmed !== true || !["微信","支付宝","现金","银行卡","其他"].includes(d.method)) fail(400,"请确认实际收款及方式");
+      if (d.cost !== undefined && !cost()) fail(403,"无权登记维修成本");
+      const received = cents(d.amount), expense = d.cost === undefined ? 0 : cents(d.cost), t = totals(o);
+      if (t.received + received > 99999999999999 || t.expenses + expense > 99999999999999) fail(400,"金额合计超出允许范围");
+      if (o.kind === "inventory" && received !== 0) fail(400,"本店维修收费请填0");
+      if (d.note !== undefined && (typeof d.note !== 'string' || d.note.trim().length > 2000)) fail(400,"维修说明无效");
+      const proof = images(d.proof);
+      for (const [kind,value] of [["receipt",received],["expense",expense]]) if(value) o.payments.push({ id:uid(), kind, cents:value, method:d.method, reason:d.reason, time:new Date().toISOString(), operator:currentRole() });
+      attach(o,proof,"pickup"); finish(o); o.status="completed";o.completedAt=new Date().toISOString();o.diagnosis=(d.note||'').trim();o.waitingParts=false;
+      return { data:{amount:received/100,note:o.diagnosis}, ...(d.cost!==undefined?{costData:{cost:expense/100}}:{}) };
+    })],
     [
       "POST",
       "/repair-orders/:id/payment",
@@ -909,7 +917,7 @@ module.exports = function (
       "/repair-orders/:id/transition",
       (d, h, p) =>
         mutate(d, p, "transition", write, (o) => {
-          if (!(TRANSITIONS[o.status] || []).includes(d.to))
+          if (!(d.to === "cancelled" && !closed(o.status)) && !(TRANSITIONS[o.status] || []).includes(d.to))
             fail(409, "不允许跨节点");
           if (d.to === "pending_confirm" && (!o.diagnosis || o.quote === null))
             fail(400, "请先检测并报价");
@@ -1074,14 +1082,10 @@ module.exports = function (
         d,
       ),
     queue: () => {
-      const rows = filter({}).filter((o) => !closed(o.status)),
-        today = new Date(Date.now() + 28800000).toISOString().slice(0, 10);
+      const rows = filter({}).filter((o) => !closed(o.status));
       return {
-        overdue: rows.filter((o) => o.expectedAt && o.expectedAt < today)
-          .length,
-        pendingConfirm: rows.filter((o) => o.status === "pending_confirm")
-          .length,
-        waitingParts: rows.filter((o) => o.waitingParts).length,
+        active: rows.length,
+        overdue: rows.filter(overdue).length,
       };
     },
   };

@@ -16,24 +16,29 @@ const { initialValues, validateValues } = require('../../../utils/template');
 const { upload } = require('../../../utils/request');
 const auth = require('../../../utils/auth');
 const drafts = require('./draft');
+const repeat = require('./repeat');
+const { PER_UNIT_KEYS } = repeat;
 let sequence = 0;
 function identityReset() { const blank = row(); return Object.fromEntries(IDENTITY_KEYS.map(k => [k, blank[k]])); }
 function row() { return { key: `row_${++sequence}`, imei1: '', imei2: '', serialNo: '', noSerial: false, noSerialReason: '', state: '', message: '', matchModelId: '', expanded: false, attributes: {}, cost: '' }; }
 /** 行内串码相关字段，模式切换时清空 */
 const IDENTITY_KEYS = ['imei1', 'imei2', 'serialNo', 'noSerial', 'noSerialReason', 'state', 'message', 'matchModelId'];
+// TODO(confirm): 供应商、激活/ID锁/网络锁、拆修、电池等其他必填项暂不调整，可在型号模板配置。
 const serialMode = mode => mode === 'serial' || mode === 'serial_imei';
 module.exports = function inboundPage(batch) {
   return {
     requireStaff: true, permission: PERM.INBOUND,
     data: {
+      suppliers: [], supplierIndex: 0, supplierRequired: false, canSupplier: false, identityFocus: false,
       batch, model: null, modelLoading: false, identifierMode: 'imei', conditionOptions: CONDITION_TYPE, reasonPresets: NO_SERIAL_REASONS, quantity: '1', quantityLimit: QUANTITY_LIMIT, batchNoSerial: false, batchReason: '', templateId: '', templateVersion: 0, templateFields: [], parameterFields: [], imageFields: [], rowFields: [], attributes: {},
-      hasDraft: false, restoringDraft: false, checkingSubmission: false,
+      successResult: null, hasDraft: false, restoringDraft: false, checkingSubmission: false,
       rows: [row()], costPresets: [], submitting: false, uploading: false, fieldUploads: 0, descriptionPresets: { peer: [], customer: [] },
-      form: { condition: 'used', inspectionConfirmed: false, cost: '', wholesale: '', retail: '', agentBase: '', targetProfit: '', peerDesc: '', customerDesc: '', internalNote: '', publicImages: [], flags: { showInShop: true, sharePeer: true, shareAgent: false } }
+      form: { condition: 'used', supplierId: '', cost: '', wholesale: '', retail: '', agentBase: '', retailProfit: '', wholesaleProfit: '', agentProfit: '', peerDesc: '', customerDesc: '', internalNote: '', publicImages: [], flags: { showInShop: true, sharePeer: true, shareAgent: false } }
     },
-    onLoad() {
+    onLoad(query = {}) {
       this.draftKey = drafts.keyFor(auth.getCachedUser(), batch);
       try { this.setData({ hasDraft: !!(this.draftKey && wx.getStorageSync(this.draftKey)?.savedAt) }); } catch (error) {}
+      if (query.restore === '1' && this.data.hasDraft) this.restoreDraft();
       this.offModel = events.on('inbound:model-selected', model => { const pages = getCurrentPages(); if (pages[pages.length - 2] === this) this.selectModel(model); });
     },
     onUnload() { if (this.offModel) this.offModel(); clearTimeout(this.suggestTimer); this.destroyed = true; },
@@ -41,7 +46,7 @@ module.exports = function inboundPage(batch) {
       return this.draftKey && this.draftKey === drafts.keyFor(auth.getCachedUser(), batch);
     },
     draftBusy() {
-      return this.data.submitting || this.data.modelLoading || this.data.uploading || this.data.fieldUploads > 0 || this.data.restoringDraft || this.data.checkingSubmission;
+      return !!this.data.successResult || this.data.submitting || this.data.modelLoading || this.data.uploading || this.data.fieldUploads > 0 || this.data.restoringDraft || this.data.checkingSubmission;
     },
     onSaveDraft() {
       if (this.draftBusy()) return;
@@ -75,6 +80,11 @@ module.exports = function inboundPage(batch) {
           : [null, []];
         const templatePatch = this.templateData(model, template, costPresets);
         const values = drafts.restoredValues(saved, template, templatePatch.rowFields);
+        const user = auth.getCachedUser(), canSupplier = repeat.supplierAllowed(user);
+        const suppliers = await this.activeSuppliers(canSupplier);
+        const supplier = suppliers.find(s => s.id === saved.form.supplierId || (!saved.form.supplierId && s.name === values.attributes.supplier));
+        if (template?.fields.some(f => f.key === 'supplier')) values.attributes.supplier = supplier?.name || '';
+        this.preferenceCategory = template?.category || model?.category;
         const fileGroups = [saved.form.publicImages, ...templatePatch.imageFields.map(field => values.attributes[field.key])];
         const fileFailed = await drafts.refreshFiles(fileGroups, api.file.detail);
         if (this.destroyed || !this.draftAvailable()) return;
@@ -85,15 +95,15 @@ module.exports = function inboundPage(batch) {
         const sameMode = (saved.identifierMode || 'imei') === templatePatch.identifierMode;
         restoredRows = values.rows.map(savedRow => ({ ...row(), ...savedRow, ...(sameMode ? {} : identityReset()) }));
         this.setData({
-          ...templatePatch,
+          ...templatePatch, suppliers: [{id:'', name:'请选择供应商'}, ...suppliers], supplierIndex: supplier ? suppliers.indexOf(supplier)+1 : 0, canSupplier,
           quantity: sameMode && saved.quantity ? String(saved.quantity) : '1',
           batchNoSerial: sameMode && !!saved.batchNoSerial,
           batchReason: sameMode ? saved.batchReason || '' : '',
           rows: restoredRows,
           attributes: values.attributes,
-          form: { ...this.data.form, ...saved.form, inspectionConfirmed: false },
+          form: { ...drafts.restoredForm(saved.form, this.data.form), supplierId: supplier?.id || '' },
         });
-        notice = !sameMode ? '分类串码方式已变化，请重新填写串码' : values.changed ? '模板已更新，请补核参数' : '草稿已恢复，请重新确认实机验收';
+        notice = !sameMode ? '分类串码方式已变化，请重新填写串码' : values.changed ? '模板已更新，请补核参数' : '草稿已恢复';
         if (fileFailed) notice += '，部分附件暂不可预览';
       } catch (error) {
         notice = error.message || '草稿恢复失败，请重试';
@@ -133,9 +143,10 @@ module.exports = function inboundPage(batch) {
       return {
         model, templateId: template?.id || '', templateVersion: template?.version || 0,
         templateFields: fields,
-        parameterFields: fields.filter(field => field.type !== 'image'),
+        parameterFields: fields.filter(field => field.type !== 'image' && field.key !== 'supplier'),
+        supplierRequired: !!fields.find(f => f.key === 'supplier')?.required,
         imageFields: fields.filter(field => field.type === 'image'),
-        rowFields: fields.filter(field => ['battery', 'grade', 'refurbishment', 'ram'].includes(field.key)),
+        rowFields: fields.filter(field => PER_UNIT_KEYS.includes(field.key)),
         descriptionPresets: template?.descriptionPresets || { peer: [], customer: [] },
         costPresets,
         identifierMode: template?.identifierMode || model?.identifierMode || 'imei',
@@ -147,7 +158,7 @@ module.exports = function inboundPage(batch) {
       if (this.data.restoringDraft || this.data.checkingSubmission) return;
       const revision = this.modelRevision = (this.modelRevision || 0) + 1;
       this.setData({ modelLoading: true });
-      return Promise.all([api.template.modelForm(model.id), api.inbound.costPresets({ modelId: model.id })]).then(([template, costPresets]) => {
+      return Promise.all([api.template.modelForm(model.id), api.inbound.costPresets({ modelId: model.id })]).then(async ([template, costPresets]) => {
         if (this.destroyed || revision !== this.modelRevision) return;
         const patch = this.templateData(model, template, costPresets);
         const modeChanged = patch.identifierMode !== this.data.identifierMode;
@@ -155,8 +166,52 @@ module.exports = function inboundPage(batch) {
         const rows = this.data.rows.map(r => ({ ...r, attributes: {}, ...(modeChanged ? identityReset() : {}) }));
         // 序列号查重按型号进行，换型号后要重新校验
         const recheck = serialMode(patch.identifierMode) ? rows.map(r => ({ ...r, state: '', message: '' })) : rows;
-        this.setData({ ...patch, attributes: initialValues(template.fields), rows: recheck, ...(modeChanged ? { quantity: '1', batchNoSerial: false, batchReason: '' } : {}) });
+        const user = auth.getCachedUser();
+        const canSupplier = repeat.supplierAllowed(user);
+        const suppliers = await this.activeSuppliers(canSupplier);
+        if (this.destroyed || revision !== this.modelRevision) return;
+        const category = template.category || model.category;
+        let saved = {};
+        try { saved = wx.getStorageSync(repeat.keyFor(user, category)) || {}; } catch (e) {}
+        const attributes = initialValues(template.fields);
+        for (const [k,v] of Object.entries(saved.attributes || {})) {
+          const field = template.fields.find(f => f.key === k);
+          if (field && !validateValues([{ ...field, required: false }], { [k]: v })) attributes[k] = v;
+        }
+        const sameCategory = category === this.preferenceCategory;
+        // 已填写的常用值优先；换分类才使用该分类记忆。
+        if (sameCategory) ['shopWarranty','warrantyLength','store'].forEach(k => {
+          if (this.data.attributes[k] !== undefined) attributes[k] = this.data.attributes[k];
+        });
+        const candidateId = sameCategory ? this.data.form.supplierId : saved.supplierId;
+        const supplier = canSupplier && suppliers.find(s => s.id === candidateId);
+        if (supplier) attributes.supplier = supplier.name;
+        this.preferenceCategory = category;
+        this.setData({ ...patch, suppliers: [{ id: '', name: '请选择供应商' }, ...suppliers], supplierIndex: supplier ? suppliers.indexOf(supplier) + 1 : 0, canSupplier,
+          attributes, rows: recheck, 'form.supplierId': supplier ? supplier.id : '',
+          ...(!sameCategory && !this.flagsTouched && saved.flags ? { 'form.flags': saved.flags } : {}),
+          ...(modeChanged ? { quantity: '1', batchNoSerial: false, batchReason: '' } : {}) });
       }).catch(e => this.$toast(e.message)).finally(() => { if (!this.destroyed && revision === this.modelRevision) this.setData({ modelLoading: false }); });
+    },
+    async activeSuppliers(allowed) {
+      if (!allowed) return [];
+      const suppliers = [];
+      for (let page = 1; ; page++) {
+        const response = await api.supplier.list({ active: true, page, pageSize: 100 });
+        suppliers.push(...response.list);
+        if (suppliers.length >= response.total || !response.list.length) return suppliers;
+      }
+    },
+    onSupplier(e) {
+      if (this.data.submitting) return;
+      const supplierIndex = Number(e.detail.value), supplier = this.data.suppliers[supplierIndex];
+      this.setData({ supplierIndex, 'form.supplierId': supplier?.id || '', 'attributes.supplier': supplier?.id ? supplier.name : '' });
+    },
+    rememberCommon() {
+      const user = auth.getCachedUser(), key = repeat.keyFor(user, this.preferenceCategory || this.data.model?.category);
+      if (!key) return;
+      try { wx.setStorageSync(key, repeat.preferences(this.data.attributes, this.data.form.flags, this.data.form.supplierId, user)); }
+      catch (e) { this.$toast('入库已成功，常用值未能保存'); }
     },
     onCondition(e) { if (!this.data.submitting) this.setData({ 'form.condition': e.currentTarget.dataset.value }); },
     onInput(e) {
@@ -164,8 +219,18 @@ module.exports = function inboundPage(batch) {
       if (this.data.submitting) return;
       this.setData({ [`form.${key}`]: e.detail.value });
       this.priceRevision = (this.priceRevision || 0) + 1;
-      if (['retail', 'wholesale', 'agentBase'].includes(key)) { this.priceTouched = this.priceTouched || {}; this.priceTouched[key] = true; }
-      if (['cost', 'targetProfit'].includes(key)) this.suggest();
+      const mapping = { retailProfit: 'retail', wholesaleProfit: 'wholesale', agentProfit: 'agentBase' };
+      this.priceTouched = this.priceTouched || {};
+      if (['retail', 'wholesale', 'agentBase'].includes(key)) {
+        this.priceTouched[key] = true;
+        const profitKey = Object.keys(mapping).find(p => mapping[p] === key);
+        this.setData({ [`form.${profitKey}`]: '' });
+      }
+      if (mapping[key]) {
+        this.priceTouched[mapping[key]] = false;
+        if (key === 'wholesaleProfit' && !this.data.form.agentProfit) this.priceTouched.agentBase = false;
+      }
+      if (key === 'cost' || mapping[key]) this.suggest();
     },
     onFieldBusy(e) { this.setData({ fieldUploads: Math.max(0, this.data.fieldUploads + (e.detail.busy ? 1 : -1)) }); },
     onAttributeChange(e) { if (!this.data.submitting) this.setData({ [`attributes.${e.detail.key}`]: e.detail.value }); },
@@ -326,15 +391,22 @@ module.exports = function inboundPage(batch) {
     suggest() {
       clearTimeout(this.suggestTimer);
       this.suggestTimer = setTimeout(() => {
-        const { cost, targetProfit } = this.data.form; if (cost === '') return;
+        const { cost, retailProfit, wholesaleProfit, agentProfit } = this.data.form;
+        if (cost === '') return;
         const revision = this.priceRevision;
-        api.inbound.suggestPrice({ cost: Number(cost), targetProfit: Number(targetProfit) || 0 }).then(result => {
+        const input = { cost };
+        Object.entries({ retailProfit, wholesaleProfit, agentProfit }).forEach(([k,v]) => { if (v !== '') input[k] = v; });
+        api.inbound.suggestPrice(input).then(result => {
           if (this.destroyed || revision !== this.priceRevision) return;
-          const patch = {}; ['retail', 'wholesale', 'agentBase'].forEach(key => { if (!(this.priceTouched || {})[key]) patch[`form.${key}`] = String(result[key]); }); this.setData(patch);
+          const patch = {};
+          ['retail', 'wholesale', 'agentBase'].forEach(key => {
+            if (result[key] !== undefined && !(this.priceTouched || {})[key]) patch[`form.${key}`] = String(result[key]);
+          });
+          this.setData(patch);
         }).catch(() => null);
       }, 300);
     },
-    onFlagChange(e) { if (!this.data.submitting) this.setData({ [`form.flags.${e.currentTarget.dataset.flag}`]: e.detail.value }); },
+    onFlagChange(e) { if (!this.data.submitting) { this.flagsTouched = true; this.setData({ [`form.flags.${e.currentTarget.dataset.flag}`]: e.detail.value }); } },
     onQuickDescription(e) {
       if (this.data.submitting) return;
       const channel = e.currentTarget.dataset.channel, list = this.data.descriptionPresets[channel] || [];
@@ -357,13 +429,23 @@ module.exports = function inboundPage(batch) {
       else { const target = i + Number(action); if (target < 0 || target >= list.length) return; [list[i], list[target]] = [list[target], list[i]]; }
       this.setData({ 'form.publicImages': list });
     },
+    onBlockTouch() {},
+    onDone() { this.repeatAttributes = null; this.setData({ successResult: null }); },
+    onRepeat() {
+      if (!this.data.successResult || !this.repeatAttributes || this.data.submitting) return;
+      const attributes = this.repeatAttributes;
+      this.repeatAttributes = null;
+      this.setData({ successResult: null, attributes, identityFocus: true }, () => {
+        wx.pageScrollTo({ selector: '#identity-0', duration: 200 });
+        if (!batch) this.onScan({ currentTarget: { dataset: { row: this.data.rows[0].key } } });
+      });
+    },
     onSubmit() {
       if (this.draftBusy()) return;
       return this.submitWithChecks();
     },
     async submitWithChecks() {
       if (!this.data.model) return this.$toast('请先选择型号');
-      if (!this.data.form.inspectionConfirmed) return this.$toast('请先确认已完成逐台实机验收');
       this.setData({ checkingSubmission: true });
       try {
         const pending = this.data.rows.filter(item => item.state !== 'ok');
@@ -379,7 +461,6 @@ module.exports = function inboundPage(batch) {
     confirmInbound() {
       const { model, templateVersion, templateFields, attributes, rows, form } = this.data;
       if (!model) return this.$toast('请先选择型号');
-      if (!form.inspectionConfirmed) return this.$toast('请先确认已完成逐台实机验收');
       const { identifierMode, batchNoSerial, batchReason } = this.data;
       const seen = new Set();
       const units = [];
@@ -415,14 +496,18 @@ module.exports = function inboundPage(batch) {
       this.setData({ submitting: true });
       const count = batch ? units.length : quantity;
       const total = batch ? units.reduce((sum, u) => sum + Number(u.cost), 0) : Number(units[0].cost) * quantity;
-      wx.showModal({ title: batch ? '确认批量入库' : quantity > 1 ? '确认按数量入库' : '确认单台入库', content: `${model.name}\n共 ${count} 件 · 总成本 ¥${total.toFixed(2)}\n整备中的设备将进入复检状态，暂不可售。`, success: res => {
+      wx.showModal({ title: batch ? '确认批量入库' : quantity > 1 ? '确认按数量入库' : '确认单台入库', content: `${model.name}\n共 ${count} 件 · 总成本 ¥${total.toFixed(2)}`, success: res => {
         if (!res.confirm) { this.setData({ submitting: false }); return; }
-        const common = { ...form, modelId: model.id, templateVersion, attributes };
+        const { supplierId, ...rest } = form;
+        const common = { ...rest, ...(supplierId ? { supplierId } : {}), modelId: model.id, templateVersion, attributes };
         const request = batch ? api.inbound.createBatch({ common, units }) : api.inbound.createUnit({ ...common, ...units[0], ...(quantity > 1 ? { quantity } : {}) });
         request.then(result => {
           this.clearDraft(true);
-          this.setData({ rows: [row()], quantity: '1', batchNoSerial: false, batchReason: '', attributes: initialValues(templateFields), 'form.publicImages': [], 'form.inspectionConfirmed': false });
-          wx.showModal({ title: '入库成功', content: `已保存 ${result.created || 1} 件设备与模板快照`, showCancel: false });
+          this.rememberCommon();
+          const previous = this.data.attributes;
+          this.setData({ rows: [row()], quantity: '1', batchNoSerial: false, batchReason: '', attributes: { ...initialValues(templateFields), ...(this.data.form.supplierId ? {supplier: previous.supplier} : {}) }, 'form.publicImages': [] });
+          this.repeatAttributes = repeat.nextAttributes(templateFields, previous);
+          this.setData({ successResult: { created: result.created || 1 }, identityFocus: false });
         }).catch(e => this.$toast(e.message)).finally(() => this.setData({ submitting: false }));
       }, fail: () => this.setData({ submitting: false }) });
     }

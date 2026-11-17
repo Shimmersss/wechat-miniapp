@@ -427,17 +427,10 @@ module.exports = function (
               url: "/packages/staff/repair/board?overdue=true",
             },
             {
-              key: "repairConfirm",
-              text: "维修待确认",
-              count: q.pendingConfirm,
-              url: "/packages/staff/repair/board?status=pending_confirm",
+              key: "repairActive", text: "维修中", count: q.active,
+              url: "/packages/staff/repair/board?status=active",
             },
-            {
-              key: "repairParts",
-              text: "维修待配件",
-              count: q.waitingParts,
-              url: "/packages/staff/repair/board?waitingParts=true",
-            },
+
           );
         }
         return {

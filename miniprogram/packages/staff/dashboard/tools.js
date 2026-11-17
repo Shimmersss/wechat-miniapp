@@ -4,6 +4,7 @@
  */
 const { PERM } = require('../../../constants/roles');
 const ROUTES = require('../../../constants/routes');
+const { countable } = require('../../../utils/dashboard-todos');
 
 /** 顺序即默认优先级；图标文件为 tools/<key>.svg */
 const TOOLS = [
@@ -15,7 +16,6 @@ const TOOLS = [
   { key: 'repair', text: '维修开单', url: ROUTES.REPAIR_BOARD, perm: [PERM.REPAIR_HANDLE, PERM.REPAIR_QUOTE, PERM.REPAIR_CASH] },
   { key: 'loans', text: '出借借入', url: ROUTES.LOANS, perm: PERM.LOAN_MANAGE },
   { key: 'share', text: '分渠道分享', url: ROUTES.SHARE, perm: PERM.SHARE },
-  { key: 'parts', text: '维修配件', url: ROUTES.REPAIR_PARTS, perm: [PERM.PARTS_MANAGE, PERM.REPAIR_HANDLE, PERM.REPAIR_CASH] },
   { key: 'template', text: '型号模板', url: ROUTES.TEMPLATES, perm: PERM.TEMPLATE_MANAGE },
   { key: 'agentReview', text: '代理审核', url: ROUTES.AGENT_REVIEW, perm: PERM.AGENT_REVIEW },
   { key: 'agentOrders', text: '代理订单', url: ROUTES.AGENT_ORDERS_ADMIN, perm: [PERM.AGENT_REVIEW, PERM.SALES_CREATE] },
@@ -35,8 +35,8 @@ const TODO_TOOL = {
   loanOverdue: 'loans',
   loanRecheck: 'loans',
   repairOverdue: 'repair',
-  repairConfirm: 'repair',
-  repairParts: 'repair'
+  repairActive: 'repair',
+  inboundDraft: 'inbound'
 };
 
 /** 默认常用区两行：工具不超过 8 个全部放下，否则放 7 个，留一格给“更多” */
@@ -78,10 +78,10 @@ function indexAt(col, row, total) {
   return Math.max(0, Math.min(total - 1, r * ROW_SIZE + c));
 }
 
-/** 待办角标：{ 工具 key: 显示文字 } */
+/** 待办角标：{ 工具 key: 显示文字 }；超期维修已含在维修中，不重复相加 */
 function toolBadges(todos) {
   const sums = {};
-  (todos || []).forEach((t) => {
+  countable(todos).forEach((t) => {
     const key = TODO_TOOL[t.key];
     if (key && t.count) sums[key] = (sums[key] || 0) + Number(t.count);
   });

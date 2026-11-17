@@ -4,10 +4,10 @@
   <view class="body">
     <view class="name ellipsis">{{unit.name}}</view>
     <view class="spec">{{unit.storage}}<text wx:if="{{unit.ram}}"> · 运行内存 {{unit.ram}}</text>  {{unit.color}}</view>
+    <view class="info-tags"><text wx:if="{{unit.grade}}">{{unit.grade}}</text><text wx:if="{{batteryLabel}}">电池 {{batteryLabel}}</text><text wx:if="{{unit.storage}}">{{unit.storage}}</text></view>
     <view class="foot">
       <price-tag value="{{unit.price}}" size="md" />
       <text wx:if="{{unit.lotCount > 1}}" class="grade">余 {{unit.lotCount}} 件</text>
-      <text wx:elif="{{unit.grade}}" class="grade">{{unit.grade}}</text>
     </view>
   </view>
 </view>

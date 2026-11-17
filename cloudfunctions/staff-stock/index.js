@@ -21,12 +21,7 @@ function add(method,path,action,permissions) {
     const {d,p}=prepare(action,ctx.data,ctx.params,user);
     if (action === 'models.identify') return rpc('api_imei_model_lookup', { p_imei: d.imei });
     if(action==='pricing.suggest') {
-      const cents=v=>{const [w,f='']=money(v).split('.');return BigInt(w)*100n+BigInt(f.padEnd(2,'0'));};
-      const total=cents(d.cost)+cents(d.targetProfit??0);
-      if(total>99999999999999n)fail(400,'金额合计超出允许范围');
-      const discount=cents(process.env.WHOLESALE_DISCOUNT||"0");
-      const peer=total-discount<cents(d.cost)?cents(d.cost):total-discount;
-      return {retail:Number(total)/100,wholesale:Number(peer)/100,agentBase:Number(peer)/100};
+      return require('./shared/pricing-suggest').suggest(d, process.env.WHOLESALE_DISCOUNT || '0');
     }
     const result=await rpc('api_stock',{p_action:action,p_params:p,p_data:d,p_user:user,p_request_id:ctx.requestId});
     await resolveFiles(result,user);

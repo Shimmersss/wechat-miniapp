@@ -17,9 +17,9 @@ Component({
   properties: {
     unit: { type: Object, value: {} }
   },
-  data: { placeholder: '' },
+  data: { placeholder: '', batteryLabel: '' },
   observers: {
-    unit(unit) { this.setData({ placeholder: unit && !unit.cover ? placeholderOf(unit) : '' }); }
+    unit(unit) { this.setData({ placeholder: unit && !unit.cover ? placeholderOf(unit) : '', batteryLabel: unit?.battery !== undefined && unit?.battery !== null && unit?.battery !== '' ? String(unit.battery).replace(/%$/, '') + '%' : '' }); }
   },
   methods: {
     onTap() {

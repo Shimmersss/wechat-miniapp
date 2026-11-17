@@ -16,13 +16,15 @@
         <status-pill text="已质检" tone="gold" />
       </view>
       <view class="h1 mt-sm">{{unit.name}}</view>
-      <view class="muted small">{{unit.version}} · {{unit.storage}}<text wx:if="{{unit.ram}}"> · 运行内存 {{unit.ram}}</text> · {{unit.color}} · {{unit.grade}}<text wx:if="{{unit.battery !== undefined}}"> · 电池 {{unit.battery}}%</text></view>
+      <view wx:if="{{subtitle}}" class="muted small">{{subtitle}}</view>
       <view class="row mt">
         <price-tag value="{{unit.price}}" size="lg" />
         <text class="tiny muted">{{priceLabel}}</text>
       </view>
     </view>
 
+    <section-card wx:if="{{info.length}}" title="关键信息"><view class="grid-2"><view wx:for="{{info}}" wx:key="key"><view class="tiny muted">{{item.label}}</view><view class="small mt-sm">{{item.value}}</view></view></view></section-card>
+    <section-card wx:if="{{unit.desc}}" title="机况描述"><view class="condition-description">{{unit.desc}}</view></section-card>
     <view wx:for="{{unit.videos}}" wx:key="*this" class="card"><video class="product-video" src="{{item}}" /></view>
     <section-card title="放心承诺">
       <view class="grid-2">
@@ -30,13 +32,12 @@
         <metric-item label="检测说明" value="一机一报告" />
       </view>
       <view class="divider"></view>
-      <view class="small muted">{{unit.desc}}</view>
       <view wx:if="{{unit.imeiMasked}}" class="tiny muted mt-sm">串码 {{unit.imeiMasked}} · 完整串码到店核验</view>
       <view wx:elif="{{unit.serialMasked}}" class="tiny muted mt-sm">序列号 {{unit.serialMasked}} · 完整序列号到店核验</view>
     </section-card>
 
-    <section-card wx:if="{{unit.publicFields.length}}" title="单机检测与参数">
-      <view wx:for="{{unit.publicFields}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><view wx:if="{{item.type === 'image'}}"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" class="report-photo" src="{{photo.url}}" mode="aspectFill" /></view><text wx:else>{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text></view>
+    <section-card wx:if="{{publicFields.length}}" title="单机检测与参数">
+      <view wx:for="{{publicFields}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><view wx:if="{{item.type === 'image'}}"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" class="report-photo" src="{{photo.url}}" mode="aspectFill" /></view><text wx:else>{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text></view>
     </section-card>
     <section-card wx:if="{{similar.length}}" title="相似在售">
       <view class="grid-2">

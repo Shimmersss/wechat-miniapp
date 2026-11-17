@@ -4,6 +4,8 @@ const config = require('../../../config/index');
 const { can } = require('../../../utils/permission');
 const { PERM, ROLE_LABELS } = require('../../../constants/roles');
 const tools = require('./tools');
+const todoState = require('../../../utils/dashboard-todos');
+const events = require('../../../utils/events');
 
 const { ROW_SIZE } = tools;
 const CELL_RPX = 200; // 编辑网格的行高，与 index.wxss 的 .edit-tool 保持一致
@@ -20,7 +22,7 @@ createPage({
   permission: PERM.DASHBOARD_VIEW,
   data: {
     roleLabel: '', greeting: '', dateText: '', displayName: '',
-    stats: null, todos: [], todoTotal: 0, badges: {}, loading: false, error: '',
+    stats: null, todos: [], todoKinds: 0, badges: {}, loading: false, error: '',
     pinned: [], more: [], moreOpen: false,
     // 编辑模式：editItems 只增减不换位，顺序记在 this.order，这样格子能平滑移动
     editing: false, editItems: [], editMore: [], editRows: 0,
@@ -53,8 +55,9 @@ createPage({
     this.setData({ loading: true, error: '' });
     return api.dashboard.overview()
       .then((stats) => {
-        const todos = tools.pendingTodos(stats.todos);
-        this.setData({ stats, todos, todoTotal: todos.length, badges: tools.toolBadges(stats.todos) });
+        const todos = tools.pendingTodos(todoState.withDrafts(stats.todos, this.data.user));
+        events.emit('dashboard:todos', { userId: this.data.user.id, total: todoState.total(todos) });
+        this.setData({ stats, todos, todoKinds: todos.length, badges: tools.toolBadges(stats.todos) });
       })
       .catch((e) => this.setData({ error: e.message }))
       .finally(() => this.setData({ loading: false }));

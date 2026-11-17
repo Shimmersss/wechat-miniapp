@@ -1,12 +1,14 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-// 这些用例固定验证微信原生云函数调用，不依赖本机真机网关配置。
-require('../miniprogram/config').cloudHttpBaseUrl='';
+// 固定使用测试HTTPS网关，不依赖本机私有配置。
+require('../miniprogram/config').cloudHttpBaseUrl='https://gateway.test';
 const {upload}=require('../miniprogram/utils/request');
 const withTiming=require('../cloudfunctions/common/startup-timing');
 function wxMock({status=200,finishCode=0,processing=false,foreignBuffer=false}={}){
  const calls=[];let completed=0;
- global.wx={getStorageSync:k=>k==='xm_token'?'employee-token':'',getAccountInfoSync:()=>({miniProgram:{envVersion:'develop'}}),getFileSystemManager:()=>({readFile:o=>o.success({data:foreignBuffer?require('node:vm').runInNewContext('new Uint8Array([1,2,3]).buffer'):new Uint8Array([1,2,3]).buffer})}),showToast(){},cloud:{init(){},callFunction(o){calls.push(o);o.success({result:o.data.path.endsWith('upload-intent')?{code:0,data:{uploadId:'id',uploadUrl:'https://storage.test/signed?token=limited'}}:processing&&completed++===0?{code:0,data:{processing:true,processedBytes:1,totalBytes:3}}:{code:finishCode,message:finishCode?'核验失败':'ok',data:finishCode?null:{fileId:'id',scope:'internal',url:'https://storage.test/read'}}});}},request(o){calls.push(o);assert.equal(o.method,'PUT');assert.equal(o.header.Authorization,undefined);assert.equal(Object.values(o.header).includes('employee-token'),false);o.success({statusCode:status});}};
+ global.wx={getStorageSync:k=>k==='xm_token'?'employee-token':'',getAccountInfoSync:()=>({miniProgram:{envVersion:'develop'}}),getFileSystemManager:()=>({readFile:o=>o.success({data:foreignBuffer?require('node:vm').runInNewContext('new Uint8Array([1,2,3]).buffer'):new Uint8Array([1,2,3]).buffer})}),showToast(){},request(o){calls.push(o);
+ if(o.method==='POST') { o.name=o.url.split('/xiamu-')[1];o.success({statusCode:200,data:o.data.path.endsWith('upload-intent')?{code:0,data:{uploadId:'id',uploadUrl:'https://storage.test/signed?token=limited'}}:processing&&completed++===0?{code:0,data:{processing:true,processedBytes:1,totalBytes:3}}:{code:finishCode,message:finishCode?'核验失败':'ok',data:finishCode?null:{fileId:'id',scope:'internal',url:'https://storage.test/read'}}});return; }
+ assert.equal(o.method,'PUT');assert.equal(o.header.Authorization,undefined);assert.equal(Object.values(o.header).includes('employee-token'),false);o.success({statusCode:status});}};
  return calls;
 }
 test('云上传只给受限地址传原始字节，登记完成前不返回文件',async()=>{

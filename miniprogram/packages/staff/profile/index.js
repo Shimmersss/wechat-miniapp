@@ -10,7 +10,6 @@ const ENTRIES = [
   { text: '销售记录', url: ROUTES.SALES_LIST, perm: PERM.SALES_CREATE },
   { text: '采购与快递', url: ROUTES.PURCHASE_LIST, perm: PERM.PURCHASE_MANAGE },
   { text: '维修看板', url: ROUTES.REPAIR_BOARD, perm: [PERM.REPAIR_HANDLE, PERM.REPAIR_QUOTE, PERM.REPAIR_CASH] },
-  { text: '维修配件', url: ROUTES.REPAIR_PARTS, perm: [PERM.PARTS_MANAGE, PERM.REPAIR_HANDLE, PERM.REPAIR_CASH] },
   { text: '出借 / 借入', url: ROUTES.LOANS, perm: PERM.LOAN_MANAGE },
   { text: '型号模板', url: ROUTES.TEMPLATES, perm: PERM.TEMPLATE_MANAGE },
   { text: '供应商', url: ROUTES.SUPPLIERS, perm: PERM.SUPPLIER_VIEW },

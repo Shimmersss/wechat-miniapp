@@ -19,7 +19,7 @@ const createLoans=require('./loans');
 const createAgents=require('./agents');
 const createStaffAdmin=require('./staff-admin');
 const loadSeed=require('./test-seed');
-const { ROLE_PERMISSIONS, ROLE_LABELS, SENSITIVE_FIELDS, PERM, STAFF_ROLES } = require('../constants/roles');
+const { ROLE_PERMISSIONS, ROLE_LABELS, defaultVisibleFields, SENSITIVE_FIELDS, PERM, STAFF_ROLES } = require('../constants/roles');
 const { REPAIR_FLOW } = require('../constants/status');
 const { PHONE_CATEGORY, brandRank } = require('../constants/shop-brands');
 
@@ -60,6 +60,7 @@ function makeUser(role) {
     nickname: ROLE_LABELS[role] || '访客',
     role,
     permissions: ROLE_PERMISSIONS[role] || [],
+    visibleFields: defaultVisibleFields(role),
     agentStatus: role === 'agent' ? 'active' : undefined,
     staffNo: STAFF_ROLES.includes(role) ? staff?.id || `mock_staff_${role}` : undefined
   };
@@ -226,9 +227,8 @@ const routes = [
     return exist ? { unique: false, conflictUnitId: exist.id } : { unique: true };
   }],
   ['POST', '/pricing/suggest', (d) => {
-    const cost = Number(d.cost) || 0;
-    const retail = d.targetMargin ? Math.round(cost / (1 - d.targetMargin)) : cost + (Number(d.targetProfit) || 0);
-    return { retail, wholesale: retail - 300, agentBase: retail - 300 };
+    requirePermission(PERM.INBOUND);
+    return require('./pricing').suggest(d);
   }],
   ['GET', '/pricing/cost-presets', () => [6200, 6450, 6600]],
   ...inboundRoutes,
