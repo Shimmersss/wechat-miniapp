@@ -158,7 +158,7 @@ test("借入页面：型号库选择、串码校验、归还即冲销", async ()
   });
   edit.data.devices[0].imei1 = "123";
   edit.onSubmit();
-  assert.match(edit.notices.at(-1), /IMEI1/);
+  assert.match(edit.data.errors["device-0-imei1"], /IMEI1/);
   edit.data.devices[0].imei1 = imei();
   await edit.onSubmit();
   assert.equal(edit.data.error, "");

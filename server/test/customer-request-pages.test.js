@@ -135,11 +135,17 @@ test("员工跟进与本人取消页面：内部说明、版本冲突和原操�
   };
   await detail.onChange();
   assert.ok(detail.data.pending);
-  assert.equal(detail.confirmations[0].needReason, true);
+  assert.equal(detail.confirmations.length, 0);
+  assert.equal(detail.data.pending.reason, "跟进状态变更");
   await detail.onRetry();
   assert.equal(detail.data.detail.status, "contacted");
   assert.equal(detail.data.pending, null);
   boss.customerRequest.updateStatus = change;
+  assert.ok(detail.data.undo);
+  await detail.onUndo();
+  assert.equal(detail.data.detail.status, "new");
+  assert.equal(detail.data.detail.timeline.at(-1).note, "撤销跟进状态变更");
+  await detail.onChange();
   const own = page(
     "miniprogram/packages/shop/requests/detail.js",
     api,
@@ -148,6 +154,7 @@ test("员工跟进与本人取消页面：内部说明、版本冲突和原操�
   await own.onLoad({ id: created.id });
   assert.ok(!JSON.stringify(own.data.detail).includes("验证用人工处理说明"));
   detail.onSale();
+  detail.onUnload();
   const pos = page("miniprogram/packages/staff/pos/index.js", boss);
   await pos.onLoad(detail.navigation[0].query);
   assert.equal(pos.data.cart.length, 1);

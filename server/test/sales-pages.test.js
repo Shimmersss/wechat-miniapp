@@ -130,7 +130,7 @@ test("收银页面经真实API报价、成交原因、响应丢失后原样重�
   });
   assert.equal(p.data.quote, null);
   await p.onCheckout();
-  assert.match(p.notices.at(-1), /报价/);
+  assert.match(p.data.errors.quote, /报价/);
   await p.onQuote();
   assert.equal(p.data.total, 1250.25);
   const original = boss.sales.create,
