@@ -33,3 +33,15 @@ test('公开列表视图返回封面缩略图，不回传原图或内部凭证',
   assert.deepEqual(view.images, []);
   assert.doesNotMatch(JSON.stringify(view), /internal/);
 });
+
+test('店保未填写（null 或空）时返回 null，不显示成 0 天', () => {
+  const fields = [{ key: 'shopWarranty', visibility: ['customer', 'peer'] }];
+  const view = shopWarranty => publicView({ template_snapshot: { fields }, attributes: { shopWarranty }, attached: [] }, 'customer').warrantyDays;
+  assert.equal(view(null), null);
+  assert.equal(view(''), null);
+  assert.equal(view(undefined), null);
+  assert.equal(view('abc'), null);
+  assert.equal(view(90), 90);
+  assert.equal(view('30'), 30);
+  assert.equal(view(0), 0);
+});
