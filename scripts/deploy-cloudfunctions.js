@@ -151,6 +151,11 @@ const maintenanceTrigger = () =>
 const names = positionals.length ? positionals : Object.keys(FUNCTION_ENV);
 
 const work = fs.mkdtempSync(path.join(os.tmpdir(), "xiamu-fn-"));
+// 配置临时存放，但登录态仍从项目根目录读取，避免退回全局账号或重新弹登录。
+const runTcb = (args, options) => execFileSync("tcb", [
+  "--cwd", root, "--config-file", path.join(work, "cloudbaserc.json"), ...args
+], options);
+
 try {
   const functions = names.map((name) => {
     if (!FUNCTION_ENV[name]) throw new Error(`未登记的函数：${name}`);
@@ -210,9 +215,7 @@ try {
     { mode: 0o600 },
   );
   for (const name of names) {
-    execFileSync(
-      "tcb",
-      ["fn", "deploy", name, "--force", "--dir", path.join(fnRoot, name)],
+    runTcb(["fn", "deploy", name, "--force", "--dir", path.join(fnRoot, name)],
       {
         cwd: work,
         stdio: "inherit",
@@ -220,7 +223,7 @@ try {
     );
     if (name === "cloud-maintenance") {
       const readTriggers = () => {
-        const raw = execFileSync("tcb", ["fn", "detail", name, "--json"], {
+        const raw = runTcb(["fn", "detail", name, "--json"], {
           cwd: work,
           encoding: "utf8",
         });
@@ -237,9 +240,7 @@ try {
           t.TriggerName.startsWith("maintenance-") &&
           (t.TriggerName !== desired || cronOf(t) !== MAINTENANCE_CRON),
       ))
-        execFileSync(
-          "tcb",
-          ["fn", "trigger", "delete", name, trigger.TriggerName],
+        runTcb(["fn", "trigger", "delete", name, trigger.TriggerName],
           { cwd: work, stdio: "inherit" },
         );
       if (
@@ -247,7 +248,7 @@ try {
           (t) => t.TriggerName === desired && cronOf(t) === MAINTENANCE_CRON,
         )
       )
-        execFileSync("tcb", ["fn", "trigger", "create", name], {
+        runTcb(["fn", "trigger", "create", name], {
           cwd: work,
           stdio: "inherit",
         });
@@ -261,7 +262,7 @@ try {
     }
 
     if (name === "agent-expiry") {
-      const detailText = execFileSync("tcb", ["fn", "detail", name, "--json"], {
+      const detailText = runTcb(["fn", "detail", name, "--json"], {
         cwd: work,
         encoding: "utf8",
       });
@@ -274,13 +275,11 @@ try {
         : existing?.TriggerDesc;
       // 频率以本脚本为准：现有触发器 Cron 不同就先删后建，删除失败则不再创建。
       if (existing && cron !== EXPIRY_CRON)
-        execFileSync(
-          "tcb",
-          ["fn", "trigger", "delete", name, "agent-order-expiry"],
+        runTcb(["fn", "trigger", "delete", name, "agent-order-expiry"],
           { cwd: work, stdio: "inherit" },
         );
       if (!existing || cron !== EXPIRY_CRON)
-        execFileSync("tcb", ["fn", "trigger", "create", name], {
+        runTcb(["fn", "trigger", "create", name], {
           cwd: work,
           stdio: "inherit",
         });
