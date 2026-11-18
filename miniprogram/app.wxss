@@ -256,3 +256,5 @@ button.btn-dark[disabled] {
   margin-top: 16rpx; font-size: 24rpx; color: var(--c-ink-2);
   font-weight: 600; text-align: center;
 }
+
+.field-error { color: var(--c-red); font-size: 24rpx; line-height: 1.5; margin-top: 8rpx; }

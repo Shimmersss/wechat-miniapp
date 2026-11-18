@@ -62,4 +62,20 @@ function required(form, rules) {
   return miss ? miss[1] : '';
 }
 
-module.exports = { isImei, normalizeSerial, serialError, isSerial, noSerialReasonError, isPhone, isTrackingNo, required };
+/** 按表单顺序返回第一处错误。校验器接收字段值和整份表单，返回提示或空串。 */
+function firstError(rules, form) {
+  for (const [field, validate] of rules) {
+    const message = validate(form[field], form);
+    if (message) return { field, message };
+  }
+  return null;
+}
+
+function showFieldError(page, error) {
+  page.setData({ errors: error ? { [error.field]: error.message } : {} }, () => {
+    if (error) wx.pageScrollTo({ selector: '#field-' + error.field, offsetTop: -16, duration: 200 });
+  });
+  return !!error;
+}
+
+module.exports = { firstError, showFieldError, isImei, normalizeSerial, serialError, isSerial, noSerialReasonError, isPhone, isTrackingNo, required };

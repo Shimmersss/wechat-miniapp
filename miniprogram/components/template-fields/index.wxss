@@ -62,3 +62,5 @@
   text-align: center;
   overflow-wrap: anywhere;
 }
+
+.parameter-error { color: var(--c-red); font-size: 24rpx; margin-top: 8rpx; }

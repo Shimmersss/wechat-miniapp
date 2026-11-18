@@ -1,6 +1,6 @@
 const media = require('../../utils/media');
 Component({
-  properties: { fields: Array, values: Object, disabled: Boolean },
+  properties: { fields: Array, values: Object, disabled: Boolean, error: Object },
   data: { uploading: false, custom: {}, customLabels: {} },
   observers: {
     'fields, values': function(fields, values) {

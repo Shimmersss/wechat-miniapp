@@ -14,15 +14,16 @@
   <block wx:elif="{{!loading}}">
     <view wx:if="{{me.status === 'rejected'}}" class="notice">上次申请未通过：{{me.reviewRemark}}。可修改资料后重新申请。</view>
     <view class="card">
-      <view class="field"><view class="field-label required">姓名 / 昵称</view><input class="input" maxlength="50" value="{{form.name}}" data-field="name" bindinput="onInput" disabled="{{saving}}" /></view>
-      <view class="field"><view class="field-label required">手机号</view><input class="input" type="number" maxlength="11" value="{{form.phone}}" data-field="phone" bindinput="onInput" disabled="{{saving}}" /></view>
-      <view class="field"><view class="field-label required">所在地区</view><picker mode="region" value="{{form.region}}" bindchange="onRegion" disabled="{{saving}}"><view class="picker">{{form.region.length ? form.region[0] + ' ' + form.region[1] + ' ' + form.region[2] : '选择省 / 市 / 区'}}</view></picker></view>
+      <view class="field" id="field-name"><view class="field-label required">姓名 / 昵称</view><input class="input" maxlength="50" value="{{form.name}}" data-field="name" bindinput="onInput" disabled="{{saving}}" /><view wx:if="{{errors.name}}" class="field-error">{{errors.name}}</view></view>
+      <view class="field" id="field-phone"><view class="field-label required">手机号</view><input class="input" type="number" maxlength="11" value="{{form.phone}}" data-field="phone" bindinput="onInput" disabled="{{saving}}" /><view wx:if="{{errors.phone}}" class="field-error">{{errors.phone}}</view></view>
+      <view class="field" id="field-region"><view class="field-label required">所在地区</view><picker mode="region" value="{{form.region}}" bindchange="onRegion" disabled="{{saving}}"><view class="picker">{{form.region.length ? form.region[0] + ' ' + form.region[1] + ' ' + form.region[2] : '选择省 / 市 / 区'}}</view></picker><view wx:if="{{errors.region}}" class="field-error">{{errors.region}}</view></view>
       <view class="field"><view class="field-label">邀请码（选填）</view><input class="input" maxlength="8" value="{{form.inviteCode}}" data-field="inviteCode" bindinput="onInput" placeholder="由邀请你的代理提供" disabled="{{saving}}" /></view>
     </view>
     <section-card title="代理协议要点">
       <view class="small rule">· 代理收益 = 你在总部代理底价上设置的加价，加价不能超过门店给定的固定金额上限。</view>
       <view class="small rule">· 顾客通过你的链接下单后短时锁定设备，由门店确认收款成交；每成交一单记一笔收益。</view>
-      <view class="agree" bindtap="onAgree"><view class="check {{agreed ? 'on' : ''}}">{{agreed ? '✓' : ''}}</view><text class="small">我已阅读并同意以上代理协议</text></view>
+      <view id="field-agreed" class="agree" bindtap="onAgree"><view class="check {{agreed ? 'on' : ''}}">{{agreed ? '✓' : ''}}</view><text class="small">我已阅读并同意以上代理协议</text></view>
+      <view wx:if="{{errors.agreed}}" class="field-error">{{errors.agreed}}</view>
     </section-card>
     <view class="footer-space"></view>
     <view class="footer-bar"><button class="btn btn-primary" bindtap="onSubmit" loading="{{saving}}" disabled="{{saving}}">{{me.status === 'rejected' ? '重新提交申请' : '提交申请'}}</button></view>

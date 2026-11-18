@@ -3,7 +3,7 @@ const config = require('../../../config/index');
 const api = require('../../../api/index');
 const { PERM, STAFF_ROLES, ROLE_LABELS } = require('../../../constants/roles');
 const { confirmSensitive } = require('../../../utils/confirm');
-const { isPhone } = require('../../../utils/validate');
+const { isPhone, firstError, showFieldError } = require('../../../utils/validate');
 const { date } = require('../../../utils/format');
 
 /**
@@ -41,14 +41,14 @@ createPage({
   onKeyword(e) { this.setData({ keyword: e.detail.value }); },
   onSearch() { return this.load(true); },
 
-  onCreate() { this.setData({ editor: { mode: 'create', name: '', phone: '', roleIndex: Math.max(0, this.data.roles.findIndex((r) => r.key === 'sales')) } }); },
+  onCreate() { this.setData({ errors: {}, editor: { mode: 'create', name: '', phone: '', roleIndex: Math.max(0, this.data.roles.findIndex((r) => r.key === 'sales')) } }); },
   onEdit(e) {
     const s = this.data.list.find((x) => x.id === e.currentTarget.dataset.id);
     if (!s) return;
     if (s.roleKey === 'boss' && !this.data.isBoss) return this.$toast('仅老板可修改老板账号');
-    this.setData({ editor: { mode: 'edit', id: s.id, version: s.version, name: s.name, phone: s.phone || '', roleIndex: Math.max(0, this.data.roles.findIndex((r) => r.key === s.roleKey)) } });
+    this.setData({ errors: {}, editor: { mode: 'edit', id: s.id, version: s.version, name: s.name, phone: s.phone || '', roleIndex: Math.max(0, this.data.roles.findIndex((r) => r.key === s.roleKey)) } });
   },
-  onCloseEditor() { if (!this.data.saving) this.setData({ editor: null }); },
+  onCloseEditor() { if (!this.data.saving) this.setData({ errors: {}, editor: null }); },
   onEditorInput(e) { this.setData({ [`editor.${e.currentTarget.dataset.field}`]: e.detail.value }); },
   onRole(e) { this.setData({ 'editor.roleIndex': Number(e.detail.value) }); },
 
@@ -59,7 +59,7 @@ createPage({
       const c = await confirmSensitive({ needReason: true, ...confirm });
       if (!c.confirmed) return;
       await task(c.reason);
-      this.setData({ editor: null });
+      this.setData({ errors: {}, editor: null });
       this.$toast('已保存');
       await this.load(true);
     }
@@ -69,11 +69,13 @@ createPage({
   onSaveEditor() {
     const ed = this.data.editor;
     if (!ed) return;
-    if (!ed.name.trim()) return this.$toast('请填写姓名');
+    if (showFieldError(this, firstError([
+      ['name', value => !value.trim() && '请填写姓名'],
+      ['phone', value => ed.mode === 'create' && (value.trim() || !this.data.staffWechatLogin) && !isPhone(value) && '请填写 11 位手机号'],
+    ], ed))) return;
     const roleKey = this.data.roles[ed.roleIndex].key;
     if (ed.mode === 'create') {
       const phone = ed.phone.trim();
-      if ((phone || !this.data.staffWechatLogin) && !isPhone(phone)) return this.$toast('请填写 11 位手机号');
       return this.run((reason) => api.staff.create({ name: ed.name.trim(), ...(phone ? { phone } : {}), roleKey, reason }), { title: '新增员工', content: '填写原因（如入职、岗位）' });
     }
     return this.run((reason) => api.staff.update(ed.id, { name: ed.name.trim(), roleKey, reason, version: ed.version }), { title: '保存员工资料', content: '填写调整原因' });

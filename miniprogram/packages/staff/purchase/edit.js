@@ -1,3 +1,4 @@
+const { firstError, showFieldError } = require('../../../utils/validate');
 const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
 const { ROUTES } = require('../../../utils/router');
@@ -66,10 +67,22 @@ createPage({
   async onSubmit() {
     if (this.data.saving || this.data.loading || this.data.saved) return;
     const form = this.data.form;
-    if (!form.supplierId || !form.expectedAt) return this.$toast('请选择供应商与预计到货日期');
     const validMoney = v => /^\d+(\.\d{1,2})?$/.test(String(v));
-    if (form.freight && !validMoney(form.freight)) return this.$toast('运费须为非负金额，最多两位小数');
-    if (this.data.lines.some(l => !l.modelId || !/^\d+$/.test(String(l.quantity)) || Number(l.quantity) < 1 || Number(l.quantity) > 1000 || !validMoney(l.unitCost))) return this.$toast('请逐行填写型号、1～1000 台数量和有效单价');
+    const error = firstError([
+      ['supplierId', value => !value && '请选择供应商'],
+      ['expectedAt', value => !value && '请选择预计到货日期'],
+      ['freight', value => value && !validMoney(value) && '运费须为非负金额，最多两位小数'],
+    ], form);
+    if (error) return showFieldError(this, error);
+    for (const [index, line] of this.data.lines.entries()) {
+      const rowError = firstError([
+        ['modelId', value => !value && '请选择型号'],
+        ['quantity', value => (!/^\d+$/.test(String(value)) || Number(value) < 1 || Number(value) > 1000) && '数量须为 1～1000 台'],
+        ['unitCost', value => !validMoney(value) && '请填写有效单价，最多两位小数'],
+      ], line);
+      if (rowError) return showFieldError(this, { ...rowError, field: 'line-' + index + '-' + rowError.field });
+    }
+    showFieldError(this, null);
     const payload = { ...form, freight: form.freight || '0', lines: this.data.lines.map(l => ({ modelId: l.modelId, quantity: Number(l.quantity), unitCost: l.unitCost, attributes: { ...l.attributes } })) };
     this.setData({ saving: true, error: '' });
     try {
