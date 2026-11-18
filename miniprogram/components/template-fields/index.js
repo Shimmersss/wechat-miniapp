@@ -26,6 +26,7 @@ Component({
     chooseCustom(e) {
       if (this.data.disabled) return;
       const key = e.currentTarget.dataset.key;
+      if (this.data.custom[key]) return;
       this.setData({ [`custom.${key}`]: true });
       this.triggerEvent('change', { key, value: '' });
     },
