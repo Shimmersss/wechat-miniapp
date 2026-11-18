@@ -6,7 +6,7 @@ const {can}=require('../../../utils/permission');
 const {ROUTES}=require('../../../utils/router');
 const {confirmSensitive}=require('../../../utils/confirm');
 const events=require('../../../utils/events');
-const {upload}=require('../../../utils/request');
+const media = require('../../../utils/media');
 let seq=0;
 createPage({
  requireStaff:true,permission:PERM.SALES_CREATE,
@@ -23,7 +23,7 @@ createPage({
  },
  locked(){return this.data.saving||this.data.loading||this.data.uploading||!!this.data.pending||!!this.data.order;},
  /** 收款凭证（选填）：收款截图/小票照片，作为内部凭证上传，不对顾客公开 */
- async onReceipts(){if(this.locked()||this.data.receipts.length>=9)return;this.setData({uploading:true,error:''});try{const res=await wx.chooseMedia({count:9-this.data.receipts.length,mediaType:['image'],sizeType:['compressed']});const files=await Promise.all(res.tempFiles.map(f=>upload({filePath:f.tempFilePath,scope:'internal',bizType:'sales_receipt'})));if(!this.destroyed)this.setData({receipts:this.data.receipts.concat(files)});}catch(e){if(!/cancel/.test(e.errMsg||''))this.setData({error:e.message||e.errMsg||'凭证未完成上传'});}finally{if(!this.destroyed)this.setData({uploading:false});}},
+ async onReceipts(){if(this.locked()||this.data.receipts.length>=9)return;this.setData({uploading:true,error:''});try{const files = await media.pickAndUpload({ count: 9-this.data.receipts.length, scope: 'internal', purpose: 'sales_receipt' });if(!this.destroyed)this.setData({receipts:this.data.receipts.concat(files)});}catch(e){if(!/cancel/.test(e.errMsg||''))this.setData({error:e.message||e.errMsg||'凭证未完成上传'});}finally{if(!this.destroyed)this.setData({uploading:false});}},
  onRemoveReceipt(e){if(!this.locked())this.setData({receipts:this.data.receipts.filter((_,i)=>i!==Number(e.currentTarget.dataset.index))});},
  onInput(e){if(!this.locked())this.setData({[e.currentTarget.dataset.field]:e.detail.value});},
  async onScan(){if(this.locked())return;try{this.setData({code:unitCode(await scan())});return this.onAdd();}catch(_){}},

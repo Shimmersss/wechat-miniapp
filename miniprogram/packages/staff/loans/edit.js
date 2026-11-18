@@ -3,7 +3,7 @@ const api = require('../../../api/index');
 const { ROUTES } = require('../../../utils/router');
 const { PERM } = require('../../../constants/roles');
 const { isPhone, isImei, normalizeSerial, serialError } = require('../../../utils/validate');
-const { upload } = require('../../../utils/request');
+const media = require('../../../utils/media');
 const { scan, scanSerial, unitCode } = require('../../../utils/scan');
 const events = require('../../../utils/events');
 const { supportsRam } = require('../../../utils/template');
@@ -119,8 +119,7 @@ createPage({
     if (this.locked() || this.data.form.photos.length >= 9) return;
     this.setData({ uploading: true, error: '' });
     try {
-      const res = await wx.chooseMedia({ count: 9 - this.data.form.photos.length, mediaType: ['image'], sizeType: ['compressed'] });
-      const files = await Promise.all(res.tempFiles.map((f) => upload({ filePath: f.tempFilePath, scope: 'internal', bizType: 'loan_handover' })));
+      const files = await media.pickAndUpload({ count: 9 - this.data.form.photos.length, scope: 'internal', purpose: 'loan_handover' });
       if (!this.destroyed) this.setData({ 'form.photos': this.data.form.photos.concat(files) });
     } catch (e) { if (!/cancel/.test(e.errMsg || '')) this.setData({ error: e.message || e.errMsg || '照片未完成上传' }); }
     finally { if (!this.destroyed) this.setData({ uploading: false }); }

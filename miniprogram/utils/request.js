@@ -221,12 +221,12 @@ async function upload(options) {
   }
 }
 
-function sendUpload({ filePath, scope = 'public', bizType = '' }) {
+function sendUpload({ filePath, scope = 'public', bizType = '', mediaType, posterId }) {
   if (config.useMock) {
     return Promise.resolve().then(() => require('../mock/index').registerFile({ filePath, scope }));
   }
   if (config.useCloud) {
-    return uploadCloud({ filePath, scope, bizType });
+    return uploadCloud({ filePath, scope, bizType, mediaType, posterId });
   }
   return new Promise((resolve, reject) => {
     wx.uploadFile({
@@ -248,13 +248,13 @@ function sendUpload({ filePath, scope = 'public', bizType = '' }) {
 }
 
 /** 暂存签名只允许写本次对象；正式登记成功后才向页面返回文件。 */
-async function uploadCloud({ filePath, scope, bizType }) {
+async function uploadCloud({ filePath, scope, bizType, mediaType, posterId }) {
   const fs = wx.getFileSystemManager();
   let bytes = await new Promise((resolve, reject) => fs.readFile({ filePath, success: r => resolve(r.data), fail: reject }));
   if (!bytes || Object.prototype.toString.call(bytes) !== '[object ArrayBuffer]' || !bytes.byteLength || bytes.byteLength > 32 * 1024 * 1024)
     throw new ApiError(413, '文件须为1～32MB');
   const requestKey = 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  const intent = await request({ url: '/files/upload-intent', method: 'POST', data: { scope, size: bytes.byteLength, bizType, requestKey }, showError: false });
+  const intent = await request({ url: '/files/upload-intent', method: 'POST', data: { scope, size: bytes.byteLength, bizType, requestKey, ...(mediaType ? { mediaType } : {}), ...(posterId ? { posterId } : {}) }, showError: false });
   if (intent.file) return intent.file;
   // signed PUT 不携带员工令牌，更不携带存储密钥。上传失败不会继续登记。
   await new Promise((resolve, reject) => wx.request({

@@ -6,7 +6,7 @@ const { isImei, normalizeSerial, serialError, noSerialReasonError } = require('.
 const { NO_SERIAL_REASONS, CONDITION_TYPE, CONDITION_TYPE_DEVICE } = require('../../../constants/status');
 const { initialValues, validateValues } = require('../../../utils/template');
 const { confirmSensitive } = require('../../../utils/confirm');
-const { upload } = require('../../../utils/request');
+const media = require('../../../utils/media');
 const events = require('../../../utils/events');
 let sequence = 0;
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -93,8 +93,7 @@ createPage({
     if (this.locked() || !this.data.editor || this.data.editor.publicImages.length >= 9) return;
     this.setData({ uploading: true });
     try {
-      const selected = await wx.chooseMedia({ count: 9 - this.data.editor.publicImages.length, mediaType: ['image', 'video'], sizeType: ['compressed'] });
-      const files = await Promise.all(selected.tempFiles.map(async file => ({ ...await upload({ filePath: file.tempFilePath, scope: 'public', bizType: 'unit' }), mediaType: file.fileType === 'video' ? 'video' : 'image' })));
+      const files = await media.pickAndUpload({ count: 9 - this.data.editor.publicImages.length, scope: 'public', purpose: 'unit', allowVideo: true });
       this.setData({ 'editor.publicImages': this.data.editor.publicImages.concat(files).slice(0, 9) });
     } catch (e) { if (!String(e.errMsg || '').includes('cancel')) this.$toast(e.message || '设备实拍上传失败'); }
     finally { this.setData({ uploading: false }); }

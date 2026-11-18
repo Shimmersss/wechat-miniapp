@@ -155,8 +155,8 @@ function discover() {
         }
       }
       if (
-        /require\([^)]*utils\/request/.test(source) &&
-        /\bupload\s*\(/.test(source)
+        (/require\([^)]*utils\/request/.test(source) && /\bupload\s*\(/.test(source)) ||
+        (/require\([^)]*utils\/media/.test(source) && /\bpickAndUpload\s*\(/.test(source))
       )
         uploads = true;
     }

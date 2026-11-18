@@ -1,4 +1,4 @@
-const { upload } = require('../../utils/request');
+const media = require('../../utils/media');
 Component({
   properties: { fields: Array, values: Object, disabled: Boolean },
   data: { uploading: false, custom: {}, customLabels: {} },
@@ -39,11 +39,11 @@ Component({
       if (this.data.disabled || this.data.uploading) return;
       const field = this.data.fields.find(f => f.key === e.currentTarget.dataset.key);
       const current = (this.data.values || {})[field.key] || [];
+      if (current.length >= 9) return;
       const scope = field.visibility.includes('internal') ? 'internal' : 'public';
       this.setData({ uploading: true });
       this.triggerEvent('busy', { busy: true });
-      wx.chooseMedia({ count: Math.max(1, 9 - current.length), mediaType: ['image'], sizeType: ['compressed'] })
-        .then(res => Promise.all(res.tempFiles.map(f => upload({ filePath: f.tempFilePath, scope, bizType: 'unit' }))))
+      media.pickAndUpload({ count: 9 - current.length, scope, purpose: field.key === 'receipt' ? 'acceptance_receipt' : 'unit' })
         .then(files => this.triggerEvent('change', { key: field.key, value: current.concat(files).slice(0, 9) }))
         .catch(e => { if (!String(e.errMsg || '').includes('cancel')) wx.showToast({ title: '图片上传未完成，请重试', icon: 'none' }); })
         .finally(() => { this.setData({ uploading: false }); this.triggerEvent('busy', { busy: false }); });

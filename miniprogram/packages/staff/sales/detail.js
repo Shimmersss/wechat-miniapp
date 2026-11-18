@@ -6,7 +6,7 @@ const {SALES_STATUS,SETTLEMENT_STATUS}=require('../../../constants/status');
 const {confirmSensitive}=require('../../../utils/confirm');
 const {ROUTES}=require('../../../utils/router');
 const events=require('../../../utils/events');
-const {upload}=require('../../../utils/request');
+const media = require('../../../utils/media');
 let seq=0;
 createPage({
  requireStaff:true,permission:[PERM.SALES_CREATE,PERM.REFUND,PERM.STATS_VIEW],
@@ -21,8 +21,8 @@ createPage({
   const room=Math.min(9,20-(this.data.detail.receipts||[]).length);if(room<=0)return this.$toast('每张销售单最多20张收款凭证');
   this.setData({uploading:true,error:''});
   try{
-   const res=await wx.chooseMedia({count:room,mediaType:['image'],sizeType:['compressed']});
-   const files=await Promise.all(res.tempFiles.map(f=>upload({filePath:f.tempFilePath,scope:'internal',bizType:'sales_receipt'})));
+   const files = await media.pickAndUpload({ count: room, scope: 'internal', purpose: 'sales_receipt' });
+   if (!files.length) return;
    const confirmation=await confirmSensitive({title:'补传收款凭证',content:'填写补传说明，将记录到操作日志',needReason:true});
    if(!confirmation.confirmed)return;
    this.setData({detail:await api.sales.addReceipts(this.data.id,{receipts:files.map(f=>({fileId:f.fileId})),reason:confirmation.reason})});

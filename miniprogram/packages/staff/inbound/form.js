@@ -13,7 +13,7 @@ const { scanImei, scanSerial } = require('../../../utils/scan');
 const { isImei, normalizeSerial, serialError, noSerialReasonError } = require('../../../utils/validate');
 const { NO_SERIAL_REASONS, QUANTITY_LIMIT, CONDITION_TYPE, CONDITION_TYPE_DEVICE } = require('../../../constants/status');
 const { initialValues, validateValues } = require('../../../utils/template');
-const { upload } = require('../../../utils/request');
+const media = require('../../../utils/media');
 const auth = require('../../../utils/auth');
 const drafts = require('./draft');
 const repeat = require('./repeat');
@@ -416,8 +416,7 @@ module.exports = function inboundPage(batch) {
     onChooseMedia() {
       if (this.data.submitting || this.data.uploading || this.data.form.publicImages.length >= 9) return;
       this.setData({ uploading: true });
-      wx.chooseMedia({ count: 9 - this.data.form.publicImages.length, mediaType: ['image', 'video'], sizeType: ['compressed'] })
-        .then(res => Promise.all(res.tempFiles.map(f => upload({ filePath: f.tempFilePath, scope: 'public', bizType: 'unit' }).then(file => ({ ...file, mediaType: f.fileType || 'image' })))))
+      media.pickAndUpload({ count: 9 - this.data.form.publicImages.length, allowVideo: true, scope: 'public', purpose: 'unit' })
         .then(files => this.setData({ 'form.publicImages': this.data.form.publicImages.concat(files) }))
         .catch(e => { if (!String(e.errMsg || '').includes('cancel')) this.$toast('上传未完成，请重试'); })
         .finally(() => this.setData({ uploading: false }));

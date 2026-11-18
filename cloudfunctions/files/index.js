@@ -3,7 +3,7 @@ const {currentUser,requireUser}=require('./shared/identity');
 const storage=require('./shared/pg-storage');
 const {createSHA256}=require('hash-wasm');
 function uuid(value){if(typeof value!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value))fail(400,'文件标识无效');return value;}
-const fileView=async f=>({fileId:f.id,scope:f.scope,mime:f.mime,size:Number(f.byte_size),url:await storage.signRead(f.stored_name)});
+const fileView=async f=>({fileId:f.id,scope:f.scope,mime:f.mime,size:Number(f.byte_size),url:await storage.signRead(f.stored_name),...(f.poster_id?{posterUrl:await storage.signRead((await rpc('api_file_read',{p_id:f.poster_id,p_user:null})).stored_name)}:{})});
 async function uploadRpc(ctx,user,action,id,data={}){return rpc('api_file_upload',{p_action:action,p_id:id,p_data:data,p_user:user,p_request_id:ctx.requestId});}
 async function intent(ctx){
  const user=await requireUser(ctx),d=ctx.data;
@@ -36,6 +36,8 @@ async function complete(ctx){
     if(!type||!['image/jpeg','image/png','image/webp','video/mp4'].includes(type.mime))fail(400,'仅支持 JPEG、PNG、WebP 或 MP4');
     if(upload.scope==='internal'&&type.mime==='video/mp4')fail(400,'内部凭证请上传图片');
     mime=type.mime;
+    if(upload.expected_size > (mime==='video/mp4'?25:5)*1024*1024)fail(413,'文件大小超出上传限制');
+    if(upload.media_kind && (upload.media_kind==='video')!==(mime==='video/mp4'))fail(400,'文件内容与选择的类型不一致');
    }
    const hasher=await createSHA256();if(upload.hash_state)hasher.load(Buffer.from(upload.hash_state,'base64'));else hasher.init();
    hasher.update(bytes);

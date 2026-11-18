@@ -70,6 +70,7 @@ function publicView(u, audience) {
         (f) => f.field_key === "publicImages" && f.mime.startsWith("video/"),
       )
       .map((f) => f.resolved_url),
+    posterUrl: (u.attached || []).find(f => f.field_key === "publicImages" && f.poster_url)?.poster_url,
     cover:
       (u.attached || []).find(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("image/"),

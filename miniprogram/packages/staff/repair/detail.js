@@ -4,7 +4,7 @@ const { PERM } = require("../../../constants/roles");
 const { REPAIR_STATUS } = require("../../../constants/status");
 const { PAYMENT_TYPES } = require("../../../constants/repair");
 const { confirmSensitive } = require("../../../utils/confirm");
-const { upload } = require("../../../utils/request");
+const media = require('../../../utils/media');
 const events = require("../../../utils/events");
 const terminal = (status) => ["completed", "cancelled"].includes(status);
 const timeLabel = (value) => {
@@ -133,20 +133,7 @@ createPage({
       return;
     this.setData({ uploading: true });
     try {
-      const selected = await wx.chooseMedia({
-        count: 9 - this.data.editor.photos.length,
-        mediaType: ["image"],
-        sizeType: ["compressed"],
-      });
-      const photos = await Promise.all(
-        selected.tempFiles.map((f) =>
-          upload({
-            filePath: f.tempFilePath,
-            scope: "internal",
-            bizType: "repair",
-          }),
-        ),
-      );
+      const photos = await media.pickAndUpload({ count: 9 - this.data.editor.photos.length, scope: 'internal', purpose: 'repair' });
       if (!this.destroyed)
         this.setData({
           "editor.photos": this.data.editor.photos.concat(photos),

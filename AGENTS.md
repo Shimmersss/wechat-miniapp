@@ -59,6 +59,7 @@ miniprogram/
   utils/
     page.js                      createPage 页面工厂（登录/权限守卫、PV 埋点、金额遮挡、$go/$toast）
     request.js                   请求层（信封解包、令牌、渠道头、访客 ID、mock 切换、上传）
+    media.js                     选图和视频、按用途压缩、顺序上传、失败重试
     auth.js                      静默登录、员工登录、登出
     channel.js                   分享来源捕获（s=shareId，scene 解析）
     track.js                     UV/PV/事件批量上报
