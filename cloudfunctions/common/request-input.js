@@ -141,8 +141,11 @@ function prepare(action, input, params = {}, headers = {}) {
     d.status =
       action === "cancel" ? "cancelled" : text(d.status, "目标状态", 20);
     d.version = integer(d.version, "记录版本", 1, 2147483647);
+    if (action === "staff.status" && d.undoOf !== undefined)
+      d.undoOf = text(d.undoOf, "原操作标识", 100);
+    else delete d.undoOf;
     d.signature = hash(
-      JSON.stringify({ status: d.status, version: d.version, note: d.reason }),
+      JSON.stringify({ status: d.status, version: d.version, note: d.reason, undoOf: d.undoOf }),
     );
   }
   return { d, p };
