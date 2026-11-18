@@ -7,15 +7,27 @@
     <section-card title="维修收支"><view class="grid-2"><metric-item label="已收净额" value="¥{{f.maskMoney(detail.received,privacy)}}" /><metric-item label="维修成本" value="{{detail.expenses !== undefined ? '¥'+f.maskMoney(detail.expenses + detail.partsCost,privacy) : '无权限查看'}}" /></view><view wx:for="{{detail.payments}}" wx:key="id" class="list-item"><text>{{paymentLabels[item.kind]}} · {{item.method}}</text><text>¥{{f.maskMoney(item.amount,privacy)}}</text></view></section-card>
     <section-card wx:if="{{detail.files.length}}" title="维修照片"><view class="photos"><image wx:for="{{detail.files}}" wx:key="fileId" class="report-photo" src="{{item.url}}" mode="aspectFill" /></view></section-card>
     <section-card title="处理记录"><view wx:for="{{detail.timeline}}" wx:key="id" class="list-item"><view><view>{{item.note}}</view><view wx:if="{{item.data.note}}" class="small">{{item.data.note}}</view><view class="tiny muted">{{item.operator}} · {{item.timeLabel}}</view></view></view></section-card>
-    <view wx:if="{{active}}" class="row gap-sm"><button wx:if="{{detail.canCash}}" class="btn btn-primary" data-mode="close" bindtap="onOpen">结单</button><button wx:if="{{detail.canManage || (detail.canRefund && detail.received > 0)}}" class="btn btn-line" data-mode="cancel" bindtap="onOpen">取消</button><button wx:if="{{detail.canManage}}" class="btn btn-soft" data-mode="update" bindtap="onOpen">补充照片/备注</button></view>
   </block>
-  <section-card wx:if="{{editor}}" title="{{editor.mode === 'close' ? '结单' : editor.mode === 'cancel' ? '取消维修' : '补充资料'}}">
-    <block wx:if="{{editor.mode === 'close'}}"><view class="field-label required">本次维修收费（元，可填0）</view><input class="input" type="digit" value="{{editor.amount}}" data-field="amount" bindinput="onInput" disabled="{{saving || pending}}" /><view wx:if="{{detail.received > 0}}" class="tiny muted">此前已收 ¥{{f.maskMoney(detail.received,privacy)}}，本次只填剩余实收。</view><block wx:if="{{detail.canExpense}}"><view class="field-label mt">本次维修成本（元，选填）</view><input class="input" type="digit" value="{{editor.cost}}" data-field="cost" bindinput="onInput" disabled="{{saving || pending}}" /></block></block>
+  <view wx:if="{{editor}}" id="close-editor"><section-card title="{{editor.mode === 'close' ? '结单' : editor.mode === 'cancel' ? '取消维修' : '补充资料'}}">
+    <block wx:if="{{editor.mode === 'close'}}"><view class="field-label required">本次维修收费（元，可填0）</view><input class="input" type="digit" value="{{editor.amount}}" focus="{{focusAmount}}" bindblur="onAmountBlur" data-field="amount" bindinput="onInput" disabled="{{saving || pending}}" /><view wx:if="{{detail.received > 0}}" class="tiny muted">此前已收 ¥{{f.maskMoney(detail.received,privacy)}}，本次只填剩余实收。</view><block wx:if="{{detail.canExpense}}"><view class="field-label mt">本次维修成本（元，选填）</view><input class="input" type="digit" value="{{editor.cost}}" data-field="cost" bindinput="onInput" disabled="{{saving || pending}}" /></block></block>
     <picker wx:if="{{editor.mode !== 'update'}}" range="{{methods}}" value="{{editor.methodIndex}}" data-field="methodIndex" bindchange="onInput" disabled="{{saving || pending}}"><view class="input mt">收款/退款方式：{{methods[editor.methodIndex]}}</view></picker>
     <textarea wx:if="{{editor.mode !== 'cancel'}}" class="textarea mt" placeholder="维修说明（选填）" value="{{editor.note}}" maxlength="2000" data-field="note" bindinput="onInput" disabled="{{saving || pending}}" />
     <view class="photos mt"><view wx:for="{{editor.photos}}" wx:key="fileId"><image class="report-photo" src="{{item.url}}" mode="aspectFill" /><button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onRemovePhoto" disabled="{{saving || pending}}">删除</button></view></view><button class="btn btn-soft mt" bindtap="onPhotos" disabled="{{saving || pending || uploading}}">补充凭证照片（选填）</button>
     <button wx:if="{{editor.mode === 'cancel' && detail.canRefund && detail.received > 0}}" class="btn btn-line mt" data-refund="{{true}}" bindtap="onSubmit" disabled="{{saving || pending}}">登记退清已收款</button>
-    <view class="row gap-sm mt"><button class="btn btn-line" bindtap="onDismiss" disabled="{{saving || pending || uploading}}">关闭</button><button wx:if="{{editor.mode !== 'cancel' || detail.canManage}}" class="btn btn-primary" bindtap="onSubmit" loading="{{saving}}" disabled="{{saving || pending || uploading}}">确认</button></view>
-  </section-card>
+  </section-card></view>
+  <block wx:if="{{active}}">
+    <view class="footer-space"></view>
+    <view class="footer-bar repair-actions">
+      <block wx:if="{{editor}}">
+        <button class="btn btn-line" bindtap="onDismiss" disabled="{{saving || pending || uploading}}">关闭</button>
+        <button wx:if="{{editor.mode !== 'cancel' || detail.canManage}}" class="btn btn-primary" bindtap="onSubmit" loading="{{saving}}" disabled="{{saving || pending || uploading}}">{{editor.mode === 'close' ? '结单' : '确认'}}</button>
+      </block>
+      <block wx:else>
+        <button wx:if="{{detail.canManage || (detail.canRefund && detail.received > 0)}}" class="btn btn-line" data-mode="cancel" bindtap="onOpen">取消</button>
+        <button wx:if="{{detail.canManage}}" class="btn btn-soft" data-mode="update" bindtap="onOpen">补充资料</button>
+        <button wx:if="{{detail.canCash}}" class="btn btn-primary" data-mode="close" bindtap="onOpen">结单</button>
+      </block>
+    </view>
+  </block>
 </view>
 </theme-shell>

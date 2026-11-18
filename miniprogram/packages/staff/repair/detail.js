@@ -24,6 +24,7 @@ createPage({
     paymentLabels: PAYMENT_TYPES,
     methods: ["微信", "支付宝", "现金", "银行卡", "其他"],
     editor: null,
+    focusAmount: false,
     pending: null,
     loading: false,
     saving: false,
@@ -103,8 +104,16 @@ createPage({
         methodIndex: 0,
         photos: [],
       },
+      focusAmount: false,
       error: "",
+    }, () => {
+      if (mode !== "close" || this.destroyed || this.data.editor?.mode !== mode) return;
+      wx.pageScrollTo({ selector: "#close-editor", offsetTop: -16, duration: 200 });
+      this.setData({ focusAmount: true });
     });
+  },
+  onAmountBlur() {
+    if (this.data.focusAmount) this.setData({ focusAmount: false });
   },
   onInput(e) {
     if (!this.locked())
@@ -237,6 +246,7 @@ createPage({
       if (this.destroyed) return;
       this.setData({ pending: null, editor: null });
       this.apply(detail);
+      if (action === "close") wx.pageScrollTo({ scrollTop: 0, duration: 200 });
       events.emit("inventory:changed", { repairId: detail.id });
     } catch (e) {
       if (!this.destroyed)
