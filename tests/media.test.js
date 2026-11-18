@@ -47,6 +47,26 @@ test('压缩失败时回退原图；过大的原视频给出提示', async () =>
   assert.match((await pick({ count: 1, purpose: 'unit', allowVideo: true }))[0].error, /视频过大.*30 秒/);
 });
 
+test('相册 MOV 视频压缩为 MP4 后上传；无法转换时给出提示', async () => {
+  const fsMock = { getFileInfo: ({ success }) => success({ size: 8 * mb }) };
+  mock({ tempFilePath: 'album.MOV', size: 15 * mb, fileType: 'video' }, {
+    getVideoInfo: success({ duration: 12, type: 'mov' }),
+    compressVideo: success({ tempFilePath: 'out.mp4' }),
+    getFileSystemManager: () => fsMock,
+  });
+  const [ok] = await pick({ count: 1, purpose: 'unit', allowVideo: true });
+  assert.equal(ok.filePath, 'out.mp4');
+  mock({ tempFilePath: 'album.MOV', size: 5 * mb, fileType: 'video' }, {
+    getVideoInfo: success({ duration: 12, type: 'mov' }), compressVideo: failure,
+  });
+  assert.match((await pick({ count: 1, purpose: 'unit', allowVideo: true }))[0].error, /无法转为 MP4/);
+  // 原本就是 MP4 时压缩失败仍可上传原文件
+  mock({ tempFilePath: 'camera.mp4', size: 5 * mb, fileType: 'video' }, {
+    getVideoInfo: success({ duration: 12 }), compressVideo: failure,
+  });
+  assert.equal((await pick({ count: 1, purpose: 'unit', allowVideo: true }))[0].filePath, 'camera.mp4');
+});
+
 test('依次上传，单个文件重试失败后仍保留前后成功项', async () => {
   const messages = [], seen = [];
   let active = 0;

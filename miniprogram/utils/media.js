@@ -85,19 +85,24 @@ async function compressImage(original, purpose) {
   return best;
 }
 
+const isMp4 = value => /^(video\/)?mp4$/i.test(String(value || ''));
+const extension = filePath => String(filePath || '').split('?')[0].split('.').pop();
+
 async function compressVideo(original) {
   const info = await invoke(wx.getVideoInfo, { src: original.filePath }).catch(() => null);
-  const format = String(info?.type || original.filePath.split('.').pop()).toLowerCase();
-  if (format !== 'mp4' && format !== 'video/mp4') throw new Error('仅支持 MP4 视频');
   if (Number(info?.duration || original.duration) > 30) throw new Error('视频最长 30 秒，请剪短后重试');
-  let best = original;
+  // iPhone 相册视频常为 MOV，服务端按内容只收 MP4；微信压缩输出 MP4，因此非 MP4 必须压缩成功才能上传。
+  const originalMp4 = isMp4(info?.type || extension(original.filePath));
+  let best = originalMp4 ? original : null;
   try {
     const { tempFilePath } = await invoke(wx.compressVideo, { src: original.filePath, quality: 'medium' });
     const size = await stat(tempFilePath);
-    if (size && size < original.size) best = { ...original, filePath: tempFilePath, size };
+    const outputMp4 = isMp4(extension(tempFilePath));
+    if (size && outputMp4 && (!best || size < best.size)) best = { ...original, filePath: tempFilePath, size };
   } catch (error) {
     console.warn('[media] video compression unavailable', error.errMsg || error.message);
   }
+  if (!best) throw new Error('该视频无法转为 MP4，请直接拍摄或换一段视频');
   if (best.size > 20 * MB) throw new Error(VIDEO_TOO_LARGE);
   return best;
 }
