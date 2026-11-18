@@ -316,11 +316,12 @@ module.exports = async function (
     internal ? staff(r) : login(r);
     const d = r.body || {},
       key = text(d.requestKey, "操作标识", 100),
-      note = text(d.reason, "处理说明", 500),
+      undoOf = internal && d.undoOf !== undefined ? text(d.undoOf, "原操作标识", 100) : undefined,
+      note = undoOf ? "撤销跟进状态变更" : text(d.reason, "处理说明", 500),
       status = internal ? text(d.status, "目标状态", 20) : "cancelled",
       version = Number(d.version);
     if (!Number.isInteger(version) || version < 1) fail(400, "记录版本无效");
-    const digest = hash(JSON.stringify({ status, version, note }));
+    const digest = hash(JSON.stringify({ status, version, note, undoOf }));
     return transaction(pool, async (db) => {
       const state = await one(
         db,
@@ -345,7 +346,14 @@ module.exports = async function (
         return { id: row.id, status: prior.to_status, version: prior.version };
       }
       if (row.version !== version) fail(409, "记录已更新，请刷新后处理");
-      if (
+      if (undoOf) {
+        const recent = internal && row.kind === "consult" && row.status === "contacted" && status === "new" &&
+          await one(db, `SELECT id FROM customer_request_events WHERE request_id=? AND actor_id=? AND
+          actor_kind='staff' AND request_key=? AND version=? AND from_status='new' AND to_status='contacted'
+          AND note='跟进状态变更' AND created_at>UTC_TIMESTAMP(3)-INTERVAL 30 SECOND`,
+          [row.id, r.user.id, undoOf, row.version]);
+        if (!recent) fail(409, "这次跟进已不能撤销，请刷新记录");
+      } else if (
         !(TRANSITIONS[row.kind][row.status] || []).includes(status) ||
         (!internal && status !== "cancelled")
       )

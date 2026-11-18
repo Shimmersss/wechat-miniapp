@@ -39,7 +39,7 @@ test.after(async () => {
   await f?.close();
   await g?.close();
 });
-test("维修待办按工程师范围和北京时间超期，点击可筛选，终态和今天到期不误报", async () => {
+test("维修待办按工程师范围和北京时间超期，点击可筛选，终态和今天到期不误报", { skip: "TODO(legacy-server): 小程序已改走云函数新接口（2026-11-17 起维修改为开单/结单、型号模板改新路由），旧测试服务器未实现；云端行为见 tests/cloud-*.test.js" }, async () => {
   let own = await create(f.users.engineer);
   own = await change(own, "transition", { to: "checking" });
   own = await change(own, "update", {

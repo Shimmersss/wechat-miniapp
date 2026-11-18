@@ -1,10 +1,10 @@
 /** 最多50台分享设备已由PG整体验证快照/资格；只在这组公开结果内筛选和分页。 */
 const { rpc, fail } = require("./gateway");
-const { resolveFiles } = require("./stock-files");
+const { resolveFiles, resolveThumbnails } = require("./stock-files");
 const { publicView } = require("./public-unit");
 const { integer, money, text } = require("./stock-input");
 const sid = (ctx) => ctx.headers["X-Channel"] || ctx.headers["x-channel"];
-async function share(ctx, user) {
+async function share(ctx, user, mode = "detail") {
   const r = await rpc("api_agents", {
     p_action: "share.get",
     p_id: sid(ctx),
@@ -13,7 +13,8 @@ async function share(ctx, user) {
     p_request_id: ctx.requestId,
     p_config: {},
   });
-  await resolveFiles(r, user);
+  if (mode === "list") await resolveThumbnails(r.units, user);
+  else if (mode === "detail") await resolveFiles(r, user);
   return {
     channel: r.link.channel,
     brands: [
@@ -28,7 +29,7 @@ async function share(ctx, user) {
   };
 }
 async function list(ctx, user) {
-  const { units } = await share(ctx, user),
+  const { units } = await share(ctx, user, "list"),
     q = ctx.data,
     page = integer(q.page || 1, "页码", 1, 1000000),
     pageSize = integer(q.pageSize || 20, "每页数量", 1, 1000);
@@ -83,7 +84,7 @@ async function list(ctx, user) {
   };
 }
 async function home(ctx, user) {
-  const { units, brands } = await share(ctx, user);
+  const { units, brands } = await share(ctx, user, "home");
   return {
     todayStock: units.length,
     brands: [{ value: "all", label: "全部" }, ...brands],

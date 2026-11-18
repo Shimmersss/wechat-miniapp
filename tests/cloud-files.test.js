@@ -15,8 +15,8 @@ test('云上传只给受限地址传原始字节，登记完成前不返回文�
  const calls=wxMock();const f=await upload({filePath:'/temp/image.png',scope:'internal'});assert.equal(f.fileId,'id');assert.equal(calls.length,3);assert.equal(calls[0].name,'files');assert.equal(calls[0].data.data.scope,'internal');assert.equal(calls[0].data.data.size,3);assert.equal(calls[1].data.byteLength,3);assert.equal(calls[2].data.path,'/files/id/complete');
 });
 test('二进制传输失败不继续登记；核验失败不假装成功',async()=>{
- const calls=wxMock({status:500});await assert.rejects(upload({filePath:'/temp/a',scope:'internal'}),/传输失败/);assert.equal(calls.length,2);
- wxMock({finishCode:400});await assert.rejects(upload({filePath:'/temp/b',scope:'internal'}),/核验失败/);
+ const calls=wxMock({status:500});await assert.rejects(upload({filePath:'/temp/a',scope:'internal'}),/上传未完成，请重试/);assert.equal(calls.length,2);
+ wxMock({finishCode:400});await assert.rejects(upload({filePath:'/temp/b',scope:'internal'}),/上传未完成，请重试/);
 });
 test('timing只在development返回，production与未配置环境均不返回',async()=>{
  const original=process.env.NODE_ENV;

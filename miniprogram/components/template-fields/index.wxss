@@ -46,3 +46,21 @@
 .flex-picker { flex: 1; }
 .value-input.placeholder { color: var(--c-muted); line-height: 60rpx; }
 .clear { font-size: 24rpx; color: var(--c-muted); line-height: 60rpx; }
+
+.options.grade-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132rpx, 1fr));
+  white-space: normal;
+}
+.grade-options .option {
+  min-width: 0;
+  height: auto;
+  min-height: 64rpx;
+  padding: 12rpx;
+  box-sizing: border-box;
+  line-height: 36rpx;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.parameter-error { color: var(--c-red); font-size: 24rpx; margin-top: 8rpx; }

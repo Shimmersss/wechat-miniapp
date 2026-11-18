@@ -10,10 +10,10 @@ const { PERM } = require('../../../constants/roles');
 const { ROUTES } = require('../../../utils/router');
 const events = require('../../../utils/events');
 const { scanImei, scanSerial } = require('../../../utils/scan');
-const { isImei, normalizeSerial, serialError, noSerialReasonError } = require('../../../utils/validate');
+const { isImei, normalizeSerial, serialError, noSerialReasonError, firstError, showFieldError } = require('../../../utils/validate');
 const { NO_SERIAL_REASONS, QUANTITY_LIMIT, CONDITION_TYPE, CONDITION_TYPE_DEVICE } = require('../../../constants/status');
 const { initialValues, validateValues } = require('../../../utils/template');
-const { upload } = require('../../../utils/request');
+const media = require('../../../utils/media');
 const auth = require('../../../utils/auth');
 const drafts = require('./draft');
 const repeat = require('./repeat');
@@ -416,8 +416,7 @@ module.exports = function inboundPage(batch) {
     onChooseMedia() {
       if (this.data.submitting || this.data.uploading || this.data.form.publicImages.length >= 9) return;
       this.setData({ uploading: true });
-      wx.chooseMedia({ count: 9 - this.data.form.publicImages.length, mediaType: ['image', 'video'], sizeType: ['compressed'] })
-        .then(res => Promise.all(res.tempFiles.map(f => upload({ filePath: f.tempFilePath, scope: 'public', bizType: 'unit' }).then(file => ({ ...file, mediaType: f.fileType || 'image' })))))
+      media.pickAndUpload({ count: 9 - this.data.form.publicImages.length, allowVideo: true, scope: 'public', purpose: 'unit' })
         .then(files => this.setData({ 'form.publicImages': this.data.form.publicImages.concat(files) }))
         .catch(e => { if (!String(e.errMsg || '').includes('cancel')) this.$toast('上传未完成，请重试'); })
         .finally(() => this.setData({ uploading: false }));
@@ -445,8 +444,9 @@ module.exports = function inboundPage(batch) {
       return this.submitWithChecks();
     },
     async submitWithChecks() {
-      if (!this.data.model) return this.$toast('请先选择型号');
-      this.setData({ checkingSubmission: true });
+      if (!this.data.model) return showFieldError(this, { field: 'model', message: '请先选择型号' });
+      showFieldError(this, null);
+      this.setData({ checkingSubmission: true, parameterError: null });
       try {
         const pending = this.data.rows.filter(item => item.state !== 'ok');
         for (let i = 0; i < pending.length; i += 4) {
@@ -460,39 +460,50 @@ module.exports = function inboundPage(batch) {
     },
     confirmInbound() {
       const { model, templateVersion, templateFields, attributes, rows, form } = this.data;
-      if (!model) return this.$toast('请先选择型号');
+      if (!model) return showFieldError(this, { field: 'model', message: '请先选择型号' });
       const { identifierMode, batchNoSerial, batchReason } = this.data;
       const seen = new Set();
       const units = [];
       for (let i = 0; i < rows.length; i++) {
         const current = rows[i], label = batch ? `第 ${i + 1} 台：` : '';
-        if (current.state !== 'ok') return this.$toast(label + (current.message || '请完成串码校验'));
+        const fieldError = (field, message) => showFieldError(this, { field, message: label + message });
+        const identityError = message => fieldError('identity-' + i, message);
+        if (current.state !== 'ok') return identityError(current.message || '请完成串码校验');
         let identity;
         if (serialMode(identifierMode)) {
           const noSerial = current.noSerial || (batch && batchNoSerial);
           const imei = identifierMode === 'serial_imei' ? String(current.imei1 || '').trim() : '';
           const serial = noSerial ? '' : normalizeSerial(current.serialNo);
-          if (imei && (!isImei(imei) || seen.has(imei))) return this.$toast(`${label}IMEI 无效或批内重复`);
-          if (serial && (serialError(serial) || seen.has('SN:' + serial))) return this.$toast(`${label}序列号无效或批内重复`);
+          if (imei && (!isImei(imei) || seen.has(imei))) return identityError('IMEI 无效或批内重复');
+          if (serial && (serialError(serial) || seen.has('SN:' + serial))) return identityError('序列号无效或批内重复');
           if (imei) seen.add(imei);
           if (serial) seen.add('SN:' + serial);
           const reason = String(batch && batchNoSerial ? batchReason : current.noSerialReason).trim();
-          if (!serial && !imei && noSerialReasonError(reason)) return this.$toast(label + noSerialReasonError(reason));
+          if (!serial && !imei && noSerialReasonError(reason)) return identityError(noSerialReasonError(reason));
           identity = { ...(serial ? { serialNo: serial } : {}), ...(imei ? { imei1: imei } : {}), ...(!serial && !imei ? { noSerialReason: reason } : {}) };
         } else {
-          if (!isImei(current.imei1)) return this.$toast(label + (current.message || '请完成串码校验'));
-          if (current.matchModelId && current.matchModelId !== model.id) return this.$toast(`${label}识别型号与所选不一致，请核验`);
-          for (const code of [current.imei1, current.imei2].filter(Boolean)) { if (!isImei(code) || seen.has(code)) return this.$toast(`${label}串码无效或批内重复`); seen.add(code); }
+          if (!isImei(current.imei1)) return identityError(current.message || '请完成串码校验');
+          if (current.matchModelId && current.matchModelId !== model.id) return identityError('识别型号与所选不一致，请核验');
+          for (const code of [current.imei1, current.imei2].filter(Boolean)) { if (!isImei(code) || seen.has(code)) return identityError('串码无效或批内重复'); seen.add(code); }
           identity = { imei1: current.imei1, imei2: current.imei2 };
         }
-        const values = { ...attributes, ...current.attributes }, error = validateValues(templateFields, values);
-        if (error) return this.$toast(label + error);
+        const values = { ...attributes, ...current.attributes };
+        const templateError = firstError(templateFields.map(field => [field.key, () => validateValues([field], values)]), values);
+        if (templateError) {
+          this.setData({ parameterError: templateError });
+          return fieldError('parameters', templateError.message);
+        }
         const cost = current.cost === '' ? form.cost : current.cost;
-        if ([cost, form.retail, form.wholesale, form.agentBase].some(v => String(v).trim() === '' || !Number.isFinite(Number(v)) || Number(v) < 0)) return this.$toast(`${label}请填写有效成本与三价`);
+        const prices = { cost, retail: form.retail, wholesale: form.wholesale, agentBase: form.agentBase };
+        const names = { cost: '成本价', retail: '零售价', wholesale: '批发价', agentBase: '代理结算底价' };
+        const priceError = firstError(Object.keys(names).map(field => [field, value =>
+          (String(value).trim() === '' || !Number.isFinite(Number(value)) || Number(value) < 0)
+          && '请填写有效' + names[field]]), prices);
+        if (priceError) return fieldError(priceError.field === 'cost' && current.cost !== '' ? 'identity-' + i : priceError.field, priceError.message);
         units.push({ ...identity, attributes: values, cost });
       }
       const quantity = this.quantityAllowed() ? Number(this.data.quantity || 0) : 1;
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > QUANTITY_LIMIT) return this.$toast(`入库数量需为 1～${QUANTITY_LIMIT}`);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > QUANTITY_LIMIT) return showFieldError(this, { field: 'quantity', message: `入库数量需为 1～${QUANTITY_LIMIT}` });
       this.setData({ submitting: true });
       const count = batch ? units.length : quantity;
       const total = batch ? units.reduce((sum, u) => sum + Number(u.cost), 0) : Number(units[0].cost) * quantity;

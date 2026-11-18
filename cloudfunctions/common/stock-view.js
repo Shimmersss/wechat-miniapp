@@ -10,7 +10,7 @@ function unit(row,u) {
   const a=row.attributes||{}, fields=row.template_snapshot?.fields||[], attached=row.attached||[];
   const visible=f=>f.scope==='public'||(u.staffNo&&(f.owner_id===u.id||['boss','manager','purchaser'].includes(u.role)));
   // 链接由 files.js 判权后向 PG Storage 签名；不公开内部对象路径。
-  const fileView=f=>{if(!f.resolved_url)fail(503,'附件链接尚未迁移到云开发');return {fileId:f.id,scope:f.scope,mime:f.mime,mediaType:f.mime.startsWith('video/')?'video':'image',url:f.resolved_url};};
+  const fileView=f=>{if(!f.resolved_url)fail(503,'附件链接尚未迁移到云开发');return {fileId:f.id,scope:f.scope,mime:f.mime,mediaType:f.mime.startsWith('video/')?'video':'image',url:f.resolved_url,...(f.poster_url?{posterUrl:f.poster_url}:{})};};
   const publicFiles=attached.filter(f=>f.field_key==='publicImages');
   const receipt=[...new Map(attached.filter(f=>f.scope==='internal'&&visible(f)).map(f=>[f.id,f])).values()];
   const r={id:row.id,modelId:row.model_id,name:row.name,brand:row.brand,category:row.category_id,status:row.status,ownership:row.ownership,condition:row.condition_type,imeiMasked:mask(row.imei1),serialMasked:maskSerial(row.serial_no),noSerialReason:row.no_serial_reason||null,identifierMode:row.identifier_mode||'imei',lotId:row.lot_id||null,storage:a.storage,ram:a.ram,color:a.color,grade:a.grade,battery:a.battery,version:a.version,retail:Number(row.retail),flags:row.share_flags,peerDesc:row.peer_desc,customerDesc:row.customer_desc,createdAt:row.created_at,ageDays:Math.max(0,Math.floor((Date.now()-new Date(row.created_at).getTime())/86400000)),images:publicFiles.filter(f=>f.mime.startsWith('image/')).map(f=>fileView(f).url),publicImages:publicFiles.map(fileView),priceVersion:row.price_version};

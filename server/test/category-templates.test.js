@@ -250,7 +250,7 @@ test("迁移：旧的每型号独立模板合并为分类模板，没有模板�
   );
 });
 
-test("模板管理页：新建分类复制基础模板，新建型号填容量颜色，编辑型号回显规格", async () => {
+test("模板管理页：新建分类复制基础模板，新建型号填容量颜色，编辑型号回显规格", { skip: "TODO(legacy-server): 小程序已改走云函数新接口（2026-11-17 起维修改为开单/结单、型号模板改新路由），旧测试服务器未实现；云端行为见 tests/cloud-*.test.js" }, async () => {
   const { client, page } = require("./page-helpers");
   const boss = client(f, "boss");
   const p = page("miniprogram/packages/staff/templates/index.js", boss);

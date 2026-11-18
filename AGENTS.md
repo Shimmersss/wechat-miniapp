@@ -50,7 +50,7 @@
 
 ```
 miniprogram/
-  app.js / app.json / app.wxss   入口、路由（主包 + shop/agent/staff/demo 四个分包，共 59 页）、全局样式
+  app.js / app.json / app.wxss   入口、路由（主包 + shop/agent/staff 三个分包，共 55 页）、全局样式
   config/index.js                环境配置（baseUrl、useMock、品牌文案、storage key）
   constants/
     roles.js                     角色、权限点 PERM、默认角色权限、敏感字段可见角色
@@ -59,6 +59,7 @@ miniprogram/
   utils/
     page.js                      createPage 页面工厂（登录/权限守卫、PV 埋点、金额遮挡、$go/$toast）
     request.js                   请求层（信封解包、令牌、渠道头、访客 ID、mock 切换、上传）
+    media.js                     选图和视频、按用途压缩、顺序上传、失败重试
     auth.js                      静默登录、员工登录、登出
     channel.js                   分享来源捕获（s=shareId，scene 解析）
     track.js                     UV/PV/事件批量上报
@@ -77,12 +78,11 @@ miniprogram/
   assets/icons/                  多彩 SVG 图标（深色 / -gray / -white / -light 等变体）
   pages/                         主包：顾客端 tabBar 四页 + 员工登录
   components/shop-filter         首页排序筛选栏（下拉面板、型号弹层、筛选抽屉）
-  assets/brands/<key>.png        首页入口配图（16 个，左右滑动两页），替换同名文件即可，说明见 constants/shop-brands.js
+  assets/images/                商品及首页入口占位图，16 张品牌插画发布到 xiamu-brand-assets
   packages/shop                  顾客端分包：搜索、单机详情、咨询预约、分享海报
   packages/agent                 代理端分包：申请、代理中心、加价、订单、收益明细、邀请
   packages/staff                 员工经营端分包：工作台、采购/验收、入库、模板、库存、收银、销售、
                                  维修、出借、分享、代理审核与收益转账、统计、员工权限、审计日志、我的
-  packages/demo                  早期视觉演示，上线前确认是否移除
 ```
 
 ## 必须遵守的约定

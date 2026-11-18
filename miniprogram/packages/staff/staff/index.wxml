@@ -1,15 +1,15 @@
 <theme-shell>
 <view class="container">
   <view class="actions mb">
-    <view class="action" bindtap="onCreate"><view class="action-icon"><image src="/assets/icons/plus.svg" /></view><text>新增员工</text></view>
-    <view class="action" bindtap="onNavigate" data-url="/packages/staff/staff/roles"><view class="action-icon"><image src="/assets/icons/users.svg" /></view><text>角色与权限</text></view>
-    <view class="action" bindtap="onNavigate" data-url="/packages/staff/audit/index"><view class="action-icon"><image src="/assets/icons/list.svg" /></view><text>操作日志</text></view>
+    <view class="action" bindtap="onCreate"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/plus.svg" /></view><text>新增员工</text></view>
+    <view class="action" bindtap="onNavigate" data-url="/packages/staff/staff/roles"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/users.svg" /></view><text>角色与权限</text></view>
+    <view class="action" bindtap="onNavigate" data-url="/packages/staff/audit/index"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/list.svg" /></view><text>操作日志</text></view>
   </view>
 
   <view wx:if="{{editor}}" class="card">
     <view class="row mb"><text class="h2">{{editor.mode === 'create' ? '新增员工' : '编辑员工'}}</text><text class="small muted" bindtap="onCloseEditor">取消</text></view>
-    <view class="field"><view class="field-label required">姓名</view><input class="input" maxlength="50" value="{{editor.name}}" data-field="name" bindinput="onEditorInput" disabled="{{saving}}" /></view>
-    <view class="field"><view class="field-label {{staffWechatLogin ? '' : 'required'}}">{{staffWechatLogin ? '联系电话（选填）' : '手机号'}}</view><input class="input" type="number" maxlength="11" value="{{editor.phone}}" data-field="phone" bindinput="onEditorInput" disabled="{{saving || editor.mode === 'edit'}}" /></view>
+    <view class="field" id="field-name"><view class="field-label required">姓名</view><input class="input" maxlength="50" value="{{editor.name}}" data-field="name" bindinput="onEditorInput" disabled="{{saving}}" /><view wx:if="{{errors.name}}" class="field-error">{{errors.name}}</view></view>
+    <view class="field" id="field-phone"><view class="field-label {{staffWechatLogin ? '' : 'required'}}">{{staffWechatLogin ? '联系电话（选填）' : '手机号'}}</view><input class="input" type="number" maxlength="11" value="{{editor.phone}}" data-field="phone" bindinput="onEditorInput" disabled="{{saving || editor.mode === 'edit'}}" /><view wx:if="{{errors.phone}}" class="field-error">{{errors.phone}}</view></view>
     <view class="field"><view class="field-label required">角色</view><picker range="{{roles}}" range-key="label" value="{{editor.roleIndex}}" bindchange="onRole" disabled="{{saving}}"><view class="picker">{{roles[editor.roleIndex].label}}</view></picker></view>
     <view wx:if="{{editor.mode === 'create'}}" class="tiny muted mb">{{staffWechatLogin ? '保存后，用员工本人提供的编号绑定微信。' : '员工用该手机号收短信验证码登录后，自动绑定其微信。'}}</view>
     <button class="btn btn-primary btn-block" bindtap="onSaveEditor" loading="{{saving}}" disabled="{{saving}}">保存</button>

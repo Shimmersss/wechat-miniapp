@@ -51,6 +51,9 @@ createPage({
   onUnload() {
     this._revision = (this._revision || 0) + 1;
   },
+  onReachBottom() {
+    if (this.data.more && !this.data.loading) return this.load(false);
+  },
   onPullDownRefresh() {
     return this.load(true).finally(() => wx.stopPullDownRefresh());
   },
@@ -91,10 +94,11 @@ createPage({
           waitingParts: this.data.waitingParts ? "true" : undefined,
           overdue: this.data.overdue ? "true" : undefined,
           page,
+          pageSize: 20,
         };
       const [board, stats] = await Promise.all([
         api.repair.board(query),
-        api.repair.stats({ engineerId }),
+        reset ? api.repair.stats({ engineerId }) : Promise.resolve(this.data.stats),
       ]);
       if (revision !== this._revision) return;
       this.setData({
@@ -105,7 +109,7 @@ createPage({
             : c.list.concat(c.key === 'repairing' ? Object.entries(board.columns).filter(([key]) => !['completed','cancelled'].includes(key)).flatMap(([,list]) => list) : board.columns[c.key] || []),
         })),
         page,
-        more: board.hasMore,
+        more: board.page * board.pageSize < board.total,
         stats,
       });
     } catch (e) {

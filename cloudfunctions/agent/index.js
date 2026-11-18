@@ -4,7 +4,7 @@ const { createHandler, rpc, fail, hash } = require("./shared/gateway");
 const { currentUser } = require("./shared/identity");
 const { prepare } = require("./shared/agent-input");
 const { view } = require("./shared/agent-view");
-const { resolveFiles } = require("./shared/stock-files");
+const { resolveFiles, resolveThumbnails } = require("./shared/stock-files");
 const routes = [
   ["POST", "/agent/applications", "apply"],
   ["GET", "/agent/me", "me"],
@@ -119,7 +119,8 @@ exports.main = require("./shared/startup-timing")(
             ),
           },
         });
-        await resolveFiles(r, u);
+        if (a === "share.get" && String(d.thumbnails) === "true") await resolveThumbnails(r.units, u);
+        else await resolveFiles(r, u);
         const v = view(a, r, u, d);
         if (a === "share.copy")
           return {

@@ -51,7 +51,7 @@ test("代理页面：申请 → 门店审核设上限 → 加价 → 链接下�
     region: ["广东省", "深圳市", "南山区"],
   });
   await apply.onSubmit();
-  assert.match(apply.notices.at(-1), /代理协议/);
+  assert.match(apply.data.errors.agreed, /代理协议/);
   apply.onAgree();
   await apply.onSubmit();
   assert.equal(apply.data.me.status, "pending");

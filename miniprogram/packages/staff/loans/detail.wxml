@@ -41,7 +41,7 @@
           <view class="field mt"><view class="field-label required">外观与功能结论</view><textarea class="textarea" maxlength="2000" value="{{item.condition}}" data-index="{{index}}" data-field="condition" bindinput="onReturnInput" placeholder="如：外观无新增磕碰，开机正常" disabled="{{saving || pending}}" /></view>
           <view class="field"><view class="field-label">损坏描述（选填）</view><input class="input" maxlength="2000" value="{{item.damage}}" data-index="{{index}}" data-field="damage" bindinput="onReturnInput" disabled="{{saving || pending}}" /></view>
           <view class="field-label required">交接照片 · 仅内部可见</view>
-          <view class="photos"><view wx:for="{{item.photos}}" wx:for-item="photo" wx:for-index="p" wx:key="fileId" class="photo"><image src="{{photo.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" data-photo="{{p}}" bindtap="onRemoveReturnPhoto">移除</text></view></view>
+          <view class="photos"><view wx:for="{{item.photos}}" wx:for-item="photo" wx:for-index="p" wx:key="fileId" class="photo"><image lazy-load="{{true}}" src="{{photo.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" data-photo="{{p}}" bindtap="onRemoveReturnPhoto">移除</text></view></view>
           <button class="btn btn-line btn-sm mt-sm" data-index="{{index}}" bindtap="onReturnPhotos" loading="{{uploading}}" disabled="{{saving || pending || uploading || item.photos.length >= 9}}">添加照片</button>
         </block>
       </view>
@@ -53,7 +53,7 @@
         <view class="row"><text class="h3">{{item.actionText}}</text><text class="tiny muted">{{item.operator}} · {{item.timeText}}</text></view>
         <view class="small muted mt-sm">{{item.reason}}</view>
         <view wx:for="{{item.returned}}" wx:for-item="r" wx:key="unitId" class="tiny mt-sm">{{r.name}}：{{r.condition}}{{r.damage ? '；损坏：' + r.damage : ''}}</view>
-        <view wx:if="{{item.photos.length}}" class="photos mt-sm"><image wx:for="{{item.photos}}" wx:for-item="photo" wx:key="id" class="thumb" src="{{photo.url}}" mode="aspectFill" data-url="{{photo.url}}" bindtap="onPreview" /></view>
+        <view wx:if="{{item.photos.length}}" class="photos mt-sm"><image lazy-load="{{true}}" wx:for="{{item.photos}}" wx:for-item="photo" wx:key="id" class="thumb" src="{{photo.url}}" mode="aspectFill" data-url="{{photo.url}}" bindtap="onPreview" /></view>
       </view>
     </section-card>
 

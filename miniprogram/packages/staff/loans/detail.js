@@ -3,7 +3,7 @@ const api = require('../../../api/index');
 const { ROUTES } = require('../../../utils/router');
 const { PERM } = require('../../../constants/roles');
 const { LOAN_STATUS, LOAN_TYPE } = require('../../../constants/status');
-const { upload } = require('../../../utils/request');
+const media = require('../../../utils/media');
 const { confirmSensitive } = require('../../../utils/confirm');
 const events = require('../../../utils/events');
 const { date } = require('../../../utils/format');
@@ -69,8 +69,7 @@ createPage({
     if (this.locked() || !item || item.photos.length >= 9) return;
     this.setData({ uploading: true, error: '' });
     try {
-      const res = await wx.chooseMedia({ count: 9 - item.photos.length, mediaType: ['image'], sizeType: ['compressed'] });
-      const files = await Promise.all(res.tempFiles.map((f) => upload({ filePath: f.tempFilePath, scope: 'internal', bizType: 'loan_return' })));
+      const files = await media.pickAndUpload({ count: 9 - item.photos.length, scope: 'internal', purpose: 'loan_return' });
       if (!this.destroyed && this.data.editor) this.setData({ [`editor.items[${index}].photos`]: this.data.editor.items[index].photos.concat(files) });
     } catch (err) { if (!/cancel/.test(err.errMsg || '')) this.setData({ error: err.message || err.errMsg || '照片未完成上传' }); }
     finally { if (!this.destroyed) this.setData({ uploading: false }); }

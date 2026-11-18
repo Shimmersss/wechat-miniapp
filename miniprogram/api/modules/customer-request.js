@@ -5,6 +5,6 @@ module.exports={
  list: params=>http.get('/customer-requests',params),
  /** id → 联系方式/内部跟进时间线/可执行状态/是否可开收银单 */
  detail: id=>http.get(`/customer-requests/${id}`),
- /** {requestKey,version,status,reason} → {id,status,version}；内部原因只返回获授权员工 */
+ /** {requestKey,version,status,reason,undoOf?} → {id,status,version}；内部原因只返回获授权员工 */
  updateStatus: (id,data)=>http.patch(`/customer-requests/${id}/status`,data)
 };

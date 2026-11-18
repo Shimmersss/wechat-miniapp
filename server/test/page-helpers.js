@@ -109,6 +109,8 @@ function page(relative, api, role = "boss", overrides = {}) {
       return require(resolved);
     },
     getCurrentPages: () => [definition, {}],
+    setTimeout,
+    clearTimeout,
     wx: {},
     ...overrides,
   };

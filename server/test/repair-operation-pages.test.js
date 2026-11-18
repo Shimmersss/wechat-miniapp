@@ -122,7 +122,7 @@ test("配件页面经真实API：采购建档、回执丢失原样重试、版�
   eng.onCreate();
   assert.equal(eng.data.editor, null);
 });
-test("维修详情页面经真实API完成报价确认/领退料/收退款/取机；原请求重试只记一次", async () => {
+test("维修详情页面经真实API完成报价确认/领退料/收退款/取机；原请求重试只记一次", { skip: "TODO(legacy-server): 小程序已改走云函数新接口（2026-11-17 起维修改为开单/结单、型号模板改新路由），旧测试服务器未实现；云端行为见 tests/cloud-*.test.js" }, async () => {
   const order = await create(),
     p = await detail("boss", order.id);
   await transition(p, "checking");
@@ -223,7 +223,7 @@ test("维修详情页面经真实API完成报价确认/领退料/收退款/取�
     eng.data.detail.timeline.some((e) => e.data.result === "更换后充放电正常"),
   );
 });
-test("维修详情版本冲突拒绝旧报价覆盖，刷新后允许零元报价", async () => {
+test("维修详情版本冲突拒绝旧报价覆盖，刷新后允许零元报价", { skip: "TODO(legacy-server): 小程序已改走云函数新接口（2026-11-17 起维修改为开单/结单、型号模板改新路由），旧测试服务器未实现；云端行为见 tests/cloud-*.test.js" }, async () => {
   let o = await create();
   o = await api.repair.transition(o.id, {
     requestKey: "checking_" + Date.now(),

@@ -24,7 +24,38 @@ module.exports=function(db,{fail,currentRole,requirePermission,paginate,clone,sh
   if(d.unitId&&(!u||u.status!=='in_stock'||!u.flags[flag]||share&&!share.snapshots.some(i=>i.id===u.id)))fail(kind==='order'&&u&&u.status==='locked'?409:404,kind==='order'&&u&&u.status==='locked'?'该设备已被锁定或售出':'商品不存在或已下架');
   const time=new Date().toISOString(),r={id:uid(),ownerId:owner(),kind,unitId:d.unitId||null,unit:u?publicUnit(u,{channel,price:share?share.snapshots.find(i=>i.id===u.id).price:undefined}):null,content:(d.content||'').trim(),phone:d.phone.trim(),name:(d.name||'').trim(),date:kind==='appointment'?d.date:null,timeSlot:kind==='appointment'?d.timeSlot:null,source:share?share.channel:'natural',shareId:share?.shareId||null,shareOwnerId:share?.ownerId||null,requestKey:d.requestKey,signature,status:'new',version:1,createdAt:time,updatedAt:time,timeline:[{id:uid(),status:'new',time,actor:'本人',note:'',operator:currentRole()}],operations:{}};if(kind==='order')agents.lock(r,share,d.unitId);requests.unshift(r);audit(kind==='appointment'?'提交到店预约':kind==='order'?'代理链接下单':'提交商品咨询',r);return view(r);
  }
- function change(d,p,internal){if(internal)staff();const r=find(p.id);if(!internal&&r.ownerId!==owner())fail(404,'记录不存在');const status=internal?d.status:'cancelled',signature=JSON.stringify({status,version:d.version,reason:d.reason}),op=owner()+':'+d.requestKey;if(!d.requestKey||!d.reason?.trim()||d.reason.length>500)fail(400,'请填写处理说明和标识');if(r.operations[op]){const old=r.operations[op];if(old.signature!==signature)fail(409,'操作标识内容冲突');return old.result;}if(d.version!==r.version||!(TRANSITIONS[r.kind][r.status]||[]).includes(status))fail(409,'状态或版本已变化，请刷新');r.status=status;r.version++;if(r.kind==='order'&&['closed','cancelled'].includes(status))agents.release(r.id,internal?'门店关闭代理订单：'+d.reason:'顾客取消代理订单');r.updatedAt=new Date().toISOString();r.timeline.push({id:uid(),status,time:r.updatedAt,actor:internal?'门店':'本人',operator:currentRole(),note:d.reason});const result={id:r.id,status:r.status,version:r.version};r.operations[op]={signature,result};audit(internal?'跟进咨询预约':'取消咨询预约',r,d.reason);return result;}
+ function change(d,p,internal) {
+  if (internal) staff();
+  const r=find(p.id);
+  if (!internal && r.ownerId!==owner()) fail(404,'记录不存在');
+  const status=internal?d.status:'cancelled',undoOf=internal?d.undoOf:undefined;
+  const reason=undoOf?'撤销跟进状态变更':d.reason;
+  const signature=JSON.stringify({status,version:d.version,reason,undoOf}),op=owner()+':'+d.requestKey;
+  if (!d.requestKey||!reason?.trim()||reason.length>500) fail(400,'请填写处理说明和标识');
+  if (r.operations[op]) {
+   const old=r.operations[op];
+   if (old.signature!==signature) fail(409,'操作标识内容冲突');
+   return old.result;
+  }
+  if (d.version!==r.version) fail(409,'状态或版本已变化，请刷新');
+  if (undoOf) {
+   const previous=r.operations[owner()+':'+undoOf];
+   if (r.kind!=='consult'||r.status!=='contacted'||status!=='new'||previous?.result.version!==r.version||
+       previous.from!=='new'||previous.reason!=='跟进状态变更'||Date.now()-previous.at>=30000)
+    fail(409,'这次跟进已不能撤销，请刷新记录');
+  } else if (!(TRANSITIONS[r.kind][r.status]||[]).includes(status)) {
+   fail(409,'状态或版本已变化，请刷新');
+  }
+  const from=r.status;
+  r.status=status;r.version++;
+  if(r.kind==='order'&&['closed','cancelled'].includes(status))agents.release(r.id,internal?'门店关闭代理订单：'+reason:'顾客取消代理订单');
+  r.updatedAt=new Date().toISOString();
+  r.timeline.push({id:uid(),status,time:r.updatedAt,actor:internal?'门店':'本人',operator:currentRole(),note:reason});
+  const result={id:r.id,status:r.status,version:r.version};
+  r.operations[op]={signature,result,from,reason,at:Date.now()};
+  audit(internal?'跟进咨询预约':'取消咨询预约',r,reason);
+  return result;
+ }
  function rows(d,internal){if(internal)staff();let list=requests.filter(r=>internal||r.ownerId===owner());if(d.kind)list=list.filter(r=>r.kind===d.kind);if(d.status)list=list.filter(r=>r.status===d.status);if(internal&&d.keyword)list=list.filter(r=>(r.name+r.phone).includes(d.keyword)||r.id===d.keyword);return paginate(list.map(r=>view(r,internal)),d);}
  function forSale(d,rows){if(!d.customerRequestId)return null;staff();const r=find(d.customerRequestId);if(!ACTIVE.includes(r.status)||r.salesOrderId)fail(409,'意向已结束或关联成交');if(!r.unitId||!rows.some(i=>i.u.id===r.unitId))fail(400,'销售需包含意向设备');if(r.kind==='order')agents.saleItem(r.id,r.unitId);return r;}
  function recordSale(r,order){if(!r)return;if(r.kind==='order')agents.recordSale(r.id,order.id);r.salesOrderId=order.id;r.status=r.kind==='appointment'?'completed':'closed';r.version++;r.updatedAt=new Date().toISOString();r.timeline.push({id:uid(),status:r.status,time:r.updatedAt,actor:'门店',operator:currentRole(),note:'已登记销售单 '+order.id});Object.assign(order,{customerRequestId:r.id,source:r.source,shareId:r.shareId,shareOwnerId:r.shareOwnerId});}

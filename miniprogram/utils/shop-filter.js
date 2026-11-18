@@ -21,8 +21,8 @@ const BATTERY_OPTIONS = [
 ];
 
 /** 首页入口固定展示，按 8 个一页分组；品牌展开由服务端完成，前端只传入口 key */
-function brandTiles() {
-  const tiles = SHOP_BRANDS.map((tile) => ({ key: tile.key, label: tile.label, type: tile.type, image: `/assets/brands/${tile.key}.png` }));
+function brandTiles(baseUrl = '') {
+  const tiles = SHOP_BRANDS.map((tile) => ({ key: tile.key, label: tile.label, type: tile.type, image: baseUrl ? `${baseUrl}/${tile.key}.png` : '' }));
   const pages = [];
   for (let i = 0; i < tiles.length; i += PAGE_SIZE) pages.push({ index: pages.length, tiles: tiles.slice(i, i + PAGE_SIZE) });
   return pages;

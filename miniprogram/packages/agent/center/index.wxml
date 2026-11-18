@@ -20,15 +20,15 @@
   </view>
 
   <view class="entries mb">
-    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/orders/index"><view class="entry-icon"><image src="/assets/icons/list.svg" /></view><text>我的订单</text></view>
-    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/commission/index"><view class="entry-icon"><image src="/assets/icons/chart.svg" /></view><text>收益明细</text></view>
-    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/markup/index"><view class="entry-icon"><image src="/assets/icons/layers.svg" /></view><text>加价管理</text></view>
-    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/invite/index"><view class="entry-icon"><image src="/assets/icons/users.svg" /></view><text>邀请代理</text></view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/orders/index"><view class="entry-icon"><image lazy-load="{{true}}" src="/assets/icons/list.svg" /></view><text>我的订单</text></view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/commission/index"><view class="entry-icon"><image lazy-load="{{true}}" src="/assets/icons/chart.svg" /></view><text>收益明细</text></view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/markup/index"><view class="entry-icon"><image lazy-load="{{true}}" src="/assets/icons/layers.svg" /></view><text>加价管理</text></view>
+    <view class="entry" bindtap="onNavigate" data-url="/packages/agent/invite/index"><view class="entry-icon"><image lazy-load="{{true}}" src="/assets/icons/users.svg" /></view><text>邀请代理</text></view>
   </view>
 
   <section-card title="可转发库存" subtitle="门店开放代理转发的在库设备">
     <view wx:for="{{units}}" wx:key="id" class="unit">
-      <image class="thumb" src="{{item.cover}}" mode="aspectFill" />
+      <image lazy-load="{{true}}" class="thumb" src="{{item.cover}}" mode="aspectFill" />
       <view class="flex-1">
         <view class="h3 ellipsis">{{item.name}} {{item.storage}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></view>
         <view class="tiny muted ellipsis">{{item.color}} · {{item.grade}}</view>

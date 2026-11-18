@@ -1,8 +1,7 @@
 /**
- * 首页入口（左右滑动，每页 8 个）。配图放在 assets/brands/<key>.png，直接替换同名文件即可，页面不用改：
- * 建议 240×240 透明底 PNG，主体居中，单张不超过 30KB（主包上限 2MB）。
- * 现有配图是原创插画（不含品牌商标）：手机为各品牌 2026 年秋季旗舰背面，其余为品类示意，
- * 由 design-demos/brand-icons/build.py 生成；新机发布或新增入口时改那里再运行。
+ * 首页入口每页 8 个。原创插画源文件和生成脚本位于 design-demos/brand-icons/。
+ * 发布时将 images/<key>.png 上传到公开的 xiamu-brand-assets 桶，地址由本机网关配置生成，
+ * 小程序包内的 assets/images/device-placeholder.png 在弱网或图片加载失败时显示。
  *
  * type：
  * - brand       品牌入口，限定在手机分类，按 names 匹配型号的品牌值或品牌名（不区分大小写）

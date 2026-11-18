@@ -4,7 +4,7 @@
 <view wx:if="{{unit}}" class="page">
   <swiper wx:if="{{unit.images.length}}" class="gallery" circular bindchange="onSwiperChange">
     <swiper-item wx:for="{{unit.images}}" wx:key="*this">
-      <image class="gallery-img" src="{{item}}" mode="aspectFill" data-src="{{item}}" bindtap="onPreview" />
+      <image lazy-load="{{true}}" class="gallery-img" src="{{item}}" mode="aspectFill" data-src="{{item}}" bindtap="onPreview" />
     </swiper-item>
   </swiper>
   <view wx:if="{{unit.images.length}}" class="dots tiny">{{current + 1}}/{{unit.images.length}} · 单机实拍</view>
@@ -25,7 +25,7 @@
 
     <section-card wx:if="{{info.length}}" title="关键信息"><view class="grid-2"><view wx:for="{{info}}" wx:key="key"><view class="tiny muted">{{item.label}}</view><view class="small mt-sm">{{item.value}}</view></view></view></section-card>
     <section-card wx:if="{{unit.desc}}" title="机况描述"><view class="condition-description">{{unit.desc}}</view></section-card>
-    <view wx:for="{{unit.videos}}" wx:key="*this" class="card"><video class="product-video" src="{{item}}" /></view>
+    <view wx:for="{{unit.videos}}" wx:key="*this" class="card"><video class="product-video" src="{{item}}" poster="{{index === 0 ? unit.posterUrl : ''}}" /></view>
     <section-card title="放心承诺">
       <view class="grid-2">
         <metric-item label="店铺质保" value="{{unit.warrantyDays === null ? '以门店确认为准' : unit.warrantyDays + ' 天'}}" />
@@ -37,7 +37,7 @@
     </section-card>
 
     <section-card wx:if="{{publicFields.length}}" title="单机检测与参数">
-      <view wx:for="{{publicFields}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><view wx:if="{{item.type === 'image'}}"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" class="report-photo" src="{{photo.url}}" mode="aspectFill" /></view><text wx:else>{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text></view>
+      <view wx:for="{{publicFields}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><view wx:if="{{item.type === 'image'}}"><image lazy-load="{{true}}" wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" class="report-photo" src="{{photo.url}}" mode="aspectFill" /></view><text wx:else>{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text></view>
     </section-card>
     <section-card wx:if="{{similar.length}}" title="相似在售">
       <view class="grid-2">
@@ -48,8 +48,8 @@
 
   <view class="footer-space"></view>
   <view class="footer-bar">
-    <button class="icon-action" bindtap="onPoster"><image class="action-icon" src="/assets/icons/poster.svg" /><text>海报</text></button>
-    <button class="icon-action" open-type="share"><image class="action-icon" src="/assets/icons/forward.svg" /><text>转发</text></button>
+    <button class="icon-action" bindtap="onPoster"><image lazy-load="{{true}}" class="action-icon" src="/assets/icons/poster.svg" /><text>海报</text></button>
+    <button class="icon-action" open-type="share"><image lazy-load="{{true}}" class="action-icon" src="/assets/icons/forward.svg" /><text>转发</text></button>
     <block wx:if="{{unit.priceType === 'agent'}}">
       <button class="btn btn-soft" bindtap="onConsult">咨询</button>
       <button class="btn btn-primary" bindtap="onOrder">立即下单</button>

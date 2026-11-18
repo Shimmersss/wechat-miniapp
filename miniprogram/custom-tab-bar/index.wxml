@@ -3,7 +3,7 @@
 <view wx:if="{{!hidden}}" class="tabbar-scope {{dark ? 'theme-root theme-dark' : 'theme-root'}}">
   <view class="tabbar">
     <view wx:for="{{tabs}}" wx:key="path" class="tab {{selected === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTap">
-      <image class="icon" src="/assets/icons/{{item.icon}}{{selected === index ? '' : '-gray'}}{{dark ? '-light' : ''}}.svg" />
+      <image lazy-load="{{true}}" class="icon" src="/assets/icons/{{item.icon}}{{selected === index ? '' : '-gray'}}{{dark ? '-light' : ''}}.svg" />
       <text class="text">{{item.text}}</text>
     </view>
   </view>

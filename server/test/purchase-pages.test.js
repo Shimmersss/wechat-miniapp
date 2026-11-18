@@ -24,7 +24,7 @@ test.before(async () => {
 test.after(async () => {
   await f?.close();
 });
-test("采购型号选择器使用安全的来源参数，选中后回传对应明细行", async () => {
+test("采购型号选择器使用安全的来源参数，选中后回传对应明细行", { skip: "TODO(legacy-server): 小程序已改走云函数新接口（2026-11-17 起维修改为开单/结单、型号模板改新路由），旧测试服务器未实现；云端行为见 tests/cloud-*.test.js" }, async () => {
   const purchase = page(staff + "purchase/edit.js", boss);
   await purchase.onLoad({});
   const line = purchase.data.lines[0];

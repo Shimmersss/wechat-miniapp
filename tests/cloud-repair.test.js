@@ -16,7 +16,7 @@ test('维修响应裁剪所有费用入口，不能从事件、付款或配件�
  const r=view('get',row,u,{});for(const k of ['partsCost','expenses','costAllocation','profit','identifier','request_hash','creator_id'])assert.equal(Object.hasOwn(r,k),false,k);assert.equal(r.timeline[0].costData,undefined);assert.equal(r.parts[0].cost,undefined);assert.equal(r.payments.length,1);assert.equal(r.imeiMasked,'35****0006');
  const boss=view('get',row,{...u,visibleFields:['cost','fullImei','profit'],permissions:[...u.permissions,'profit:view']},{});assert.equal(boss.partsCost,20);assert.equal(boss.profit,75);
 });
-test('维修统计使用北京时间边界，限制366天并裁剪成本利润；看板固定200条',()=>{
- const d=prepare('stats',{from:'2030-01-01',to:'2030-01-01'},null,u);assert.equal(d.start,'2029-12-31T16:00:00.000Z');assert.equal(d.end,'2030-01-01T16:00:00.000Z');assert.throws(()=>prepare('stats',{from:'2030-01-01',to:'2032-01-01'},null,u));assert.equal(prepare('board',{pageSize:999},null,u).pageSize,200);
+test('维修统计使用北京时间边界，限制366天并裁剪成本利润；看板默认20条并支持显式分页',()=>{
+ const d=prepare('stats',{from:'2030-01-01',to:'2030-01-01'},null,u);assert.equal(d.start,'2029-12-31T16:00:00.000Z');assert.equal(d.end,'2030-01-01T16:00:00.000Z');assert.throws(()=>prepare('stats',{from:'2030-01-01',to:'2032-01-01'},null,u));assert.equal(prepare('board',{},null,u).pageSize,20);assert.equal(prepare('board',{page:3,pageSize:20},null,u).offset,40);assert.throws(()=>prepare('board',{pageSize:201},null,u));
  const r=view('stats',{created:0,completed:0,cohort_completed:0,avg_hours:0,revenue:0,parts:3,expenses:2,internal_cost:9},u,{});assert.equal(r.completionRate,0);assert.equal(r.partsCost,undefined);assert.equal(r.profit,undefined);
 });

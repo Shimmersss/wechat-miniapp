@@ -4,7 +4,7 @@ const { PERM } = require("../../../constants/roles");
 const { REPAIR_STATUS } = require("../../../constants/status");
 const { PAYMENT_TYPES } = require("../../../constants/repair");
 const { confirmSensitive } = require("../../../utils/confirm");
-const { upload } = require("../../../utils/request");
+const media = require('../../../utils/media');
 const events = require("../../../utils/events");
 const terminal = (status) => ["completed", "cancelled"].includes(status);
 const timeLabel = (value) => {
@@ -24,6 +24,7 @@ createPage({
     paymentLabels: PAYMENT_TYPES,
     methods: ["微信", "支付宝", "现金", "银行卡", "其他"],
     editor: null,
+    focusAmount: false,
     pending: null,
     loading: false,
     saving: false,
@@ -103,8 +104,16 @@ createPage({
         methodIndex: 0,
         photos: [],
       },
+      focusAmount: false,
       error: "",
+    }, () => {
+      if (mode !== "close" || this.destroyed || this.data.editor?.mode !== mode) return;
+      wx.pageScrollTo({ selector: "#close-editor", offsetTop: -16, duration: 200 });
+      this.setData({ focusAmount: true });
     });
+  },
+  onAmountBlur() {
+    if (this.data.focusAmount) this.setData({ focusAmount: false });
   },
   onInput(e) {
     if (!this.locked())
@@ -124,20 +133,7 @@ createPage({
       return;
     this.setData({ uploading: true });
     try {
-      const selected = await wx.chooseMedia({
-        count: 9 - this.data.editor.photos.length,
-        mediaType: ["image"],
-        sizeType: ["compressed"],
-      });
-      const photos = await Promise.all(
-        selected.tempFiles.map((f) =>
-          upload({
-            filePath: f.tempFilePath,
-            scope: "internal",
-            bizType: "repair",
-          }),
-        ),
-      );
+      const photos = await media.pickAndUpload({ count: 9 - this.data.editor.photos.length, scope: 'internal', purpose: 'repair' });
       if (!this.destroyed)
         this.setData({
           "editor.photos": this.data.editor.photos.concat(photos),
@@ -237,6 +233,7 @@ createPage({
       if (this.destroyed) return;
       this.setData({ pending: null, editor: null });
       this.apply(detail);
+      if (action === "close") wx.pageScrollTo({ scrollTop: 0, duration: 200 });
       events.emit("inventory:changed", { repairId: detail.id });
     } catch (e) {
       if (!this.destroyed)

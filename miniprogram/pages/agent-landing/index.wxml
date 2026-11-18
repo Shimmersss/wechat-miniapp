@@ -1,7 +1,7 @@
 <theme-shell>
 <view class="container has-tabbar">
   <view class="hero">
-    <image class="hero-deco" src="/assets/agent/hero-deco.svg" mode="aspectFill" />
+    <image lazy-load="{{true}}" class="hero-deco" src="/assets/agent/hero-deco.svg" mode="aspectFill" />
     <text class="hero-tag">夏目数码代理</text>
     <view class="hero-title">不压货，也能卖手机</view>
     <view class="hero-sub">货由门店备好，你只管转发给身边的朋友。成交一台，加价就归你。</view>
@@ -23,7 +23,7 @@
   <section-card title="为什么好做">
     <view class="perks">
       <view wx:for="{{perks}}" wx:key="icon" class="perk">
-        <image class="perk-icon" src="/assets/agent/{{item.icon}}.svg" />
+        <image lazy-load="{{true}}" class="perk-icon" src="/assets/agent/{{item.icon}}.svg" />
         <view class="perk-title">{{item.title}}</view>
         <view class="perk-desc">{{item.desc}}</view>
       </view>

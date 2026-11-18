@@ -1,3 +1,4 @@
+const { firstError, showFieldError } = require('../../../utils/validate');
 const {createPage}=require('../../../utils/page');
 const api=require('../../../api/index');
 const {scan,unitCode}=require('../../../utils/scan');
@@ -6,7 +7,7 @@ const {can}=require('../../../utils/permission');
 const {ROUTES}=require('../../../utils/router');
 const {confirmSensitive}=require('../../../utils/confirm');
 const events=require('../../../utils/events');
-const {upload}=require('../../../utils/request');
+const media = require('../../../utils/media');
 let seq=0;
 createPage({
  requireStaff:true,permission:PERM.SALES_CREATE,
@@ -23,12 +24,12 @@ createPage({
  },
  locked(){return this.data.saving||this.data.loading||this.data.uploading||!!this.data.pending||!!this.data.order;},
  /** 收款凭证（选填）：收款截图/小票照片，作为内部凭证上传，不对顾客公开 */
- async onReceipts(){if(this.locked()||this.data.receipts.length>=9)return;this.setData({uploading:true,error:''});try{const res=await wx.chooseMedia({count:9-this.data.receipts.length,mediaType:['image'],sizeType:['compressed']});const files=await Promise.all(res.tempFiles.map(f=>upload({filePath:f.tempFilePath,scope:'internal',bizType:'sales_receipt'})));if(!this.destroyed)this.setData({receipts:this.data.receipts.concat(files)});}catch(e){if(!/cancel/.test(e.errMsg||''))this.setData({error:e.message||e.errMsg||'凭证未完成上传'});}finally{if(!this.destroyed)this.setData({uploading:false});}},
+ async onReceipts(){if(this.locked()||this.data.receipts.length>=9)return;this.setData({uploading:true,error:''});try{const files = await media.pickAndUpload({ count: 9-this.data.receipts.length, scope: 'internal', purpose: 'sales_receipt' });if(!this.destroyed)this.setData({receipts:this.data.receipts.concat(files)});}catch(e){if(!/cancel/.test(e.errMsg||''))this.setData({error:e.message||e.errMsg||'凭证未完成上传'});}finally{if(!this.destroyed)this.setData({uploading:false});}},
  onRemoveReceipt(e){if(!this.locked())this.setData({receipts:this.data.receipts.filter((_,i)=>i!==Number(e.currentTarget.dataset.index))});},
  onInput(e){if(!this.locked())this.setData({[e.currentTarget.dataset.field]:e.detail.value});},
  async onScan(){if(this.locked())return;try{this.setData({code:unitCode(await scan())});return this.onAdd();}catch(_){}},
  async onAdd(){
-  if(this.locked())return;const code=this.data.code.trim();if(!code)return this.$toast('请扫码或输入完整设备编号');this.setData({loading:true,error:''});
+  if(this.locked())return;const code=this.data.code.trim();if(!code)return showFieldError(this,{field:'code',message:'请扫码或输入完整设备编号'});this.setData({loading:true,error:''});
   try{const u=await api.sales.lookup(code);if(this.data.cart.some(i=>i.id===u.id))return this.$toast('已在收银单中');this.setData({cart:this.data.cart.concat({...u,channel:'retail',price:''}),code:''});await this.requote();}
   catch(e){this.setData({error:e.message});}finally{this.setData({loading:false});}
  },
@@ -42,14 +43,22 @@ createPage({
  onPayChange(e){if(!this.locked())this.setData({payIndex:Number(e.detail.value)});},
  onPrice(e){if(this.locked()||!this.data.canPrice)return;const i=this.data.cart.findIndex(u=>u.id===e.currentTarget.dataset.id);if(i<0)return;this.revision=(this.revision||0)+1;this.setData({['cart['+i+'].price']:e.detail.value,quote:null,total:null,quoting:false});},
  onChannel(e){if(this.locked())return;const i=this.data.cart.findIndex(u=>u.id===e.currentTarget.dataset.id);if(i<0)return;const channel=e.detail.value?'wholesale':'retail';this.setData({['cart['+i+'].channel']:channel,['cart['+i+'].price']:''});return this.requote();},
- onQuote(){if(!this.locked())return this.requote();},
+ validatePrices() {
+  const index=this.data.cart.findIndex(item=>item.price!==''&&!/^\d+(\.\d{1,2})?$/.test(String(item.price)));
+  return index<0?null:{field:'price-'+index,message:'请输入有效成交价，最多两位小数'};
+ },
+ onQuote(){if(!this.locked()&&!showFieldError(this,this.validatePrices()))return this.requote();},
  async onRefresh(){
   if(this.locked()||!this.data.cart.length)return;
   this.setData({loading:true,error:''});try{const cart=await Promise.all(this.data.cart.map(async u=>({...await api.sales.lookup(u.id,u.channel==='agent'?this.data.customerRequestId:undefined),channel:u.channel,price:'',agentPrice:u.agentPrice})));this.setData({cart});await this.requote();}catch(e){this.setData({quote:null,total:null,error:e.message});}finally{this.setData({loading:false});}
  },
  async onCheckout(){
   if(this.locked()||this.data.quoting)return;
-  if(!this.data.quote||!this.data.cart.length)return this.$toast('请先获取有效报价');
+  const error=firstError([
+   ['cart', value=>!value.length&&'请先添加要收银的设备'],
+   ['payIndex', value=>!this.data.payMethods[value]&&'请选择收款方式'],
+  ],this.data);
+  if(showFieldError(this,error||this.validatePrices()||(!this.data.quote?{field:'quote',message:'请先核算报价'}:null)))return;
   this.setData({saving:true,error:''});
   try{
    const changed=this.data.quote.items.some(i=>i.price!==i.basePrice);

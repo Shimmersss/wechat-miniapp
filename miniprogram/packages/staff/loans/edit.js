@@ -2,8 +2,8 @@ const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
 const { ROUTES } = require('../../../utils/router');
 const { PERM } = require('../../../constants/roles');
-const { isPhone, isImei, normalizeSerial, serialError } = require('../../../utils/validate');
-const { upload } = require('../../../utils/request');
+const { isPhone, isImei, normalizeSerial, serialError, firstError, showFieldError } = require('../../../utils/validate');
+const media = require('../../../utils/media');
 const { scan, scanSerial, unitCode } = require('../../../utils/scan');
 const events = require('../../../utils/events');
 const { supportsRam } = require('../../../utils/template');
@@ -119,8 +119,7 @@ createPage({
     if (this.locked() || this.data.form.photos.length >= 9) return;
     this.setData({ uploading: true, error: '' });
     try {
-      const res = await wx.chooseMedia({ count: 9 - this.data.form.photos.length, mediaType: ['image'], sizeType: ['compressed'] });
-      const files = await Promise.all(res.tempFiles.map((f) => upload({ filePath: f.tempFilePath, scope: 'internal', bizType: 'loan_handover' })));
+      const files = await media.pickAndUpload({ count: 9 - this.data.form.photos.length, scope: 'internal', purpose: 'loan_handover' });
       if (!this.destroyed) this.setData({ 'form.photos': this.data.form.photos.concat(files) });
     } catch (e) { if (!/cancel/.test(e.errMsg || '')) this.setData({ error: e.message || e.errMsg || '照片未完成上传' }); }
     finally { if (!this.destroyed) this.setData({ uploading: false }); }
@@ -129,32 +128,40 @@ createPage({
 
   check() {
     const f = this.data.form;
-    if (!f.counterparty.trim()) return '请填写对方（同行 / 门店）';
-    if (!isPhone(f.phone.trim())) return '请填写 11 位联系电话';
-    if (!f.dueAt) return '请选择应归还日期';
-    if (!f.reason.trim()) return '请填写交接说明';
-    if (f.type === 'loan_out') return this.data.units.length ? '' : '请选择要出借的设备';
+    const error = firstError([
+      ['counterparty', value => !value.trim() && '请填写对方（同行 / 门店）'],
+      ['phone', value => !isPhone(value) && '请填写 11 位联系电话'],
+      ['dueAt', value => !value && '请选择应归还日期'],
+      ['reason', value => !value.trim() && '请填写交接说明'],
+    ], f);
+    if (error) return error;
+    if (f.type === 'loan_out') return this.data.units.length ? null : { field: 'units', message: '请选择要出借的设备' };
     const seen = new Set();
     for (const [i, d] of this.data.devices.entries()) {
-      if (!d.model) return `第 ${i + 1} 台请选择型号`;
+      const error = (field, message) => ({ field: 'device-' + i + '-' + field, message });
+      if (!d.model) return error('model', '请选择型号');
       if (d.identifierMode !== 'imei') {
-        const error = serialError(d.serialNo);
-        if (error) return `第 ${i + 1} 台${d.serialNo.trim() ? error : '请填写序列号'}`;
+        const message = serialError(d.serialNo);
+        if (message) return error('serialNo', d.serialNo.trim() ? message : '请填写序列号');
         const key = 'SN:' + d.model.id + ':' + normalizeSerial(d.serialNo);
-        if (seen.has(key)) return `第 ${i + 1} 台序列号重复`;
+        if (seen.has(key)) return error('serialNo', '序列号重复');
         seen.add(key);
         continue;
       }
-      if (!isImei(d.imei1.trim())) return `第 ${i + 1} 台 IMEI1 须为 15 位有效串码`;
-      if (d.imei2.trim() && !isImei(d.imei2.trim())) return `第 ${i + 1} 台 IMEI2 无效`;
-      for (const code of [d.imei1.trim(), d.imei2.trim()].filter(Boolean)) { if (seen.has(code)) return `串码 ${code} 重复`; seen.add(code); }
+      if (!isImei(d.imei1.trim())) return error('imei1', 'IMEI1 须为 15 位有效串码');
+      if (d.imei2.trim() && !isImei(d.imei2.trim())) return error('imei2', 'IMEI2 无效');
+      for (const field of ['imei1', 'imei2']) {
+        const code = d[field].trim();
+        if (!code) continue;
+        if (seen.has(code)) return error(field, '串码重复');
+        seen.add(code);
+      }
     }
-    return '';
+    return null;
   },
   onSubmit() {
     if (this.locked()) return;
-    const error = this.check();
-    if (error) return this.$toast(error);
+    if (showFieldError(this, this.check())) return;
     const f = this.data.form;
     const body = {
       requestKey: 'loan_' + Date.now() + '_' + ++sequence + '_' + Math.random().toString(36).slice(2),

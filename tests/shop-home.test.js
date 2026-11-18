@@ -13,7 +13,7 @@ test('首页入口：16 个入口分两页，每个都有图片，体积在上�
   assert.equal(SHOP_BRANDS.length, 16);
   assert.equal(new Set(SHOP_BRANDS.map((b) => b.key)).size, 16);
   SHOP_BRANDS.forEach((b) => {
-    const file = path.join(__dirname, '../miniprogram/assets/brands', b.key + '.png');
+    const file = path.join(__dirname, '../design-demos/brand-icons/images', b.key + '.png');
     assert.ok(fs.existsSync(file), b.key);
     assert.ok(fs.statSync(file).size <= 30 * 1024, b.key + ' 超过 30KB');
   });

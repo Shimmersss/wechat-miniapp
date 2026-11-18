@@ -21,17 +21,17 @@
         <view class="flex-1"><view class="h3 ellipsis">{{item.name}} {{item.storage}}<text wx:if="{{item.ram}}"> · 运行内存 {{item.ram}}</text></view><view class="tiny muted">{{f.code(item)}} · {{item.color}}</view></view>
         <button class="btn btn-line btn-sm" data-id="{{item.id}}" bindtap="onRemoveUnit" disabled="{{pending || saving}}">移除</button>
       </view>
-      <empty-state wx:if="{{!units.length}}" text="还没有选择设备" />
+      <view id="field-units"><empty-state wx:if="{{!units.length}}" text="还没有选择设备" /><view wx:if="{{errors.units}}" class="field-error">{{errors.units}}</view></view>
     </section-card>
 
     <section-card wx:else title="借入设备" subtitle="{{devices.length}} 台">
       <view wx:for="{{devices}}" wx:key="key" class="device">
         <view class="row mb"><text class="h3">第 {{index + 1}} 台</text><text wx:if="{{devices.length > 1}}" class="small muted" data-index="{{index}}" bindtap="onRemoveDevice">删除</text></view>
-        <view class="field"><view class="field-label required">型号</view><button class="btn btn-line btn-block" data-index="{{index}}" bindtap="onChooseModel" disabled="{{pending || saving}}">{{item.model ? item.model.name : '从型号库选择'}}</button></view>
-        <view wx:if="{{item.identifierMode !== 'imei'}}" class="field"><view class="field-label required">序列号（SN）</view><view class="row gap-sm"><input class="input flex-1" maxlength="40" value="{{item.serialNo}}" data-index="{{index}}" data-field="serialNo" bindinput="onDeviceInput" placeholder="借入设备须登记序列号，归还时核对" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" data-field="serialNo" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view></view>
+        <view id="field-device-{{index}}-model" class="field"><view class="field-label required">型号</view><button class="btn btn-line btn-block" data-index="{{index}}" bindtap="onChooseModel" disabled="{{pending || saving}}">{{item.model ? item.model.name : '从型号库选择'}}</button><view wx:if="{{errors['device-' + index + '-model']}}" class="field-error">{{errors['device-' + index + '-model']}}</view></view>
+        <view wx:if="{{item.identifierMode !== 'imei'}}" id="field-device-{{index}}-serialNo" class="field"><view class="field-label required">序列号（SN）</view><view class="row gap-sm"><input class="input flex-1" maxlength="40" value="{{item.serialNo}}" data-index="{{index}}" data-field="serialNo" bindinput="onDeviceInput" placeholder="借入设备须登记序列号，归还时核对" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" data-field="serialNo" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view><view wx:if="{{errors['device-' + index + '-serialNo']}}" class="field-error">{{errors['device-' + index + '-serialNo']}}</view></view>
         <block wx:else>
-        <view class="field"><view class="field-label required">IMEI1</view><view class="row gap-sm"><input class="input flex-1" type="number" maxlength="15" value="{{item.imei1}}" data-index="{{index}}" data-field="imei1" bindinput="onDeviceInput" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view></view>
-        <view class="field"><view class="field-label">IMEI2（选填）</view><input class="input" type="number" maxlength="15" value="{{item.imei2}}" data-index="{{index}}" data-field="imei2" bindinput="onDeviceInput" disabled="{{pending || saving}}" /></view>
+        <view id="field-device-{{index}}-imei1" class="field"><view class="field-label required">IMEI1</view><view class="row gap-sm"><input class="input flex-1" type="number" maxlength="15" value="{{item.imei1}}" data-index="{{index}}" data-field="imei1" bindinput="onDeviceInput" disabled="{{pending || saving}}" /><button class="btn btn-line btn-sm" data-index="{{index}}" bindtap="onScanImei" disabled="{{pending || saving}}">扫码</button></view><view wx:if="{{errors['device-' + index + '-imei1']}}" class="field-error">{{errors['device-' + index + '-imei1']}}</view></view>
+        <view id="field-device-{{index}}-imei2" class="field"><view class="field-label">IMEI2（选填）</view><input class="input" type="number" maxlength="15" value="{{item.imei2}}" data-index="{{index}}" data-field="imei2" bindinput="onDeviceInput" disabled="{{pending || saving}}" /><view wx:if="{{errors['device-' + index + '-imei2']}}" class="field-error">{{errors['device-' + index + '-imei2']}}</view></view>
         </block>
         <view wx:if="{{item.ramOptions.length}}" class="field"><view class="field-label">运行内存（选填）</view><picker range="{{item.ramOptions}}" data-index="{{index}}" bindchange="onRamPick" disabled="{{pending || saving || loading}}"><view class="picker">{{item.ram || '未填写'}}</view></picker></view>
         <view class="field"><view class="field-label">成色（选填）</view><input class="input" maxlength="60" value="{{item.condition}}" data-index="{{index}}" data-field="condition" bindinput="onDeviceInput" placeholder="如 99新" disabled="{{pending || saving}}" /></view>
@@ -41,15 +41,15 @@
     </section-card>
 
     <section-card title="对方与归还">
-      <view class="field"><view class="field-label required">对方（同行 / 门店）</view><input class="input" maxlength="120" value="{{form.counterparty}}" data-field="counterparty" bindinput="onInput" disabled="{{pending || saving}}" /></view>
-      <view class="field"><view class="field-label required">联系电话</view><input class="input" type="number" maxlength="11" value="{{form.phone}}" data-field="phone" bindinput="onInput" disabled="{{pending || saving}}" /></view>
-      <view class="field"><view class="field-label required">应归还日期</view><picker mode="date" start="{{today}}" value="{{form.dueAt}}" data-field="dueAt" bindchange="onInput" disabled="{{pending || saving}}"><view class="picker">{{form.dueAt || '选择日期'}}</view></picker></view>
-      <view class="field"><view class="field-label required">交接说明</view><textarea class="textarea" maxlength="500" value="{{form.reason}}" data-field="reason" bindinput="onInput" placeholder="如：同行急用，当面交接，外观无划痕" disabled="{{pending || saving}}" /></view>
+      <view id="field-counterparty" class="field"><view class="field-label required">对方（同行 / 门店）</view><input class="input" maxlength="120" value="{{form.counterparty}}" data-field="counterparty" bindinput="onInput" disabled="{{pending || saving}}" /><view wx:if="{{errors.counterparty}}" class="field-error">{{errors.counterparty}}</view></view>
+      <view id="field-phone" class="field"><view class="field-label required">联系电话</view><input class="input" type="number" maxlength="11" value="{{form.phone}}" data-field="phone" bindinput="onInput" disabled="{{pending || saving}}" /><view wx:if="{{errors.phone}}" class="field-error">{{errors.phone}}</view></view>
+      <view id="field-dueAt" class="field"><view class="field-label required">应归还日期</view><picker mode="date" start="{{today}}" value="{{form.dueAt}}" data-field="dueAt" bindchange="onInput" disabled="{{pending || saving}}"><view class="picker">{{form.dueAt || '选择日期'}}</view></picker><view wx:if="{{errors.dueAt}}" class="field-error">{{errors.dueAt}}</view></view>
+      <view id="field-reason" class="field"><view class="field-label required">交接说明</view><textarea class="textarea" maxlength="500" value="{{form.reason}}" data-field="reason" bindinput="onInput" placeholder="如：同行急用，当面交接，外观无划痕" disabled="{{pending || saving}}" /><view wx:if="{{errors.reason}}" class="field-error">{{errors.reason}}</view></view>
       <view class="field"><view class="field-label">备注（选填）</view><input class="input" maxlength="2000" value="{{form.remark}}" data-field="remark" bindinput="onInput" disabled="{{pending || saving}}" /></view>
     </section-card>
 
     <section-card title="交接照片" subtitle="选填 · 仅内部可见">
-      <view class="photos"><view wx:for="{{form.photos}}" wx:key="fileId" class="photo"><image src="{{item.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" bindtap="onRemovePhoto">移除</text></view></view>
+      <view class="photos"><view wx:for="{{form.photos}}" wx:key="fileId" class="photo"><image lazy-load="{{true}}" src="{{item.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" bindtap="onRemovePhoto">移除</text></view></view>
       <button class="btn btn-line btn-block mt" bindtap="onPhotos" loading="{{uploading}}" disabled="{{pending || saving || uploading || form.photos.length >= 9}}">添加交接照片</button>
     </section-card>
 

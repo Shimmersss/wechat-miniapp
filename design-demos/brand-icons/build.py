@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-首页品牌入口配图：生成 miniprogram/assets/brands/<key>.png。
+首页品牌入口配图：生成 design-demos/brand-icons/images/<key>.png。
 
   python3 design-demos/brand-icons/build.py            # 生成全部
   python3 design-demos/brand-icons/build.py apple vivo # 只生成指定品牌
@@ -36,7 +36,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "miniprogram/assets/brands"
+OUT = ROOT / "design-demos/brand-icons/images"
 SIZE = 240
 SCALE = 4  # 先放大渲染再缩小，边缘更干净
 LIMIT = 30 * 1024

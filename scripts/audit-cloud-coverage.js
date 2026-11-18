@@ -126,6 +126,7 @@ function discover() {
       if (!next.endsWith(".js")) next += ".js";
       if (
         next.endsWith("/api/index.js") ||
+        next.endsWith("/config/cloud.local.js") ||
         next.endsWith("/utils/request.js") ||
         !next.startsWith(path.join(root, "miniprogram"))
       )
@@ -155,8 +156,8 @@ function discover() {
         }
       }
       if (
-        /require\([^)]*utils\/request/.test(source) &&
-        /\bupload\s*\(/.test(source)
+        (/require\([^)]*utils\/request/.test(source) && /\bupload\s*\(/.test(source)) ||
+        (/require\([^)]*utils\/media/.test(source) && /\bpickAndUpload\s*\(/.test(source))
       )
         uploads = true;
     }

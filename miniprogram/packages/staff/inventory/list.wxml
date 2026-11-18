@@ -11,11 +11,11 @@
     </view>
   </view>
   <view wx:if="{{!picking}}" class="actions mb">
-    <view wx:if="{{canInbound}}" class="action" bindtap="onNavigate" data-url="/packages/staff/inbound/index"><view class="action-icon"><image src="/assets/icons/inbound.svg" /></view><text>入库</text></view>
-    <view wx:if="{{canSell}}" class="action" bindtap="onStartPick"><view class="action-icon"><image src="/assets/icons/outbound.svg" /></view><text>手动出库</text></view>
-    <view wx:if="{{canSell}}" class="action" bindtap="onScanOut"><view class="action-icon"><image src="/assets/icons/scan.svg" /></view><text>扫码出库</text></view>
-    <view wx:if="{{canShare}}" class="action" bindtap="onStartAgent"><view class="action-icon"><image src="/assets/icons/forward.svg" /></view><text>代理转发</text></view>
-    <view wx:if="{{canStocktake}}" class="action stocktake-entry" bindtap="onStocktake"><view class="action-icon"><image src="/assets/icons/list.svg" /></view><text>库存盘点</text></view>
+    <view wx:if="{{canInbound}}" class="action" bindtap="onNavigate" data-url="/packages/staff/inbound/index"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/inbound.svg" /></view><text>入库</text></view>
+    <view wx:if="{{canSell}}" class="action" bindtap="onStartPick"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/outbound.svg" /></view><text>手动出库</text></view>
+    <view wx:if="{{canSell}}" class="action" bindtap="onScanOut"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/scan.svg" /></view><text>扫码出库</text></view>
+    <view wx:if="{{canShare}}" class="action" bindtap="onStartAgent"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/forward.svg" /></view><text>代理转发</text></view>
+    <view wx:if="{{canStocktake}}" class="action stocktake-entry" bindtap="onStocktake"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/list.svg" /></view><text>库存盘点</text></view>
   </view>
   <view wx:else class="notice row"><text class="flex-1">{{pickMode === 'agent' ? '勾选在库可售设备，批量开启或关闭“允许代理转发”。' : pickFor === 'loan' ? '勾选要出借的在库自有设备（可多选），确认后带回出借单。' : '勾选要出库的在库设备（可多选），确认后进入收银登记实收并扣库。'}}</text><button class="btn btn-line btn-sm" bindtap="onSelectAll">全选本页</button></view>
   <view class="row gap-sm mb"><input class="search-bar flex-1" placeholder="型号 / 完整 IMEI / 设备编号" value="{{keyword}}" bindinput="onKeyword" bindconfirm="onSearch" confirm-type="search" /><button class="btn btn-line btn-sm" bindtap="onScan">扫码</button><button class="btn btn-line btn-sm" bindtap="onToggleFilter">筛选</button></view>
@@ -35,7 +35,7 @@
     <view wx:if="{{pickMode === 'agent'}}" class="small mt-sm {{item.flags.shareAgent ? 'agent-on' : 'muted'}}">{{item.flags.shareAgent ? '已开启代理转发' : '未开启代理转发'}}</view>
     <view class="tiny muted mt-sm">成本 {{item.cost !== undefined ? '¥' + f.maskMoney(item.cost, privacy) : '无权限查看'}} · 批发 {{item.wholesale !== undefined ? '¥' + f.maskMoney(item.wholesale, privacy) : '无权限查看'}}</view>
   </view>
-  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的库存" /><view wx:if="{{loading}}" class="small muted mb">加载中…</view>
+  <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的库存" /><view wx:if="{{loading}}" class="small muted mb">加载中…</view><view wx:elif="{{!error && !hasMore && list.length}}" class="tiny muted center mt">没有更多了</view>
   <view wx:if="{{picking}}" class="footer-space"></view>
 </view>
 <view wx:if="{{pickMode === 'agent'}}" class="footer-bar">

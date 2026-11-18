@@ -1,7 +1,7 @@
 const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
 const { ROUTES } = require('../../../utils/router');
-const { isPhone } = require('../../../utils/validate');
+const { isPhone, firstError, showFieldError } = require('../../../utils/validate');
 
 /**
  * 申请成为代理（框架文档 7.2、十三.1）：姓名、手机号、地区、可选邀请码，须同意代理协议；
@@ -30,10 +30,12 @@ createPage({
   async onSubmit() {
     if (this.data.saving) return;
     const f = this.data.form;
-    if (!f.name.trim()) return this.$toast('请填写姓名或昵称');
-    if (!isPhone(f.phone.trim())) return this.$toast('请填写 11 位手机号');
-    if (!f.region.length) return this.$toast('请选择所在地区');
-    if (!this.data.agreed) return this.$toast('请先阅读并同意代理协议');
+    if (showFieldError(this, firstError([
+      ['name', value => !value.trim() && '请填写姓名或昵称'],
+      ['phone', value => !isPhone(value) && '请填写 11 位手机号'],
+      ['region', value => !value.length && '请选择所在地区'],
+      ['agreed', value => !value && '请先阅读并同意代理协议'],
+    ], { ...f, agreed: this.data.agreed }))) return;
     this.setData({ saving: true, error: '' });
     try {
       const me = await api.agent.apply({ name: f.name.trim(), phone: f.phone.trim(), region: f.region.join(' '), agreed: true, ...(f.inviteCode.trim() ? { inviteCode: f.inviteCode.trim() } : {}) });
