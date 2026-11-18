@@ -79,8 +79,7 @@ function request(options) {
         header: headers,
         success: (res) => {
           if (res.statusCode >= 400) {
-            const message = res.data && res.data.message;
-            return reject(new ApiError(res.statusCode, message || httpErrorMessage(res.statusCode)));
+            return reject(responseError(res));
           }
           try {
             resolve(unwrap(res.data));
@@ -127,6 +126,15 @@ function httpErrorMessage(status) {
   return status >= 500 ? '服务器开小差了，请稍后重试' : '请求未完成，请稍后重试';
 }
 
+function responseError(res) {
+  const body = res.data;
+  if (typeof body?.code === 'number' && body.code !== 0 && typeof body.message === 'string' && body.message) {
+    return new ApiError(res.statusCode, body.message, body.data);
+  }
+  if (res.statusCode >= 500) console.warn('[request] HTTP', res.statusCode, body?.message || '');
+  return new ApiError(res.statusCode, httpErrorMessage(res.statusCode));
+}
+
 async function transportError(err) {
   const detail = String(err?.errMsg || err?.message || err || '');
   console.warn('[request]', detail);
@@ -164,7 +172,7 @@ function callCloud({ url, method, data, headers }) {
         timeout: config.timeout,
         success: (res) => {
           if (res.statusCode >= 400 && res.data?.code === undefined)
-            return reject(new ApiError(res.statusCode, res.data?.message || httpErrorMessage(res.statusCode)));
+            return reject(responseError(res));
           try {
             resolve(unwrap(res.data));
           } catch (e) {

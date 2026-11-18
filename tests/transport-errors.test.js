@@ -16,3 +16,20 @@ test('传输错误显示可操作的中文提示', async () => {
     assert.equal((await transportError(error)).message, message);
   }
 });
+
+test('网关 HTTP 5xx 忽略网关原始说明，业务信封保留服务端文案', async () => {
+  const config = require('../miniprogram/config/index');
+  const { request } = require('../miniprogram/utils/request');
+  config.useMock = false;
+  config.useCloud = true;
+  config.cloudHttpBaseUrl = 'https://api.example.test';
+  let data = { message: 'upstream socket closed' };
+  global.wx = {
+    getStorageSync: () => '',
+    request: ({ success }) => success({ statusCode: 503, data }),
+  };
+  const send = () => request({ url: '/shop/home', showError: false });
+  await assert.rejects(send, /服务器开小差了/);
+  data = { code: 503, message: '门店暂不可用' };
+  await assert.rejects(send, /门店暂不可用/);
+});
