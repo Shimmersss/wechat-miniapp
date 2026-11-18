@@ -56,8 +56,8 @@ function request(options) {
 
   const done = (promise) =>
     promise
-      .catch((err) => {
-        const apiErr = err instanceof ApiError ? err : transportError(err);
+      .catch(async (err) => {
+        const apiErr = err instanceof ApiError ? err : await transportError(err);
         handleError(apiErr, showError);
         throw apiErr;
       })
@@ -80,7 +80,7 @@ function request(options) {
         success: (res) => {
           if (res.statusCode >= 400) {
             const message = res.data && res.data.message;
-            return reject(new ApiError(res.statusCode, message || `服务异常(${res.statusCode})`));
+            return reject(new ApiError(res.statusCode, message || httpErrorMessage(res.statusCode)));
           }
           try {
             resolve(unwrap(res.data));
@@ -121,13 +121,25 @@ const CLOUD_FUNCTIONS = {
   units: 'staff-stock', stocktakes: 'staff-stock', 'stocktake-sessions': 'staff-stock',
   sales: 'staff-sales', 'sales-orders': 'staff-sales', files: 'files', loans: 'staff-loans', 'repair-orders': 'staff-repair', 'repair-parts': 'staff-repair'
 };
-function transportError(err) {
+function httpErrorMessage(status) {
+  if (status === 401) return '登录已失效，请重新登录';
+  if (status === 404) return '后端接口未部署';
+  return status >= 500 ? '服务器开小差了，请稍后重试' : '请求未完成，请稍后重试';
+}
+
+async function transportError(err) {
   const detail = String(err?.errMsg || err?.message || err || '');
   console.warn('[request]', detail);
   if (/-505005|FUNCTIONS_NOT_FOUND/i.test(detail)) return new ApiError(-1, '后端接口未部署');
   if (/domain list|合法域名/i.test(detail)) return new ApiError(-1, '云开发网关未加入小程序的 request 合法域名');
+  if (err?.statusCode >= 500) return new ApiError(err.statusCode, httpErrorMessage(err.statusCode));
+  const network = await new Promise(resolve => {
+    if (typeof wx.getNetworkType !== 'function') return resolve();
+    wx.getNetworkType({ success: resolve, fail: () => resolve() });
+  });
+  if (network?.networkType === 'none') return new ApiError(-1, '当前没有网络');
   if (/timeout|timed out/i.test(detail)) return new ApiError(-1, '连接服务器超时，请稍后重试');
-  return new ApiError(-1, detail || '连接服务器失败，请稍后重试');
+  return new ApiError(-1, '网络不稳定，请检查网络后重试');
 }
 
 /** HTTPS 网关传输；身份依靠会话及 wx.login code 换取，禁止回退默认云环境。 */
@@ -152,7 +164,7 @@ function callCloud({ url, method, data, headers }) {
         timeout: config.timeout,
         success: (res) => {
           if (res.statusCode >= 400 && res.data?.code === undefined)
-            return reject(new ApiError(res.statusCode, res.statusCode === 404 ? '后端接口未部署' : `服务异常(${res.statusCode})`));
+            return reject(new ApiError(res.statusCode, res.data?.message || httpErrorMessage(res.statusCode)));
           try {
             resolve(unwrap(res.data));
           } catch (e) {
@@ -199,7 +211,17 @@ function unwrap(body) {
  * 文件上传。scope 区分公开设备照片(public)与内部收货凭证(internal)，服务端按 scope 分桶并控制访问权限。
  * @returns {Promise<{ fileId: string, url: string }>}
  */
-function upload({ filePath, scope = 'public', bizType = '' }) {
+async function upload(options) {
+  try {
+    return await sendUpload(options);
+  } catch (err) {
+    if (err.code === 401) throw err;
+    console.warn('[upload]', err.errMsg || err.message);
+    throw new ApiError(err.code, '上传未完成，请重试');
+  }
+}
+
+function sendUpload({ filePath, scope = 'public', bizType = '' }) {
   if (config.useMock) {
     return Promise.resolve().then(() => require('../mock/index').registerFile({ filePath, scope }));
   }
@@ -232,7 +254,7 @@ async function uploadCloud({ filePath, scope, bizType }) {
   if (!bytes || Object.prototype.toString.call(bytes) !== '[object ArrayBuffer]' || !bytes.byteLength || bytes.byteLength > 32 * 1024 * 1024)
     throw new ApiError(413, '文件须为1～32MB');
   const requestKey = 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  const intent = await request({ url: '/files/upload-intent', method: 'POST', data: { scope, size: bytes.byteLength, bizType, requestKey } });
+  const intent = await request({ url: '/files/upload-intent', method: 'POST', data: { scope, size: bytes.byteLength, bizType, requestKey }, showError: false });
   if (intent.file) return intent.file;
   // signed PUT 不携带员工令牌，更不携带存储密钥。上传失败不会继续登记。
   await new Promise((resolve, reject) => wx.request({
@@ -244,7 +266,7 @@ async function uploadCloud({ filePath, scope, bizType }) {
   bytes = null;
   // 分段核验中的响应不是文件成功；只在最终登记完成后返回页面。
   for (let step = 0; step < 130; step++) {
-    const result = await request({ url: '/files/' + encodeURIComponent(intent.uploadId) + '/complete', method: 'POST', data: {}, loading: false });
+    const result = await request({ url: '/files/' + encodeURIComponent(intent.uploadId) + '/complete', method: 'POST', data: {}, loading: false, showError: false });
     if (result.fileId) return result;
     if (!result.processing) throw new ApiError(500, '文件核验响应无效');
   }
@@ -259,4 +281,4 @@ const http = {
   del: (url, data, opts) => request({ url, method: 'DELETE', data, ...opts })
 };
 
-module.exports = { request, upload, http, ApiError };
+module.exports = { request, upload, http, ApiError, transportError };
