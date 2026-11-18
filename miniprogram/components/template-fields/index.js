@@ -1,15 +1,19 @@
 const { upload } = require('../../utils/request');
 Component({
   properties: { fields: Array, values: Object, disabled: Boolean },
-  data: { uploading: false, custom: {} },
+  data: { uploading: false, custom: {}, customLabels: {} },
   observers: {
     'fields, values': function(fields, values) {
       const custom = {};
+      const customLabels = {};
       (fields || []).forEach(f => {
         const value = (values || {})[f.key];
-        if (f.allowCustom && f.type === 'select') custom[f.key] = value ? !(f.options || []).includes(value) : !!this.data.custom[f.key];
+        if (f.allowCustom && f.type === 'select') {
+          custom[f.key] = value ? !(f.options || []).includes(value) : !!this.data.custom[f.key];
+          customLabels[f.key] = custom[f.key] && value ? '自定义：' + value : '自定义';
+        }
       });
-      this.setData({ custom });
+      this.setData({ custom, customLabels });
     }
   },
   methods: {
