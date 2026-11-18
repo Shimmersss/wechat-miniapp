@@ -28,7 +28,7 @@
     <view wx:for="{{unit.videos}}" wx:key="*this" class="card"><video class="product-video" src="{{item}}" poster="{{index === 0 ? unit.posterUrl : ''}}" /></view>
     <section-card title="放心承诺">
       <view class="grid-2">
-        <metric-item label="店铺质保" value="{{unit.warrantyDays === null ? '以门店确认为准' : unit.warrantyDays + ' 天'}}" />
+        <metric-item label="店铺质保" value="{{unit.warrantyDays === null || unit.warrantyDays === undefined ? '以门店确认为准' : unit.warrantyDays + ' 天'}}" />
         <metric-item label="检测说明" value="一机一报告" />
       </view>
       <view class="divider"></view>

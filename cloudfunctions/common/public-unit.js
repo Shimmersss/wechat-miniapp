@@ -64,8 +64,12 @@ function publicView(u, channel) {
           ? "wholesale"
           : "retail",
     imeiMasked: u.imei_masked,
+    // 未填写时属性可能是 null，不能转成 0 天
     warrantyDays:
-      warranty !== undefined && warranty !== "" ? Number(warranty) : null,
+      warranty === undefined || warranty === null || String(warranty).trim() === "" ||
+      !Number.isFinite(Number(warranty))
+        ? null
+        : Number(warranty),
     publicFields: fields
       .filter((f) => !FORBIDDEN.has(f.key) && open(f))
       .map((f) => ({

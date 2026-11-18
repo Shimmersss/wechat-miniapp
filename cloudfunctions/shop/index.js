@@ -84,8 +84,12 @@ function publicView(u, audience) {
     serialMasked: u.serial_masked || null,
     // 按数量入库的同批设备在列表里折叠为一张卡片，lotCount 为在售件数
     lotCount: u.lot_count ? Number(u.lot_count) : null,
+    // 未填写时属性可能是 null，不能转成 0 天（与 common/public-unit.js 一致）
     warrantyDays:
-      warranty !== undefined && warranty !== "" ? Number(warranty) : null,
+      warranty === undefined || warranty === null || String(warranty).trim() === "" ||
+      !Number.isFinite(Number(warranty))
+        ? null
+        : Number(warranty),
     publicFields: fields
       .filter((f) => !FORBIDDEN.has(f.key) && open(f))
       .map((f) => ({
