@@ -7,3 +7,5 @@ CREATE POLICY xiamu_brand_assets_no_client_update ON storage.objects AS RESTRICT
   FOR UPDATE TO anon, authenticated USING (bucket_id<>'xiamu-brand-assets') WITH CHECK (bucket_id<>'xiamu-brand-assets');
 CREATE POLICY xiamu_brand_assets_no_client_delete ON storage.objects AS RESTRICTIVE
   FOR DELETE TO anon, authenticated USING (bucket_id<>'xiamu-brand-assets');
+CREATE POLICY xiamu_brand_assets_public_read ON storage.objects
+  FOR SELECT TO anon, authenticated USING (bucket_id='xiamu-brand-assets');
