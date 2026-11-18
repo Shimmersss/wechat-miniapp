@@ -5,6 +5,6 @@
  <scroll-view scroll-x class="mb"><view class="chips nowrap"><view wx:for="{{filters}}" wx:key="value" class="chip {{activeFilter === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="onFilterTap">{{item.label}}</view></view></scroll-view>
  <view wx:if="{{error}}" class="notice">{{error}}</view>
  <view wx:for="{{list}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="onItemTap"><view class="row"><text class="h3 flex-1">{{item.unitName}}</text><status-pill text="{{f.label(statusMap,item.status)}}" tone="{{f.tone(statusMap,item.status)}}" /></view><view class="tiny muted mt-sm">{{item.no}} · {{item.seller}} · {{f.time(item.createdAt)}}</view><view class="small mt-sm">成交 ¥{{f.maskMoney(item.amount,privacy)}} · 已退 ¥{{f.maskMoney(item.refundAmount,privacy)}} · 净收 ¥{{f.maskMoney(item.netAmount,privacy)}}</view></view>
- <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的销售单" /><view wx:if="{{loading}}" class="small muted">加载中…</view>
+ <empty-state wx:if="{{!loading && !error && !list.length}}" text="暂无符合条件的销售单" /><view wx:if="{{loading}}" class="small muted">加载中…</view><view wx:elif="{{!error && !hasMore && list.length}}" class="tiny muted center mt">没有更多了</view>
 </view>
 </theme-shell>

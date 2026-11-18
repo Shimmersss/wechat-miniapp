@@ -2,7 +2,7 @@
  * 顾客端（对应 server/src/shop-share.js）。覆盖首页、在售列表、详情及分类目录；咨询/预约按请求前缀交由 customer。
  */
 const { createHandler, rpc, fail, text } = require("./shared/gateway");
-const { resolveFiles } = require("./shared/stock-files");
+const { resolveThumbnails } = require("./shared/stock-files");
 const { currentUser } = require("./shared/identity");
 const sharedChannel = require("./shared/shop-channel");
 const { SENSITIVE_FIELDS } = require("./shared/roles");
@@ -64,14 +64,16 @@ function publicView(u, audience) {
       .filter(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("image/"),
       )
-      .map((f) => f.resolved_url),
+      .map((f) => f.resolved_url).filter(Boolean),
     videos: (u.attached || [])
       .filter(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("video/"),
       )
-      .map((f) => f.resolved_url),
-    posterUrl: (u.attached || []).find(f => f.field_key === "publicImages" && f.poster_url)?.poster_url,
+      .map((f) => f.resolved_url).filter(Boolean),
+    thumbUrl: u.thumb_url,
+    posterUrl: u.poster_url || (u.attached || []).find(f => f.field_key === "publicImages" && f.poster_url)?.poster_url,
     cover:
+      u.thumb_url || u.poster_url ||
       (u.attached || []).find(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("image/"),
       )?.resolved_url || "",
@@ -93,7 +95,7 @@ function publicView(u, audience) {
         value:
           f.type === "image"
             ? (u.attached || [])
-                .filter((file) => file.field_key === f.key)
+                .filter((file) => file.field_key === f.key && file.resolved_url)
                 .map((file) => ({ fileId: file.id, url: file.resolved_url }))
             : a[f.key],
       }))
@@ -159,7 +161,7 @@ async function units(ctx) {
       offset: p.offset,
     },
   });
-  await resolveFiles(res.rows, user);
+  await resolveThumbnails(res.rows, user);
   return {
     list: res.rows.map((u) => publicView(u, peer ? "peer" : "customer")),
     total: Number(res.total),

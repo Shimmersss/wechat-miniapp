@@ -13,13 +13,13 @@
    <button wx:if="{{canPrice && detail.status === 'in_stock'}}" class="btn btn-soft btn-block mt" bindtap="onEditPrice" disabled="{{mutating}}">修改价格</button>
   </section-card>
   <section-card title="机况与参数">
-   <view wx:for="{{detail.parameters}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><text wx:if="{{item.type !== 'image'}}" class="parameter-value">{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text><view wx:else class="media-list"><image wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" src="{{photo.url}}" data-file="{{photo.fileId}}" bindtap="onPreview" mode="aspectFill" /></view></view>
+   <view wx:for="{{detail.parameters}}" wx:key="key" class="list-item"><text class="muted">{{item.label}}</text><text wx:if="{{item.type !== 'image'}}" class="parameter-value">{{item.type === 'boolean' ? (item.value ? '是' : '否') : item.value}}</text><view wx:else class="media-list"><image lazy-load="{{true}}" wx:for="{{item.value}}" wx:for-item="photo" wx:key="fileId" src="{{photo.url}}" data-file="{{photo.fileId}}" bindtap="onPreview" mode="aspectFill" /></view></view>
    <view class="h3 mt">同行描述</view><view class="small mt-sm">{{detail.peerDesc || '未填写'}}</view><view class="h3 mt">顾客描述</view><view class="small mt-sm">{{detail.customerDesc || '未填写'}}</view><view class="h3 mt">内部备注</view><view class="small mt-sm">{{detail.internalNote !== undefined ? detail.internalNote || '未填写' : '无权限查看'}}</view>
   </section-card>
   <section-card title="设备相册">
    <view class="chips mb"><view class="chip {{album === 'public' ? 'active' : ''}}" data-value="public" bindtap="onAlbum">公开实拍</view><view class="chip {{album === 'internal' ? 'active' : ''}}" data-value="internal" bindtap="onAlbum">内部凭证</view></view>
-   <view wx:if="{{album === 'public'}}" class="media-list"><block wx:for="{{detail.publicImages}}" wx:key="fileId"><video wx:if="{{item.mediaType === 'video'}}" src="{{item.url}}" /><image wx:else src="{{item.url}}" data-file="{{item.fileId}}" bindtap="onPreview" mode="aspectFill" /></block></view>
-   <view wx:else><view wx:if="{{!detail.receiptImages}}" class="small muted">无可访问的内部凭证</view><view class="media-list"><image wx:for="{{detail.receiptImages}}" wx:key="fileId" src="{{item.url}}" data-file="{{item.fileId}}" bindtap="onPreview" mode="aspectFill" /></view></view>
+   <view wx:if="{{album === 'public'}}" class="media-list"><block wx:for="{{detail.publicImages}}" wx:key="fileId"><video wx:if="{{item.mediaType === 'video'}}" src="{{item.url}}" /><image lazy-load="{{true}}" wx:else src="{{item.url}}" data-file="{{item.fileId}}" bindtap="onPreview" mode="aspectFill" /></block></view>
+   <view wx:else><view wx:if="{{!detail.receiptImages}}" class="small muted">无可访问的内部凭证</view><view class="media-list"><image lazy-load="{{true}}" wx:for="{{detail.receiptImages}}" wx:key="fileId" src="{{item.url}}" data-file="{{item.fileId}}" bindtap="onPreview" mode="aspectFill" /></view></view>
   </section-card>
   <section-card title="展示与分享">
    <view class="list-item"><text>展示在店铺</text><switch checked="{{detail.flags.showInShop}}" data-field="showInShop" bindchange="onFlag" disabled="{{mutating || !canShare || detail.status !== 'in_stock'}}" /></view>
@@ -42,7 +42,7 @@
   </section-card>
   <button wx:if="{{canSell}}" class="btn btn-primary btn-block mb" bindtap="onSell">加入收银单</button>
   <button wx:if="{{canRepair}}" class="btn btn-line btn-block mb" bindtap="onRepair">本店设备送修</button>
-  <view wx:if="{{canLoan && detail.loan}}" class="card" bindtap="onOpenLoan"><view class="row"><view><view class="h3">{{loanTypeLabels[detail.loan.type]}} {{detail.loan.no}}</view><view class="tiny muted mt-sm">{{detail.status === 'recheck' ? '已归还，复检通过后到单据里完结' : '归还在单据里逐台登记'}}</view></view><image class="loan-chevron" src="/assets/icons/chevron-gray.svg" /></view></view>
+  <view wx:if="{{canLoan && detail.loan}}" class="card" bindtap="onOpenLoan"><view class="row"><view><view class="h3">{{loanTypeLabels[detail.loan.type]}} {{detail.loan.no}}</view><view class="tiny muted mt-sm">{{detail.status === 'recheck' ? '已归还，复检通过后到单据里完结' : '归还在单据里逐台登记'}}</view></view><image lazy-load="{{true}}" class="loan-chevron" src="/assets/icons/chevron-gray.svg" /></view></view>
   <button wx:if="{{canLoanOut}}" class="btn btn-line btn-block mb" bindtap="onLoanOut" disabled="{{mutating}}">出借给同行</button>
   <view class="row gap-sm mb"><button wx:if="{{canLabel}}" class="btn btn-line flex-1" bindtap="onLabel">标签</button><button wx:if="{{canShare && detail.status === 'in_stock'}}" class="btn btn-line flex-1" bindtap="onShare">分享</button></view>
  </block>

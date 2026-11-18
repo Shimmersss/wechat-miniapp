@@ -550,7 +550,9 @@ module.exports = async function (app, deps) {
   }
   route("GET", "/repair-orders/board", async (r) => {
     const s = filter(r),
-      p = page({ ...r.query, pageSize: 200 }),
+      p = page(r.query);
+    if (p.pageSize > 200) fail(400, "每页数量无效");
+    const
       clause = s.where.length ? " WHERE " + s.where.join(" AND ") : "",
       [rows] = await pool.query(
         "SELECT * FROM repair_orders" +
@@ -561,8 +563,12 @@ module.exports = async function (app, deps) {
       columns = Object.fromEntries(
         [...REPAIR_FLOW, "cancelled"].map((k) => [k, []]),
       );
-    for (const row of rows)
-      columns[row.status].push(await repair.view(pool, row, r));
+    const list = [];
+    for (const row of rows) {
+      const item = await repair.view(pool, row, r);
+      columns[row.status].push(item);
+      list.push(item);
+    }
     const count = await one(
       pool,
       "SELECT COUNT(*) n FROM repair_orders" + clause,
@@ -570,6 +576,7 @@ module.exports = async function (app, deps) {
     );
     return {
       columns,
+      list,
       total: Number(count.n),
       page: p.page,
       pageSize: p.pageSize,

@@ -49,7 +49,7 @@
     </section-card>
 
     <section-card title="交接照片" subtitle="选填 · 仅内部可见">
-      <view class="photos"><view wx:for="{{form.photos}}" wx:key="fileId" class="photo"><image src="{{item.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" bindtap="onRemovePhoto">移除</text></view></view>
+      <view class="photos"><view wx:for="{{form.photos}}" wx:key="fileId" class="photo"><image lazy-load="{{true}}" src="{{item.url}}" mode="aspectFill" /><text class="tiny muted" data-index="{{index}}" bindtap="onRemovePhoto">移除</text></view></view>
       <button class="btn btn-line btn-block mt" bindtap="onPhotos" loading="{{uploading}}" disabled="{{pending || saving || uploading || form.photos.length >= 9}}">添加交接照片</button>
     </section-card>
 

@@ -7,8 +7,8 @@ const { http } = require('../../utils/request');
 module.exports = {
   /** { unitId?:string, unitIds?:string[], channel: 'customer'|'peer'|'agent' } → { shareId, path, title, price, imageUrl, expireAt } */
   createLink: (data) => http.post('/share/links', data, { requireSession: true }),
-  /** shareId → 已核验的公开商品与渠道价格；无权/撤销/失效明确报错 */
-  resolve: (shareId) => http.get(`/shop/shares/${shareId}`, undefined, { optionalSession: true }),
+  /** shareId, thumbnails? → 已核验的公开商品与渠道价格；无权/撤销/失效明确报错 */
+  resolve: (shareId, thumbnails = false) => http.get(`/shop/shares/${shareId}`, thumbnails ? { thumbnails: true } : undefined, { optionalSession: true }),
   /** {reason} → {revoked:true}，仅分享创建者可撤销 */
   revoke: (shareId, data) => http.patch(`/share/links/${shareId}/revoke`, data),
   /** 海报数据 → {units,expireAt,qrcode:{mime,base64}|null,qrcodeStatus,message?}；缺外部凭据时不返回假小程序码 */

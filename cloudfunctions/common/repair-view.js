@@ -16,7 +16,7 @@ function view(action,r,u,d){
  if(action==='parts.list')return {list:r.rows.map(x=>part(x,u)),total:Number(r.total),page:d.page,pageSize:d.pageSize};
  if(['parts.create','parts.receive'].includes(action))return part(r,u);
  if(action==='parts.ledger')return {list:r.rows.map(p=>({id:p.id,kind:p.kind,quantity:p.quantity,time:p.created_at,...(u.permissions.some(k=>[PERM.REPAIR_ASSIGN,PERM.REPAIR_CASH,PERM.PARTS_MANAGE].includes(k))||p.engineer_id===u.id?{orderId:p.order_id,issueId:p.issue_id,reason:p.reason,operator:p.operator}:{}),...(cost(u)?{cost:Number(p.cost_amount)}:{})})),total:Number(r.total),page:d.page,pageSize:d.pageSize};
- if(action==='list'||action==='board'){const list=r.rows.map(x=>detail(x,u));if(action==='list')return {list,total:Number(r.total),page:d.page,pageSize:d.pageSize};const columns=Object.fromEntries(['pending_check','checking','pending_confirm','repairing','pending_pickup','completed','cancelled'].map(k=>[k,[]]));for(const x of list)columns[x.status].push(x);return {columns,total:Number(r.total),page:d.page,pageSize:d.pageSize,hasMore:d.offset+list.length<Number(r.total)};}
+ if(action==='list'||action==='board'){const list=r.rows.map(x=>detail(x,u));if(action==='list')return {list,total:Number(r.total),page:d.page,pageSize:d.pageSize};const columns=Object.fromEntries(['pending_check','checking','pending_confirm','repairing','pending_pickup','completed','cancelled'].map(k=>[k,[]]));for(const x of list)columns[x.status].push(x);return {columns,list,total:Number(r.total),page:d.page,pageSize:d.pageSize,hasMore:d.offset+list.length<Number(r.total)};}
  return detail(r,u);
 }
 module.exports={view};

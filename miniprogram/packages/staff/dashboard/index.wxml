@@ -1,12 +1,12 @@
 <theme-shell>
 <view class="container {{editing ? '' : 'has-staff-tabbar'}}">
   <view class="hero">
-    <image class="hero-deco" src="/packages/staff/dashboard/tools/hero-deco.svg" mode="aspectFill" />
+    <image lazy-load="{{true}}" class="hero-deco" src="/packages/staff/dashboard/tools/hero-deco.svg" mode="aspectFill" />
     <view class="hero-top">
       <view class="hero-brand"><view class="hero-logo">夏</view><text class="hero-name">{{brand.name}}</text></view>
       <view class="hero-actions">
         <text class="hero-role">{{roleLabel}}</text>
-        <view class="eye" bindtap="togglePrivacy"><image class="eye-icon" src="/assets/icons/{{privacy ? 'eye-off-white' : 'eye-white'}}.svg" /></view>
+        <view class="eye" bindtap="togglePrivacy"><image lazy-load="{{true}}" class="eye-icon" src="/assets/icons/{{privacy ? 'eye-off-white' : 'eye-white'}}.svg" /></view>
       </view>
     </view>
     <view class="hero-greet">{{greeting}}，{{displayName}}</view>
@@ -21,13 +21,13 @@
       <view class="tool-grid">
         <view wx:for="{{pinned}}" wx:key="key" class="tool" hover-class="tool-press" bindtap="onNavigate" data-url="{{item.url}}">
           <view class="tool-icon">
-            <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+            <image lazy-load="{{true}}" class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
             <text wx:if="{{badges[item.key]}}" class="tool-badge">{{badges[item.key]}}</text>
           </view>
           <text class="tool-name">{{item.text}}</text>
         </view>
         <view wx:if="{{more.length}}" class="tool" hover-class="tool-press" bindtap="onToggleMore">
-          <view class="tool-icon"><image class="tool-img" src="/packages/staff/dashboard/tools/more.svg" /></view>
+          <view class="tool-icon"><image lazy-load="{{true}}" class="tool-img" src="/packages/staff/dashboard/tools/more.svg" /></view>
           <text class="tool-name">{{moreOpen ? '收起' : '更多'}}</text>
         </view>
       </view>
@@ -36,7 +36,7 @@
         <view class="tool-grid">
           <view wx:for="{{more}}" wx:key="key" class="tool" hover-class="tool-press" bindtap="onNavigate" data-url="{{item.url}}">
             <view class="tool-icon">
-              <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+              <image lazy-load="{{true}}" class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
               <text wx:if="{{badges[item.key]}}" class="tool-badge">{{badges[item.key]}}</text>
             </view>
             <text class="tool-name">{{item.text}}</text>
@@ -47,18 +47,18 @@
 
     <section-card wx:if="{{stats}}" title="待处理" subtitle="{{todoKinds ? todoKinds + ' 类' : ''}}">
       <view wx:for="{{todos}}" wx:key="key" class="todo" hover-class="todo-press" bindtap="onNavigate" data-url="{{item.url}}">
-        <image class="todo-icon" src="/packages/staff/dashboard/tools/{{item.tool}}.svg" />
+        <image lazy-load="{{true}}" class="todo-icon" src="/packages/staff/dashboard/tools/{{item.tool}}.svg" />
         <text class="todo-text">{{item.text}}</text>
         <text class="todo-count">{{item.count}}</text>
       </view>
       <view wx:if="{{!todos.length}}" class="todo-empty">
-        <image class="todo-empty-icon" src="/packages/staff/dashboard/tools/done.svg" />
+        <image lazy-load="{{true}}" class="todo-empty-icon" src="/packages/staff/dashboard/tools/done.svg" />
         <text>事情都处理完了</text>
       </view>
     </section-card>
 
     <view class="report-link" hover-class="todo-press" bindtap="onNavigate" data-url="/packages/staff/stats/index">
-      <image class="todo-icon" src="/packages/staff/dashboard/tools/report.svg" />
+      <image lazy-load="{{true}}" class="todo-icon" src="/packages/staff/dashboard/tools/report.svg" />
       <text class="todo-text">查看经营报表</text>
       <text class="muted">›</text>
     </view>
@@ -71,7 +71,7 @@
               style="transform: translate3d({{(dragKey === item.key ? dragCol : item.col) * 100}}%, {{(dragKey === item.key ? dragRow : item.row) * 100}}%, 0); {{dragKey === item.key ? 'left:' + dragX + 'px; top:' + dragY + 'px;' : ''}}"
               data-key="{{item.key}}" bindtouchstart="onDragStart" catchtouchmove="onDragMove" bindtouchend="onDragEnd" bindtouchcancel="onDragEnd">
           <view class="tool-icon">
-            <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+            <image lazy-load="{{true}}" class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
             <view class="tool-mark remove" data-key="{{item.key}}" catchtap="onRemoveTool"></view>
           </view>
           <text class="tool-name">{{item.text}}</text>
@@ -84,7 +84,7 @@
       <view class="tool-grid">
         <view wx:for="{{editMore}}" wx:key="key" class="tool" hover-class="tool-press" data-key="{{item.key}}" bindtap="onAddTool">
           <view class="tool-icon">
-            <image class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
+            <image lazy-load="{{true}}" class="tool-img" src="/packages/staff/dashboard/tools/{{item.key}}.svg" />
             <view class="tool-mark add"></view>
           </view>
           <text class="tool-name">{{item.text}}</text>

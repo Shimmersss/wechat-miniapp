@@ -33,10 +33,16 @@ async function signRead(storedName){
  if(!result.fullSignedURL&&!result.signedURL)fail(503,'文件链接获取失败');
  return result.fullSignedURL||new URL(result.signedURL,origin()).href;
 }
+function thumbnailUrl(signedUrl){
+ const url=new URL(signedUrl);
+ const rule='imageMogr2/thumbnail/360x360/format/webp/quality/60';
+ url.search += (url.search?'&':'?')+rule;
+ return url.href;
+}
 async function signUpload(id){
  const result=await json('object/upload/sign/'+objectPath('xiamu-staging',id),{headers:{'x-upsert':'false'}});
  if(!result.fullURL&&!result.url)fail(503,'上传链接获取失败');
  return result.fullURL||new URL(result.url,origin()).href;
 }
 async function removeTemporary(bucket,key){const r=await request('object/'+objectPath(bucket,key),{method:'DELETE'});if(!r.ok&&r.status!==404)console.warn('[storage] temporary cleanup deferred',r.status);}
-module.exports={MAX_BYTES,CHUNK_BYTES,origin,objectPath,request,json,info,copy,readChunk,signRead,signUpload,removeTemporary};
+module.exports={MAX_BYTES,CHUNK_BYTES,origin,objectPath,request,json,info,copy,readChunk,signRead,thumbnailUrl,signUpload,removeTemporary};

@@ -472,13 +472,16 @@ module.exports = function (
         const rows = filter(d).sort(
             (a, b) => closed(a.status) - closed(b.status),
           ),
-          p = paginate(rows, { ...d, pageSize: 200 }),
+          p = paginate(rows, d),
           columns = Object.fromEntries(
             ["pending_check","checking","pending_confirm","repairing","pending_pickup","completed","cancelled"].map((k) => [k, []]),
           );
-        p.list.forEach((o) => (columns[o.status] || columns.repairing).push(view(o)));
+        if (!Number.isInteger(p.pageSize) || p.pageSize < 1 || p.pageSize > 200) fail(400, "每页数量无效");
+        const list = p.list.map(view);
+        list.forEach((o) => (columns[o.status] || columns.repairing).push(o));
         return {
           columns,
+          list,
           total: rows.length,
           page: p.page,
           pageSize: p.pageSize,

@@ -3,7 +3,7 @@ const { http } = require("../../utils/request");
 module.exports = {
   /** 可分派工程师、安全/成本策略 → {engineers,canManageParts,passwordStorage:false,internalCostPolicy} */
   options: () => http.get("/repair-orders/options"),
-  /** {status?,engineerId?,keyword?,waitingParts?,overdue?,page?} → {columns,total,page,pageSize,hasMore}，每页最多200台；未完结单在前，同类按开单时间新→旧 */
+  /** {status?,engineerId?,keyword?,waitingParts?,overdue?,page?,pageSize?} → {columns,list,total,page,pageSize,hasMore}，默认20台；未完结单在前，同类按开单时间新→旧 */
   board: (params) => http.get("/repair-orders/board", params),
   /** 同看板过滤 + page/pageSize → 标准分页；工程师只能本人获分派工单 */
   list: (params) => http.get("/repair-orders", params),

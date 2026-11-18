@@ -17,7 +17,7 @@
     </view>
     <view wx:if="{{captchaImage}}" class="field">
       <view class="field-label required">图片验证</view>
-      <image src="{{captchaImage}}" mode="widthFix" style="width:400rpx" bindtap="refreshCaptcha" />
+      <image lazy-load="{{true}}" src="{{captchaImage}}" mode="widthFix" style="width:400rpx" bindtap="refreshCaptcha" />
       <input class="input" maxlength="16" disabled="{{sendingCode || submitting}}" placeholder="输入图片文字，再点获取验证码" value="{{captchaCode}}" data-field="captchaCode" bindinput="onInput" />
       <view class="tiny muted">看不清可点击图片更换</view>
     </view>

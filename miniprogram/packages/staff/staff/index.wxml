@@ -1,9 +1,9 @@
 <theme-shell>
 <view class="container">
   <view class="actions mb">
-    <view class="action" bindtap="onCreate"><view class="action-icon"><image src="/assets/icons/plus.svg" /></view><text>新增员工</text></view>
-    <view class="action" bindtap="onNavigate" data-url="/packages/staff/staff/roles"><view class="action-icon"><image src="/assets/icons/users.svg" /></view><text>角色与权限</text></view>
-    <view class="action" bindtap="onNavigate" data-url="/packages/staff/audit/index"><view class="action-icon"><image src="/assets/icons/list.svg" /></view><text>操作日志</text></view>
+    <view class="action" bindtap="onCreate"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/plus.svg" /></view><text>新增员工</text></view>
+    <view class="action" bindtap="onNavigate" data-url="/packages/staff/staff/roles"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/users.svg" /></view><text>角色与权限</text></view>
+    <view class="action" bindtap="onNavigate" data-url="/packages/staff/audit/index"><view class="action-icon"><image lazy-load="{{true}}" src="/assets/icons/list.svg" /></view><text>操作日志</text></view>
   </view>
 
   <view wx:if="{{editor}}" class="card">

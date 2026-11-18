@@ -11,5 +11,5 @@ const program = readFileSync(require('node:path').join(__dirname, 'sql/verify-it
   .replaceAll('/* APPLY_QUERY */', () => applySql({ count: ids.length, fingerprint }));
 
 // Use the local server explicitly. No cloud connection or remote connection string is accepted.
-execFileSync('psql', ['-X', '-h', '127.0.0.1', '-p', '55439', '-d', 'iteration', '-v', 'ON_ERROR_STOP=1'],
+execFileSync('psql', ['-X', '-h', '127.0.0.1', '-p', '55439', '-d', 'iteration_final', '-v', 'ON_ERROR_STOP=1'],
   { input: program, stdio: ['pipe', 'inherit', 'inherit'] });

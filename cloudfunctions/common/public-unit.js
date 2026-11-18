@@ -42,13 +42,16 @@ function publicView(u, channel) {
       .filter(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("image/"),
       )
-      .map((f) => f.resolved_url),
+      .map((f) => f.resolved_url).filter(Boolean),
     videos: (u.attached || [])
       .filter(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("video/"),
       )
-      .map((f) => f.resolved_url),
+      .map((f) => f.resolved_url).filter(Boolean),
+    thumbUrl: u.thumb_url,
+    posterUrl: u.poster_url || (u.attached || []).find(f => f.field_key === "publicImages" && f.poster_url)?.poster_url,
     cover:
+      u.thumb_url || u.poster_url ||
       (u.attached || []).find(
         (f) => f.field_key === "publicImages" && f.mime.startsWith("image/"),
       )?.resolved_url || "",
@@ -72,7 +75,7 @@ function publicView(u, channel) {
         value:
           f.type === "image"
             ? (u.attached || [])
-                .filter((file) => file.field_key === f.key)
+                .filter((file) => file.field_key === f.key && file.resolved_url)
                 .map((file) => ({ fileId: file.id, url: file.resolved_url }))
             : a[f.key],
       }))

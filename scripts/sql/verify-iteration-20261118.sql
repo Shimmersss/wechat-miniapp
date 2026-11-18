@@ -50,3 +50,92 @@ DO $$ BEGIN
   END IF;
 END $$;
 ROLLBACK;
+
+-- 新迁移及 200 台库存分页。所有夹具在本事务回滚。
+BEGIN;
+INSERT INTO users(id,openid) VALUES
+ ('de000000-0000-0000-0000-000000000001','iteration-test-employee'),
+ ('de000000-0000-0000-0000-000000000002','iteration-test-customer');
+INSERT INTO units(model_id,imei1,status,condition_type,cost,retail,wholesale,agent_base,inbound_operator_id)
+SELECT (SELECT id FROM models LIMIT 1), '98'||lpad(i::text,13,'0'), 'in_stock','used',10,20,15,12,
+  'de000000-0000-0000-0000-000000000001' FROM generate_series(1,200) i;
+DO $verify$
+DECLARE
+   y uuid:='de000000-0000-0000-0000-000000000001';
+   c uuid:='de000000-0000-0000-0000-000000000002';
+   u jsonb:=jsonb_build_object('id',y,'staffNo',y,'permissions',jsonb_build_array('inbound:do','consult:manage'));
+   p jsonb;
+   row_v jsonb;
+   request_id_v uuid;
+   upload_id uuid;
+   poster uuid;
+   ids uuid[]:='{}';
+BEGIN
+   FOR index_v IN 0..10 LOOP
+      p:=stock_inventory('units.list',jsonb_build_object('limit',20,'offset',index_v*20),'{}',u,'iteration-stock');
+      IF (p->>'total')::int<>200 OR jsonb_array_length(p->'rows')<>(CASE WHEN index_v<10 THEN 20 ELSE 0 END) THEN
+        RAISE EXCEPTION '库存分页计数错误';
+      END IF;
+      FOR row_v IN SELECT value FROM jsonb_array_elements(p->'rows') LOOP
+        IF (row_v->>'id')::uuid=ANY(ids) THEN RAISE EXCEPTION '分页设备重复'; END IF;
+        ids:=array_append(ids,(row_v->>'id')::uuid);
+      END LOOP;
+   END LOOP;
+   IF cardinality(ids)<>200 THEN RAISE EXCEPTION '分页丢失设备'; END IF;
+
+   request_id_v:=(api_customer_requests('consult.create',NULL,
+      jsonb_build_object('requestKey','consult-1','signature',repeat('a',64),'content','夹具','name','匿名','phone','13900000000'),
+      jsonb_build_object('id',c),'create','{}')->>'id')::uuid;
+   PERFORM api_customer_requests('staff.status',request_id_v,
+      jsonb_build_object('requestKey','follow-1','signature',repeat('b',64),'version',1,'status','contacted','reason','跟进状态变更'),
+      u,'follow','{}');
+   BEGIN
+     PERFORM api_customer_requests('staff.status',request_id_v,
+       jsonb_build_object('requestKey','undo-invalid','signature',repeat('c',64),'version',2,'status','new','reason','任意','undoOf','follow-1'),
+       u||jsonb_build_object('id',c),'wrong-user','{}');
+     RAISE EXCEPTION '其他员工不能撤销';
+   EXCEPTION WHEN SQLSTATE 'P0409' THEN NULL;
+   END;
+   p:=api_customer_requests('staff.status',request_id_v,
+      jsonb_build_object('requestKey','undo-1','signature',repeat('d',64),'version',2,'status','new','reason','任意','undoOf','follow-1'),
+      u,'undo','{}');
+   IF p->>'status'<>'new' OR (SELECT count(*) FROM audit_logs WHERE object_id=request_id_v::text
+        AND reason IN ('跟进状态变更','撤销跟进状态变更'))<>2 THEN
+     RAISE EXCEPTION '跟进撤销或审计错误';
+   END IF;
+
+   BEGIN
+      PERFORM api_file_upload('intent',NULL,
+        '{"scope":"public","size":5242881,"mediaType":"image","bizType":"unit","requestKey":"limit-image"}',u,'upload-limit');
+      RAISE EXCEPTION '图片必须受限';
+   EXCEPTION WHEN SQLSTATE 'P0413' THEN NULL;
+   END;
+   BEGIN
+      PERFORM api_file_upload('intent',NULL,
+        '{"scope":"public","size":26214401,"mediaType":"video","bizType":"unit","requestKey":"limit-video"}',u,'upload-limit');
+      RAISE EXCEPTION '视频必须受限';
+   EXCEPTION WHEN SQLSTATE 'P0413' THEN NULL;
+   END;
+   INSERT INTO files(id,scope,stored_name,mime,byte_size,sha256,owner_id,upload_purpose)
+      VALUES(gen_random_uuid(),'public','xiamu-public/test-cover','image/jpeg',1024,repeat('0',64),y,'unit_poster') RETURNING id INTO poster;
+   p:=api_file_upload('intent',NULL,
+      jsonb_build_object('scope','public','size',1024,'mediaType','video','bizType','unit','requestKey','valid-video','posterId',poster),
+      u,'upload-valid');
+   upload_id:=(p->'upload'->>'id')::uuid;
+   IF (SELECT poster_id FROM file_uploads WHERE id=upload_id) IS DISTINCT FROM poster THEN
+     RAISE EXCEPTION '视频封面未关联';
+   END IF;
+   BEGIN
+     PERFORM api_file_upload('intent',NULL,
+       jsonb_build_object('scope','public','size',1024,'mediaType','video','bizType','unit','requestKey','foreign-poster','posterId',poster),
+       u||jsonb_build_object('id',c),'upload-denied');
+     RAISE EXCEPTION '不能引用其他员工的封面';
+   EXCEPTION WHEN SQLSTATE 'P0400' THEN NULL;
+   END;
+   IF NOT EXISTS(SELECT 1 FROM storage.buckets WHERE id='xiamu-brand-assets' AND public AND allowed_mime_types=ARRAY['image/png']) OR
+      EXISTS(SELECT 1 FROM storage.buckets WHERE id IN ('xiamu-public','xiamu-internal') AND public) THEN
+     RAISE EXCEPTION '公开插画和业务附件的桶权限配置不符';
+   END IF;
+END
+$verify$;
+ROLLBACK;

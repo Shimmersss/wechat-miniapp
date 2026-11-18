@@ -13,7 +13,7 @@ function prepare(action,input,id,user){
   d.signature=hash(JSON.stringify(canonical(action==='create'?{actor:user.id,...input}:{action,actor:user.id,...input})));d.requestKey=text(d.requestKey,'提交标识',100);
   if(action!=='create'){d.version=integer(d.version,'版本',1,2147483647);d.reason=text(d.reason,'处理说明',500);}
  }
- if(['list','board','parts.list','parts.ledger'].includes(action)){d.page=integer(d.page||1,'页码',1,1000000);d.pageSize=action==='board'?200:integer(d.pageSize||20,'每页数量',1,1000);d.offset=(d.page-1)*d.pageSize;if(d.keyword)d.keyword=text(d.keyword,'搜索',100);}
+ if(['list','board','parts.list','parts.ledger'].includes(action)){d.page=integer(d.page||1,'页码',1,1000000);d.pageSize=integer(d.pageSize||20,'每页数量',1,action==='board'?200:1000);d.offset=(d.page-1)*d.pageSize;if(d.keyword)d.keyword=text(d.keyword,'搜索',100);}
  if(['list','board'].includes(action)&&d.status&&!['active','pending_check','checking','pending_confirm','repairing','pending_pickup','completed','cancelled'].includes(d.status))fail(400,'维修状态无效');
  if(d.engineerId)d.engineerId=uuid(d.engineerId);
  if(action==='create'){
