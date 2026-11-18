@@ -50,17 +50,12 @@ createPage({
     this.$go(this.data.agent ? ROUTES.AGENT_CENTER : ROUTES.AGENT_LANDING);
   },
 
-  /** 方案 G 视觉演示：员工身份进经营页，其他身份进顾客首页 */
   /** 切换主题：换的是 theme-shell 的类名，页面样式一行都不用改 */
   onThemeTap(e) {
     const value = e.currentTarget.dataset.value;
     if (value === this.data.themePreference) return;
     theme.set(value);
     this.setData({ themePreference: theme.getPreference() });
-  },
-
-  goDemo() {
-    this.$go(this.data.staff ? ROUTES.DEMO_BIZ : ROUTES.DEMO_HOME);
   },
 
   /** 仅 mock 模式：切换身份以验证不同角色看到的价格与字段 */

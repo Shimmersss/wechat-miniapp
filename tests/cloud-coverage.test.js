@@ -4,8 +4,8 @@ const { discover } = require("../scripts/audit-cloud-coverage");
 const { categories } = require("../cloudfunctions/common/shop-catalog");
 test("已登记页面的API及上传路径均有匹配云函数，精确复合前缀不被域前缀遮挡", () => {
   const r = discover();
-  assert.equal(r.summary.pages, 59);
-  assert.equal(r.summary.demoPages, 4);
+  assert.equal(r.summary.pages, 55);
+  assert.equal(r.summary.demoPages, 0);
   assert.deepEqual(r.missing, []);
   assert.equal(r.summary.unknownPages, 0);
   assert.equal(r.summary.utilityRoutes, 2);

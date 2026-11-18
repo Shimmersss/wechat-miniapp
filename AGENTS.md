@@ -50,7 +50,7 @@
 
 ```
 miniprogram/
-  app.js / app.json / app.wxss   入口、路由（主包 + shop/agent/staff/demo 四个分包，共 59 页）、全局样式
+  app.js / app.json / app.wxss   入口、路由（主包 + shop/agent/staff 三个分包，共 55 页）、全局样式
   config/index.js                环境配置（baseUrl、useMock、品牌文案、storage key）
   constants/
     roles.js                     角色、权限点 PERM、默认角色权限、敏感字段可见角色
@@ -82,7 +82,6 @@ miniprogram/
   packages/agent                 代理端分包：申请、代理中心、加价、订单、收益明细、邀请
   packages/staff                 员工经营端分包：工作台、采购/验收、入库、模板、库存、收银、销售、
                                  维修、出借、分享、代理审核与收益转账、统计、员工权限、审计日志、我的
-  packages/demo                  早期视觉演示，上线前确认是否移除
 ```
 
 ## 必须遵守的约定
