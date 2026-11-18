@@ -78,7 +78,7 @@ miniprogram/
   assets/icons/                  多彩 SVG 图标（深色 / -gray / -white / -light 等变体）
   pages/                         主包：顾客端 tabBar 四页 + 员工登录
   components/shop-filter         首页排序筛选栏（下拉面板、型号弹层、筛选抽屉）
-  assets/brands/<key>.png        首页入口配图（16 个，左右滑动两页），替换同名文件即可，说明见 constants/shop-brands.js
+  assets/images/                商品及首页入口占位图，16 张品牌插画发布到 xiamu-brand-assets
   packages/shop                  顾客端分包：搜索、单机详情、咨询预约、分享海报
   packages/agent                 代理端分包：申请、代理中心、加价、订单、收益明细、邀请
   packages/staff                 员工经营端分包：工作台、采购/验收、入库、模板、库存、收银、销售、

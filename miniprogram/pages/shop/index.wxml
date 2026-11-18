@@ -11,7 +11,10 @@
       <swiper-item wx:for="{{tilePages}}" wx:for-item="pageItem" wx:key="index">
         <view class="brand-grid">
           <view wx:for="{{pageItem.tiles}}" wx:key="key" class="brand-tile {{filters.brandKey === item.key ? 'active' : ''}}" hover-class="brand-press" data-key="{{item.key}}" bindtap="onBrandTap">
-            <image class="brand-img" src="{{item.image}}" mode="aspectFit" />
+            <view class="brand-media">
+              <image wx:if="{{!brandImagesReady[item.key]}}" class="brand-img" src="/assets/images/device-placeholder.png" mode="aspectFit" lazy-load="{{true}}" />
+              <image wx:if="{{item.image}}" class="brand-img {{brandImagesReady[item.key] ? '' : 'brand-img-loading'}}" src="{{item.image}}" data-key="{{item.key}}" bindload="onBrandImageLoad" mode="aspectFit" lazy-load="{{true}}" />
+            </view>
             <text class="brand-name">{{item.label}}</text>
           </view>
         </view>

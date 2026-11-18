@@ -1,10 +1,11 @@
 const {createPage}=require('../../utils/page');
 const api=require('../../api/index');
+const { brandAssetsBaseUrl } = require('../../config/index');
 const channel=require('../../utils/channel');
 const {ROUTES}=require('../../utils/router');
 const {EMPTY_FILTERS,brandTiles,applyBrandTile,toQuery}=require('../../utils/shop-filter');
 createPage({
- data:{tilePages:brandTiles(),tilePage:0,filters:EMPTY_FILTERS,filterRaised:false,list:[],page:1,hasMore:true,loading:false,error:'',scoped:false},
+ data:{tilePages:brandTiles(brandAssetsBaseUrl),brandImagesReady:{},tilePage:0,filters:EMPTY_FILTERS,filterRaised:false,list:[],page:1,hasMore:true,loading:false,error:'',scoped:false},
  onLoad(){this._context=channel.getHeaderValue();return this.refresh();},
  onShow(){const source=channel.getHeaderValue();if(source!==this._context){this._context=source;this._units=(this._units||0)+1;this.setData({loading:false,filters:EMPTY_FILTERS,list:[]});return this.refresh();}},
  onHide(){const filter=this.selectComponent('#filter');if(filter)filter.close();},
@@ -24,6 +25,7 @@ createPage({
  /** 首页入口再点一次取消；入口、品牌、分类、型号互斥 */
  onBrandTap(e){this.setData({filters:applyBrandTile(this.data.filters,e.currentTarget.dataset.key)});return this.loadUnits(true);},
  /** 记住当前页，选中第 2 页入口后刷新也不跳回第 1 页 */
+ onBrandImageLoad(e){const key=e.currentTarget.dataset.key;this.setData({brandImagesReady:{...this.data.brandImagesReady,[key]:true}});},
  onTilePage(e){this.setData({tilePage:e.detail.current});},
  onTileDot(e){this.setData({tilePage:Number(e.currentTarget.dataset.index)});},
  onFilterChange(e){this.setData({filters:e.detail});return this.loadUnits(true);},

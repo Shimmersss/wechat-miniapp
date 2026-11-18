@@ -79,3 +79,11 @@ test("公开分类：手机品牌按首页入口顺序排，未列入的品牌�
   });
   assert.deepEqual(result[0].brands.map((b) => b.value), ["苹果", "redmi", "meizu"]);
 });
+
+test("首页两页共 16 个入口使用配置的公开配图地址", () => {
+  const { brandTiles } = require("../miniprogram/utils/shop-filter");
+  const pages = brandTiles("https://assets.example.test/v1");
+  assert.deepEqual(pages.map(p => p.tiles.length), [8, 8]);
+  assert.ok(pages.flatMap(p => p.tiles).every(t => t.image === `https://assets.example.test/v1/${t.key}.png`));
+  assert.ok(brandTiles().flatMap(p => p.tiles).every(t => t.image === ""));
+});

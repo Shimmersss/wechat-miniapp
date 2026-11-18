@@ -38,6 +38,7 @@ const ENV_CONFIG = {
 module.exports = {
   env: ENV,
   ...ENV_CONFIG[ENV],
+  brandAssetsBaseUrl: ENV_CONFIG[ENV]?.useCloud ? previewCloud.brandAssetsBaseUrl || '' : '',
   staffWechatLogin: !!(ENV_CONFIG[ENV]?.useCloud || ENV_CONFIG[ENV]?.useMock),
   timeout: 15000,
   brand: {

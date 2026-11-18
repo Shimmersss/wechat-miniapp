@@ -12,7 +12,9 @@
 .brand-tile { display: flex; flex-direction: column; align-items: center; gap: 8rpx; padding: 10rpx 0; border-radius: var(--radius); }
 .brand-tile.active { background: var(--c-surface); box-shadow: var(--e1); }
 .brand-press { opacity: 0.7; }
-.brand-img { width: 112rpx; height: 112rpx; }
+.brand-media { position: relative; width: 112rpx; height: 112rpx; }
+.brand-img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.brand-img-loading { opacity: 0; }
 .brand-name { font-size: 26rpx; color: var(--c-ink); white-space: nowrap; }
 .brand-tile.active .brand-name { font-weight: 700; }
 .brand-dots { display: flex; justify-content: center; gap: 12rpx; padding: 0 0 20rpx; }

@@ -126,6 +126,7 @@ function discover() {
       if (!next.endsWith(".js")) next += ".js";
       if (
         next.endsWith("/api/index.js") ||
+        next.endsWith("/config/cloud.local.js") ||
         next.endsWith("/utils/request.js") ||
         !next.startsWith(path.join(root, "miniprogram"))
       )
