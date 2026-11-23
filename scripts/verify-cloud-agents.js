@@ -369,7 +369,7 @@ async function extraChecks() {
   results.push(
     "真实公开照片签名下载、内部凭证与完整串码不泄漏、缺微信凭据不生成二维码、撤销生效",
   );
-  // 只用原始PG查询观察定时器，不调用任何会主动清理的业务接口。
+  // 锁到期后由正常业务查询释放，并通过 PG 独立核对状态。
   const expLink = await as(first, agent, "/share/links", "POST", {
     unitId: still.id,
     channel: "agent",
@@ -386,19 +386,17 @@ async function extraChecks() {
   execute(
     `UPDATE agent_orders SET lock_expires_at=now()-interval '1 second' WHERE request_id='${expOrder.id}'`,
   );
-  let state;
-  // 定时器每 10 分钟触发（见 deploy-cloudfunctions.js 的 EXPIRY_CRON），最多等 11 分钟。
-  for (let i = 0; i < 132; i++) {
-    state = query(
+  const readState = () =>
+    query(
       `SELECT s.status,u.status unit_status FROM agent_order_states s JOIN agent_orders a ON a.request_id=s.request_id JOIN units u ON u.id=a.unit_id WHERE s.request_id='${expOrder.id}'`,
     )[0];
-    if (state.status === "released") break;
-    await new Promise((r) => setTimeout(r, 5000));
-  }
+  assert.equal(readState().status, "locked");
+  await as(customer, shop, "/shop/home");
+  const state = readState();
   assert.equal(state.status, "released");
   assert.equal(state.unit_status, "in_stock");
   results.push(
-    "已部署定时器自主释放过期订单：只观察PG，无手工调用或业务读触发",
+    "商城首页正常查询释放过期锁并恢复可售，无需定时调用",
   );
   fs.writeFileSync(
     `${local}/agent-extra-results.json`,
