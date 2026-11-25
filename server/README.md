@@ -67,31 +67,7 @@ npm --prefix server start
 
 一次性引导老板手机号：在安全终端通过环境变量设置 `BOOTSTRAP_BOSS_PHONE`（可选 `BOOTSTRAP_BOSS_NAME`），执行 `npm --prefix server run bootstrap`。不产生默认密码；首次登录仍需真实短信和微信验证。已有有效老板时拒绝重复引导。
 
-小程序开发版已指向测试服务器（`miniprogram/config/index.js`）。要连本机 API 或 mock，临时修改 `develop` 的 `baseUrl`、`useMock`，不要提交。切换环境能跑通不等于所有页面已验收。
-
-## 验证
-
-```sh
-# 一次性准备专用验证数据库；不清空正式数据库
-npm --prefix server run test:db
-
-# 后端集成测试（本机显式命令；macOS 上 `npm --prefix server test` 等价）
-cd server && node --env-file=.env --test --test-concurrency=2 test/*.test.js
-
-# 小程序和 mock 回归
-cd .. && node --test tests/*.test.js
-npm --prefix server audit
-```
-
-最近一次后端全量复跑：2026-11-04，**67/67**。当前后端共 80 项用例，COS、固定验证码改动之后尚未全量复跑。小程序/mock 2026-11-07 为 **35/35**。
-
-服务端集成测试使用专属 `xiamu_verification`，通过真实本机 HTTP、真实 MySQL、真实磁盘文件验证。只有微信/SMS 外部调用使用测试替身，因此不代表外部账号已经联调成功。测试不接受生产库名称，也不自动 DROP；验证数据保留供复查。
-
-测试包括 OTP 错误次数持久化/一次性消费、角色伪造无效、静默登录不提权、并发发布只允许一次、重启保留数据和会话、审计及版本表 UPDATE 被数据库拒绝、伪造图片被拒绝、内部文件签名及退出撤销。
-
-采购库存测试另覆盖跨串码唯一、并发写入与改价、批量失败回滚、整备不可售、盘点、未签收拒绝验收、数量比对、异常串码占用与复验计数，以及库管可验收但不能读取供应商/成本。本机测试中微信/SMS 外部调用使用替身，身份夹具仅写入专用验证库；没有添加生产环境免验证登录接口。
-
-页面集成测试加载实际供应商、采购、型号选择器和验收控制器及 API 模块，连接专用验证库的真实 HTTP 服务；平台弹窗/页栈用夹具提供。验证了供应商编辑、多行采购、搜索汇总、签收、型号回传、数量提示、上传中禁止保存、提交成功但响应丢失后的幂等重试，以及异常复验。它不替代真实微信登录、真机摄像头和整个小程序切换真实环境后的走查。
+小程序开发版、体验版和正式版均使用 CloudBase HTTPS 网关。此目录记录保留的 MySQL 服务配置，最后一轮验收结果见 [WORKLOG](../docs/archive/WORKLOG.md)。
 
 ## 部署注意
 

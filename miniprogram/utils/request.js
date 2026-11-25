@@ -64,10 +64,6 @@ function request(options) {
       .finally(() => loading && wx.hideLoading());
 
   function send(headers) {
-    if (config.useMock) {
-      const mock = require('../mock/index');
-      return mock.handle({ url, method, data, header: headers }).then(unwrap);
-    }
     if (config.useCloud) return callCloud({ url, method, data, headers });
 
     return new Promise((resolve, reject) => {
@@ -159,7 +155,7 @@ function callCloud({ url, method, data, headers }) {
   const [path, query] = url.split('?');
   const segments = path.split('/').filter(Boolean);
   const name = CLOUD_FUNCTIONS[segments.slice(0, 2).join('/')] || CLOUD_FUNCTIONS[segments[0]];
-  if (!name) return Promise.reject(new ApiError(501, '该功能尚未迁移到云开发'));
+  if (!name) return Promise.reject(new ApiError(501, '请求的服务暂不可用'));
   if (!config.cloudHttpBaseUrl)
     return Promise.reject(new ApiError(503, '未配置云开发网关，请运行 node scripts/configure-cloud-preview.js <网关域名>'));
   const params = { ...(query ? parseQuery(query) : {}), ...(data || {}) };
@@ -234,9 +230,6 @@ async function upload(options) {
 }
 
 function sendUpload({ filePath, scope = 'public', bizType = '', mediaType, posterId }) {
-  if (config.useMock) {
-    return Promise.resolve().then(() => require('../mock/index').registerFile({ filePath, scope }));
-  }
   if (config.useCloud) {
     return uploadCloud({ filePath, scope, bizType, mediaType, posterId });
   }

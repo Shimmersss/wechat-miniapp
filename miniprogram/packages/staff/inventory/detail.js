@@ -10,9 +10,9 @@ const events = require('../../../utils/events');
 createPage({
   requireStaff: true, permission: PERM.INVENTORY_VIEW,
   data: { id: '', detail: null, loading: false, error: '', mutating: false, album: 'public', priceEditor: null, priceConflict: false, recheckEditor: null, busy: 0,
-    ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false,
+    ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false, canRemove: false,
     priceLabels: { retail: '零售价', wholesale: '批发价', agentBase: '代理底价' },
-    docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检' },
+    docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检', inventory_void: '删除库存设备' },
     loanTypeLabels: { loan_out: '出借单', borrow_in: '借入单' }, canLoan: false, canLoanOut: false },
   onLot() { if (this.data.detail && this.data.detail.lotId) this.$go(ROUTES.INVENTORY, { lotId: this.data.detail.lotId }); },
   onLoad(query) { this.setData({ id: query.id, statusMap: UNIT_STATUS }); return this.load(); },
@@ -28,6 +28,7 @@ createPage({
       const detail = await api.inventory.detail(this.data.id);
       if (this.destroyed) return;
       this.setData({ detail, canPrice: can(this.data.user, PERM.PRICE_EDIT), canShare: can(this.data.user, PERM.SHARE), canLabel: can(this.data.user, PERM.LABEL_PRINT),
+        canRemove: this.data.user?.role === 'boss' && (detail.availableActions || []).includes('void'),
         canRepair: can(this.data.user, PERM.REPAIR_HANDLE) && detail.status === 'in_stock' && detail.ownership !== 'borrowed',
         canLoan: can(this.data.user, PERM.LOAN_MANAGE),
         canLoanOut: can(this.data.user, PERM.LOAN_MANAGE) && (UNIT_TRANSITIONS[detail.status] || {}).loaned_out === 'loan_out' && detail.ownership !== 'borrowed' && !detail.loan,
@@ -58,6 +59,30 @@ createPage({
     catch (error) { this.$toast(error.message); }
   },
   onLabel() { if (this.data.canLabel) this.$go(ROUTES.INVENTORY_LABEL, { id: this.data.id }); },
+  async onRemove() {
+    const { id, detail, canRemove, loading, mutating, priceEditor, recheckEditor } = this.data;
+    if (!canRemove || this.data.user?.role !== 'boss' || loading || mutating || priceEditor || recheckEditor) return;
+    this.setData({ mutating: true });
+    try {
+      const confirmation = await confirmSensitive({
+        title: '确认删除库存设备',
+        content: (detail.name || '这台设备') + '将从库存和商品展示移除。原流水与审计记录会保留。',
+        needReason: true,
+        confirmText: '删除'
+      });
+      if (!confirmation.confirmed || this.destroyed) return;
+      await api.inventory.remove(id, { reason: confirmation.reason });
+      events.emit('inventory:changed', { id });
+      if (this.destroyed) return;
+      this.setData({ detail: null, canRemove: false });
+      this.$toast('设备已删除', 'success');
+      wx.navigateBack({ fail: () => wx.redirectTo({ url: ROUTES.INVENTORY }) });
+    } catch (error) {
+      if (!this.destroyed && [404, 409].includes(Number(error.code))) await this.load();
+    } finally {
+      if (!this.destroyed) this.setData({ mutating: false });
+    }
+  },
   onRepair() { if(this.data.canRepair&&!this.data.mutating)this.$go(ROUTES.REPAIR_EDIT,{unitId:this.data.id}); },
   /** 借还入口：在库自有设备可发起出借；在借还单中的设备跳到对应单据（归还、复检后完结在单据里办理） */
   onLoanOut() { if (this.data.canLoanOut && !this.data.mutating) this.$go(ROUTES.LOAN_EDIT, { type: 'loan_out', unitId: this.data.id }); },

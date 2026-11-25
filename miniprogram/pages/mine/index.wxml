@@ -25,13 +25,6 @@
     </view>
   </section-card>
 
-  <section-card wx:if="{{devMode}}" title="开发调试" subtitle="仅 mock 模式显示">
-    <picker range="{{mockRoles}}" range-key="label" value="{{mockRoleIndex}}" bindchange="onMockRoleChange">
-      <view class="list-item"><text>切换模拟身份</text><text class="gold">{{mockRoles[mockRoleIndex].label}} ›</text></view>
-    </picker>
-    <view class="list-item" bindtap="onLoadTestSeed"><text>加载测试设备</text><text class="gold">加载 ›</text></view>
-  </section-card>
-
   <view class="small muted center">{{brand.name}} · {{brand.slogan}}</view>
   <button wx:if="{{staff}}" class="btn btn-line btn-block mt" bindtap="onLogout">退出员工账号</button>
 </view>

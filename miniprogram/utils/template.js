@@ -1,4 +1,4 @@
-/** 模板协议校验：前端提供即时提示，mock/后端仍须独立校验。 */
+/** 模板协议校验：前端提供即时提示，服务端独立校验。 */
 const TYPES = ['text', 'number', 'select', 'boolean', 'ref', 'image', 'date'];
 const TYPE_LABELS = { text: '文本', number: '数字', select: '单选', boolean: '开关', ref: '引用', image: '图片', date: '日期' };
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

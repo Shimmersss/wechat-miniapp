@@ -110,10 +110,18 @@ function prepare(action, input, params, user) {
     if(!keys.length||Object.keys(d).some(k=>!['retail','wholesale','agentBase','reason','priceVersion'].includes(k)))fail(400,'改价参数无效');
     keys.forEach(k=>d[k]=money(d[k])); text(d.reason,'改价原因',500);
   }
+  if(action==='units.void') {
+    if(Object.keys(d).some(k=>k!=='reason'))fail(400,'删除参数无效');
+    d.reason=text(d.reason,'删除原因',200);
+  }
   if(action==='units.flags.batch') {
     if(Object.keys(d).some(k=>!['unitIds','shareAgent'].includes(k))||typeof d.shareAgent!=='boolean'||!Array.isArray(d.unitIds)||!d.unitIds.length||d.unitIds.length>100||d.unitIds.some(k=>typeof k!=='string'||!/^[0-9a-f-]{36}$/i.test(k)))fail(400,'请选择1～100台设备并指定开关');
   }
   if(action==='units.recheck') {choice(d.result,['pass','fail'],'复检结论');integer(d.inspectionVersion,'复检版本',1,1000000);if(d.attributes!==undefined)object(d.attributes,'复检参数');}
+  if(action==='units.restock') {
+    d.reason=text(d.reason,'重新入库原因',500);
+    if(typeof d.restockToken!=='string'||!/^\d{0,20}$/.test(d.restockToken)) fail(400,'设备流水标识无效');
+  }
   if(action==='sessions.create') {
     const statuses=d.statuses===undefined?STOCKTAKE_DEFAULT_SCOPE:d.statuses;
     if(!Array.isArray(statuses)||!statuses.length||statuses.some(s=>!STOCKTAKE_SCOPE.includes(s)))fail(400,'盘点范围只能选择在店内的库存状态');

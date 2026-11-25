@@ -14,10 +14,9 @@
 1. 微信开发者工具 → 导入项目 → 选择本仓库根目录（`project.config.json` 已指定 `miniprogramRoot: miniprogram/`）。
 2. **AppID 不进版本库**：`project.config.json` 固定为占位 `touristappid`，真实 AppID 写在已忽略的 `project.private.config.json`（开发者工具优先读它）。
    本机设置：`./scripts/appid.sh wx…`（用自己微信有开发者权限的那个），`./scripts/appid.sh` 查看，`./scripts/appid.sh clear` 去掉。
-   不要把真实 AppID 写进任何被跟踪的文件，`tests/appid.test.js` 会拦截。
-3. **开发版、体验版和正式版统一走 HTTPS 网关**（`miniprogram/config/index.js` 的 `develop`：`useMock: false`，`useCloud: true`）。新 AppID 的个人版环境启用员工微信登录，须由管理员预先绑定在职员工。旧测试服务器仍保留短信登录。新机器先运行 `node scripts/configure-cloud-preview.js <网关域名>` 生成忽略的 `cloud.local.js`，未配置会明确报错，不再回退默认云环境。开发者工具尚未放行 request 合法域名时，需设置 `urlCheck: false`；体验版和正式版须在微信公众平台正式放行。云函数需配置 `WX_APP_ID` 和 `WX_APP_SECRET` 验证微信登录凭证。
-4. 需要本地 mock 时，把 `develop` 的 `useMock` 改为 `true` 后重新编译，**不要提交这项改动**。mock 模式下才有“我的 → 开发调试”：切换模拟身份、加载测试设备（`docs/role-tests`）；员工登录页也可选择模拟角色。
-5. 本机需要 `project.config.json` 的 `watchOptions.ignore` 排除 `.local/`、`server/node_modules/`、`.git/`：桌面程序占满了 inotify 额度，不排除会卡在初始化文件监听。
+   不要把真实 AppID 写进任何被跟踪的文件，上传前核对本机配置和构建目标。
+3. **开发版、体验版和正式版统一走 HTTPS 网关**（`miniprogram/config/index.js` 的 `useCloud: true`）。新 AppID 的个人版环境启用员工微信登录，须由管理员预先绑定在职员工。旧测试服务器仍保留短信登录。新机器先运行 `node scripts/configure-cloud-preview.js <网关域名>` 生成忽略的 `cloud.local.js`，未配置会明确报错，不再回退默认云环境。开发者工具尚未放行 request 合法域名时，需设置 `urlCheck: false`；体验版和正式版须在微信公众平台正式放行。云函数需配置 `WX_APP_ID` 和 `WX_APP_SECRET` 验证微信登录凭证。
+4. 本机需要 `project.config.json` 的 `watchOptions.ignore` 排除 `.local/`、`server/node_modules/`、`.git/`：桌面程序占满了 inotify 额度，不排除会卡在初始化文件监听。
 
 ## 真实后端（独立于微信上传目录）
 
@@ -27,7 +26,6 @@
 - API 没有热重载：改 `server/src` 或 `server/.env` 后要重启 API。
 - 迁移执行 `npm --prefix server run migrate`；API 只加载 `server/.env`，迁移专用凭据放 `server/.env.migration`，二者都禁止进入 `miniprogram/` 或版本库。
 - 本机新增表的迁移完成后执行 `npm --prefix server run db:grants`，为项目应用/报表/备份账号补充表级权限；此命令仅用于项目专属本机实例，不用于生产部署。
-- 服务端验证：`npm --prefix server run test:db` 准备专用验证库，然后在 `server/` 下 `node --env-file=.env --test --test-concurrency=2 test/*.test.js`；小程序回归 `node --test tests/*.test.js`。
 - `.local/mysql/` 和 `.local/files/` 是持久数据，不是构建缓存。真实业务切换必须以对应接口、事务和权限验证为依据，不得让未实现接口回退假成功。
 
 ## CloudBase 迁移入口
@@ -36,7 +34,7 @@
 - 共享 PG 不能 TCP 直连，只能经网关；小程序不直连 PG，所有读写经云函数，多表事务写成 PG 存储过程。
 - PG 迁移放 `cloudbase/migrations/<14位版本>_<名称>.sql`；云函数放 `cloudfunctions/<名称>/`，共享代码改 `cloudfunctions/common/`（`shared/` 是生成产物，不要手改）；部署用 `node scripts/deploy-cloudfunctions.js --env-id <环境ID> [函数名...]`。目标环境必须与本机私有函数配置中的 `CLOUDBASE_ENV_ID` 一致。开发版、体验版和正式版 `useCloud: true` 均经 HTTPS 网关调用云函数。部署目标还必须与本机 `.local/cloudbase/single-env-gateway.json` 的 `envId` 一致；不要往小程序默认关联环境部署。未迁移的路径会明确报错。
 - 云托管（容器）方案已放弃，不要再加 Dockerfile 或容器部署。迁移完成前现有 `server/` 继续服务旧测试服务器。
-- `scripts/verify-cloud-*.js` 会在目标库留下验证分类和设备，开头的 `scripts/lib/verification-guard.js` 会拒绝对正式环境（本机私有配置 `NODE_ENV=production` 的环境）运行。已留下的验证数据用 `scripts/cleanup-verification-data.js` 清理：先预览、核对后再 `--apply`，不可恢复。
+- 正式环境验收使用只读请求或经确认的实际业务操作。已留下的历史验证数据用 `scripts/cleanup-verification-data.js` 清理：先预览、核对后再 `--apply`，不可恢复。
 
 ## 测试服务器
 
@@ -51,14 +49,14 @@
 ```
 miniprogram/
   app.js / app.json / app.wxss   入口、路由（主包 + shop/agent/staff 三个分包，共 55 页）、全局样式
-  config/index.js                环境配置（baseUrl、useMock、品牌文案、storage key）
+  config/index.js                环境配置（网关地址、品牌文案、storage key）
   constants/
     roles.js                     角色、权限点 PERM、默认角色权限、敏感字段可见角色
     status.js                    单机状态 + 状态流转表、采购/维修/出借/销售/代理/结算状态、渠道、四套价格
     routes.js                    所有页面路径常量
   utils/
     page.js                      createPage 页面工厂（登录/权限守卫、PV 埋点、金额遮挡、$go/$toast）
-    request.js                   请求层（信封解包、令牌、渠道头、访客 ID、mock 切换、上传）
+    request.js                   请求层（信封解包、令牌、渠道头、访客 ID、上传）
     media.js                     选图和视频、按用途压缩、顺序上传、失败重试
     auth.js                      静默登录、员工登录、登出
     channel.js                   分享来源捕获（s=shareId，scene 解析）
@@ -69,10 +67,8 @@ miniprogram/
     theme.js                     主题管理（浅色 / 深色 / 零售绿），由 theme-shell 组件应用
     validate.js / scan.js / router.js / events.js
   api/index.js + api/modules/*   按业务域划分的接口函数（每个函数都有接口注释）
-  mock/index.js + mock/data.js   路由式 mock，模拟“服务端按角色裁剪字段、按渠道决定价格”
-  mock/test-seed.js              角色测试预置数据，手动加载，详见 docs/role-tests
   components/                    brand-header, section-card, status-pill, price-tag, metric-item,
-                                 empty-state, product-card, staff-tabbar, todo-block,
+                                 empty-state, product-card, staff-tabbar,
                                  template-fields, theme-shell
   custom-tab-bar/                顾客端自定义 tabBar（图标 + 较大字号）
   assets/icons/                  多彩 SVG 图标（深色 / -gray / -white / -light 等变体）
@@ -94,14 +90,13 @@ miniprogram/
 - 员工页加 `requireStaff: true` + `permission: PERM.xxx`；代理页加 `requireAgent: true`。
 - 跳转用 `ROUTES` 常量 + `this.$go(path, query)`；WXML 里可用 `bindtap="onNavigate" data-url="..."`。
 - 员工端一级页（工作台/库存/收银/报表/我的）底部放 `<staff-tabbar active="..." />`，容器加 `has-staff-tabbar`。
-- 每个页面里的 `<todo-block items="...">` 列出了该页待实现功能；**做完一项就从列表删掉，全部完成后删除该组件**。JS 里的 `TODO(codex):` 同理。
+- 正式版页面只展示可用入口和真实业务状态，不放测试角色、测试数据或功能占位提示。
 
 ### 数据与接口
 - 分类有串码方式 `identifierMode`（`imei` / `serial` / `serial_imei`，见 `constants/status.js` 的 `IDENTIFIER_MODES`），已有设备的分类不能改。完整序列号与完整 IMEI 同级裁剪，公开页面只给 `serialMasked`；页面显示串码统一用 `filters.wxs` 的 `f.code(unit)`。
-- 新增接口：①在 `api/modules/<域>.js` 加函数并写注释（参数、返回）；②在 `mock/index.js` 的 `routes` 加 mock；③页面只通过 `api.<域>.<fn>()` 调用。
+- 新增接口：①在 `api/modules/<域>.js` 加函数并写注释（参数、返回）；②实现和验证对应的服务端路由及权限；③页面只通过 `api.<域>.<fn>()` 调用。
 - 后端响应信封固定为 `{ code: 0, data, message }`；列表统一 `{ list, total, page, pageSize }`。
 - 金额单位前端统一为“元”。
-- mock 路由按顺序匹配，固定路径（如 `/repair-orders/board`）必须写在 `/:id` 之前。
 
 ### 安全底线（框架文档 二、十一）
 - **价格由服务端计算**：前端不计算零售价/同行价/代理分享价，提交的金额只是意图；代理加价只提交 `markup`，由服务端校验范围并返回 `sharePrice`。
@@ -125,9 +120,10 @@ miniprogram/
 
 ## 待实现功能清单（按框架文档“十二、实施顺序”）
 
-状态按 2026-11-04 代码实测标注：**页面与 mock 已接通**记 `[x]`；仅剩外部实机条件（真机、蓝牙、正式微信/SMS/小程序码）或缺口的记 `[ ]` 并注明。勾选依据是页面控制器中的实际调用，不是文档里的历史记录。
+**页面与接口已接通**记 `[x]`；仅剩外部实机条件（真机、蓝牙、正式微信/SMS/小程序码）或缺口的记 `[ ]` 并注明。勾选依据是页面控制器中的实际调用，不是文档里的历史记录。
 
 ### 阶段 A：营业与库存可信
+- [x] 库存手动删除：老板可在详情作废无业务单据的自有设备，保留流水和审计，释放原串码后可重新入库。
 - [x] 员工登录：短信验证码、微信绑定、登录失败提示（`pages/login`，`utils/auth.js`）；正式短信/微信交换待外部配置
 - [x] 型号模板：每个分类一套模板（字段编辑、版本发布），型号单独配置容量/颜色，作为入库型号选择器回传 `modelId`（`staff/templates/*`）；入库/采购/验收统一读 `GET /models/:id/form`
 - [x] 采购单：供应商选择、明细行增删、运单绑定与扫码（首期不查轨迹）（`staff/purchase/*`、`staff/suppliers`）
@@ -165,6 +161,5 @@ miniprogram/
 
 ## 完成标准
 
-- 微信开发者工具编译无报错、无 WXML 警告；控制台没有 `[mock] 未实现` 警告。
-- 临时切到 mock（见“运行”第 4 条），切换 顾客 / 同行 / 代理 / 老板 / 销售 身份走一遍对应页面：顾客端看不到同行价，销售看不到成本和毛利，非代理进不了代理页。
-- 新增接口都有 mock，且 mock 同样遵守字段裁剪规则。
+- 通过 `node scripts/audit-cloud-coverage.js` 核对接口与真实角色权限，验收记录写入 WORKLOG。
+- 微信开发者工具编译无报错、无 WXML 警告。
