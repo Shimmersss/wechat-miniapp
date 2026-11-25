@@ -27,7 +27,7 @@ createPage({
     const revision = this.revision = (this.revision || 0) + 1, page = reset ? 1 : this.data.page + 1;
     this.setData({ loading: true, error: '' });
     try {
-      const res = await api.inventory.list({ keyword: this.data.keyword.trim(), modelId: this.data.model ? this.data.model.id : undefined, lotId: this.data.lotId || undefined, status: this.data.activeFilter || undefined,
+      const res = await api.inventory.list({ keyword: unitCode(this.data.keyword), modelId: this.data.model ? this.data.model.id : undefined, lotId: this.data.lotId || undefined, status: this.data.activeFilter || undefined,
         ageingOver: this.data.ageingOver === '' ? undefined : this.data.ageingOver, minPrice: this.data.minPrice === '' ? undefined : this.data.minPrice, maxPrice: this.data.maxPrice === '' ? undefined : this.data.maxPrice, page, pageSize: 20 });
       if (this.destroyed || revision !== this.revision) return;
       const list = reset ? res.list : this.data.list.concat(res.list);

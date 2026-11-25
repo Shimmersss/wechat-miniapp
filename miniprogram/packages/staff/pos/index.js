@@ -27,9 +27,9 @@ createPage({
  async onReceipts(){if(this.locked()||this.data.receipts.length>=9)return;this.setData({uploading:true,error:''});try{const files = await media.pickAndUpload({ count: 9-this.data.receipts.length, scope: 'internal', purpose: 'sales_receipt' });if(!this.destroyed)this.setData({receipts:this.data.receipts.concat(files)});}catch(e){if(!/cancel/.test(e.errMsg||''))this.setData({error:e.message||e.errMsg||'凭证未完成上传'});}finally{if(!this.destroyed)this.setData({uploading:false});}},
  onRemoveReceipt(e){if(!this.locked())this.setData({receipts:this.data.receipts.filter((_,i)=>i!==Number(e.currentTarget.dataset.index))});},
  onInput(e){if(!this.locked())this.setData({[e.currentTarget.dataset.field]:e.detail.value});},
- async onScan(){if(this.locked())return;try{this.setData({code:unitCode(await scan())});return this.onAdd();}catch(_){}},
+ async onScan(){if(this.locked())return;try{this.setData({code:await scan()});return this.onAdd();}catch(_){}},
  async onAdd(){
-  if(this.locked())return;const code=this.data.code.trim();if(!code)return showFieldError(this,{field:'code',message:'请扫码或输入完整设备编号'});this.setData({loading:true,error:''});
+  if(this.locked())return;const code=unitCode(this.data.code);if(!code)return showFieldError(this,{field:'code',message:'请扫码或输入完整设备编号'});this.setData({loading:true,error:''});
   try{const u=await api.sales.lookup(code);if(this.data.cart.some(i=>i.id===u.id))return this.$toast('已在收银单中');this.setData({cart:this.data.cart.concat({...u,channel:'retail',price:''}),code:''});await this.requote();}
   catch(e){this.setData({error:e.message});}finally{this.setData({loading:false});}
  },

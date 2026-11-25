@@ -1,5 +1,6 @@
-/** 扫码封装：IMEI 条码 / 运单号 / 设备标签二维码 */
+/** 扫码封装：IMEI 条码 / 运单号 / 设备标签 */
 const { isImei, normalizeSerial } = require('./validate');
+const { decodeDeviceLabel } = require('./device-label-code');
 
 function scan({ onlyFromCamera = true, scanType = ['barCode', 'qrCode'] } = {}) {
   return new Promise((resolve, reject) => {
@@ -33,6 +34,6 @@ function scanSerial() {
 function unitCode(raw) {
   const value = String(raw || '').trim();
   const match = value.match(/^IMEI[12]?\s*[:：]?\s*(\d{15})$/i);
-  return match ? match[1] : value;
+  return match ? match[1] : decodeDeviceLabel(value);
 }
 module.exports = { scan, scanImei, scanSerial, unitCode };
