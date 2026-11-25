@@ -8,9 +8,9 @@
   </view>
   <view wx:elif="{{label}}" class="card label">
     <view class="h3">{{brand.name}}</view>
-    <image class="qr" src="{{qrSrc}}" mode="aspectFit" />
     <view class="h3">{{label.name}} {{label.storage}}<text wx:if="{{label.ram}}"> · 内存 {{label.ram}}</text></view>
     <view class="tiny muted">{{label.grade}} · 零售 {{f.maskMoney(label.retail, privacy)}} · {{f.code(label)}}</view>
+    <image class="barcode" src="{{barcodeSrc}}" mode="aspectFit" />
     <view class="tiny muted">编号 {{label.unitId}}</view>
   </view>
   <view wx:if="{{label}}" class="notice mt">打开 PDF 后，可在右上角保存或分享。打印时选择实际大小或 100% 缩放。</view>
