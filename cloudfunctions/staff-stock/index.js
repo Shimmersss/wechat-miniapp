@@ -21,6 +21,9 @@ function add(method,path,action,permissions) {
     }
     const {d,p}=prepare(action,ctx.data,ctx.params,user);
     if (action === 'models.identify') return rpc('api_imei_model_lookup', { p_imei: d.imei });
+    if (action === 'units.editForm' || action === 'units.edit') {
+      return rpc('api_stock_unit_edit', { p_id: p.id, p_data: action === 'units.edit' ? d : null, p_user: user, p_request_id: ctx.requestId });
+    }
     if (action === 'units.restock') {
       return rpc('api_stock_restock',{p_id:p.id,p_data:d,p_user:user,p_request_id:ctx.requestId});
     }
@@ -70,6 +73,9 @@ add('GET','/units','units.list',inv);
 add('PATCH','/units/share-flags','units.flags.batch',[PERM.SHARE,...inv]);
 add('GET','/units/:id','units.get',inv);
 add('DELETE','/units/:id','units.void',inv);
+const editUnit = [...inv, [PERM.INBOUND, PERM.PRICE_EDIT]];
+add('GET','/units/:id/edit-form','units.editForm',editUnit);
+add('PATCH','/units/:id/details','units.edit',editUnit);
 add('PATCH','/units/:id/price','units.price',[PERM.PRICE_EDIT,...inv]);
 add('PATCH','/units/:id/share-flags','units.flags',[PERM.SHARE,...inv]);
 add('GET','/units/:id/ledger','units.ledger',inv);

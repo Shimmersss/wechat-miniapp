@@ -10,6 +10,10 @@ module.exports = {
   remove: (id, data) => http.del(`/units/${id}`, data, { loading: true }),
   /** 改价 { retail?, wholesale?, agentBase?, reason, priceVersion } → 最新员工单机视图；需改价与库存权限，写审计 */
   updatePrice: (id, data) => http.patch(`/units/${id}/price`, data, { loading: true }),
+  /** 在库自有设备编辑表单 → { editVersion, fields, values, condition?, cost?, peerDesc?, customerDesc?, internalNote? } */
+  editForm: (id) => http.get(`/units/${id}/edit-form`),
+  /** { editVersion, reason, cost?, condition?, attributes?, peerDesc?, customerDesc?, internalNote? } → { id }；只传改动项 */
+  updateDetails: (id, data) => http.patch(`/units/${id}/details`, data, { loading: true }),
   /** 分享开关 { showInShop, sharePeer, shareAgent } */
   updateShareFlags: (id, data) => http.patch(`/units/${id}/share-flags`, data),
   /** 批量开关代理转发 { unitIds: string[1..100], shareAgent: boolean } → { updated, shareAgent }；整批事务，开启时须全部为在库可售，逐台写审计 */
