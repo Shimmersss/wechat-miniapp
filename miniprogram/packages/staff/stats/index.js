@@ -65,9 +65,9 @@ createPage({
     return this.load();
   },
   onPullDownRefresh() {
-    this.load().finally(() => wx.stopPullDownRefresh());
+    this.load({ refresh: true }).finally(() => wx.stopPullDownRefresh());
   },
-  async load() {
+  async load({ refresh = false, rangeChanged = false } = {}) {
     const revision = (this.revision = (this.revision || 0) + 1),
       params = { range: this.data.range };
     this.setData({ loading: true, error: "" });
@@ -95,9 +95,9 @@ createPage({
           : Promise.resolve(null),
         // 库存现状来自工作台接口（报表接口没有库存维度）。
         // 没有库存查看权限时不请求，避免多余调用与字段泄露。
-        this.data.canInventory
-          ? api.dashboard.overview().then((d) => d.inventory).catch(() => null)
-          : Promise.resolve(null),
+        this.data.canInventory && (!rangeChanged || !this.data.inventoryNow)
+          ? api.dashboard.overview({ refresh }).then((d) => d.inventory).catch(() => null)
+          : Promise.resolve(this.data.inventoryNow),
       ]);
       if (revision !== this.revision) return;
       const rows = trend.list.map((row) => ({
@@ -118,7 +118,9 @@ createPage({
             : this.data.trendMetric,
       });
       this.chart();
-      if (this.data.canInventory) await this.loadAgeing(true);
+      if (this.data.canInventory && (!rangeChanged || !this.data.ageingPage)) {
+        await this.loadAgeing(true);
+      }
     } catch (e) {
       if (revision === this.revision) this.setData({ error: e.message });
     } finally {
@@ -144,12 +146,36 @@ createPage({
     return this.loadAgeing(false);
   },
   onRangeTap(e) {
-    this.setData({ range: e.currentTarget.dataset.value });
-    return this.load();
+    const range = e.currentTarget.dataset.value;
+    if (range === this.data.range) return;
+    this.setData({ range });
+    return this.load({ rangeChanged: true });
   },
-  onDimension(e) {
-    this.setData({ dimension: e.currentTarget.dataset.value });
-    return this.load();
+  async onDimension(e) {
+    const dimension = e.currentTarget.dataset.value;
+    if (this.data.loading) return;
+    if (this.pendingBreakdown?.dimension === dimension) return;
+    if (dimension === this.data.dimension && !this.pendingBreakdown) return;
+    const revision = this.revision;
+    const request = { dimension };
+    this.pendingBreakdown = request;
+    if (dimension === this.data.dimension) {
+      this.pendingBreakdown = null;
+      return;
+    }
+    this.setData({ error: '' });
+    try {
+      const result = await api.stats.breakdown({ range: this.data.range, dimension });
+      if (this.revision === revision && this.pendingBreakdown === request) {
+        this.setData({ dimension, breakdown: result.list });
+      }
+    } catch (error) {
+      if (this.revision === revision && this.pendingBreakdown === request) {
+        this.setData({ error: error.message });
+      }
+    } finally {
+      if (this.pendingBreakdown === request) this.pendingBreakdown = null;
+    }
   },
   onMetric(e) {
     if (

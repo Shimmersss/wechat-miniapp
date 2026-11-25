@@ -136,8 +136,8 @@ const env = {
 env.APPOINTMENT_SLOTS_B64 =
   env.APPOINTMENT_SLOTS_B64 ||
   Buffer.from(env.APPOINTMENT_SLOTS, "utf8").toString("base64");
-// null 表示暂停定时维护。恢复时使用北京时间 02:00–02:50 的 "0 */10 2 * * * *"。
-const MAINTENANCE_CRON = null;
+// 北京时间每天 04:00，沿用已验证的线上维护配置。
+const MAINTENANCE_CRON = "0 0 4 * * * *";
 const maintenanceTrigger = () =>
   "maintenance-" +
   crypto
@@ -181,7 +181,7 @@ try {
           }
         : {}),
       runtime: "Nodejs18.15",
-      timeout: 10,
+      timeout: name === "cloud-maintenance" ? 120 : 10,
       handler: "index.main",
       installDependency: true,
       ignore: ["node_modules", "node_modules/**"],
