@@ -80,10 +80,6 @@ const FUNCTION_ENV = {
   files: ["NODE_ENV", "CLOUDBASE_API_KEY", "STORAGE_TIMEOUT_MS"],
 };
 
-// 代理锁库到期释放频率（7 段 Cron）。2026-11-09 定为每 10 分钟，节省体验版资源点；
-// 到期设备最多晚 10 分钟回到可售。TODO(confirm): 正式上线后按套餐资源点重新评估频率。
-const EXPIRY_CRON = "0 */10 * * * * *";
-
 function readEnv() {
   if (!fs.existsSync(envFile))
     throw new Error(
@@ -140,7 +136,8 @@ const env = {
 env.APPOINTMENT_SLOTS_B64 =
   env.APPOINTMENT_SLOTS_B64 ||
   Buffer.from(env.APPOINTMENT_SLOTS, "utf8").toString("base64");
-const MAINTENANCE_CRON = "0 */10 * * * * *";
+// 北京时间每天 04:00，沿用已验证的线上维护配置。
+const MAINTENANCE_CRON = "0 0 4 * * * *";
 const maintenanceTrigger = () =>
   "maintenance-" +
   crypto
@@ -172,18 +169,7 @@ try {
     }
     return {
       name,
-      ...(name === "agent-expiry"
-        ? {
-            triggers: [
-              {
-                name: "agent-order-expiry",
-                type: "timer",
-                config: EXPIRY_CRON,
-              },
-            ],
-          }
-        : {}),
-      ...(name === "cloud-maintenance"
+      ...(name === "cloud-maintenance" && MAINTENANCE_CRON
         ? {
             triggers: [
               {
@@ -195,7 +181,7 @@ try {
           }
         : {}),
       runtime: "Nodejs18.15",
-      timeout: 10,
+      timeout: name === "cloud-maintenance" ? 120 : 10,
       handler: "index.main",
       installDependency: true,
       ignore: ["node_modules", "node_modules/**"],
@@ -229,7 +215,7 @@ try {
         });
         return JSON.parse(raw.slice(raw.indexOf("{"))).data?.Triggers || [];
       };
-      const desired = maintenanceTrigger(),
+      const desired = MAINTENANCE_CRON ? maintenanceTrigger() : null,
         existing = readTriggers();
       const cronOf = (t) =>
         t.TriggerDesc?.startsWith("{")
@@ -237,14 +223,14 @@ try {
           : t.TriggerDesc;
       for (const trigger of existing.filter(
         (t) =>
-          t.TriggerName.startsWith("maintenance-") &&
-          (t.TriggerName !== desired || cronOf(t) !== MAINTENANCE_CRON),
+          t.Type === "timer" &&
+          (!desired || t.TriggerName !== desired || cronOf(t) !== MAINTENANCE_CRON),
       ))
         runTcb(["fn", "trigger", "delete", name, trigger.TriggerName],
           { cwd: work, stdio: "inherit" },
         );
       if (
-        !existing.some(
+        desired && !existing.some(
           (t) => t.TriggerName === desired && cronOf(t) === MAINTENANCE_CRON,
         )
       )
@@ -252,13 +238,12 @@ try {
           cwd: work,
           stdio: "inherit",
         });
-      if (
-        !readTriggers().some(
-          (t) => t.TriggerName === desired && cronOf(t) === MAINTENANCE_CRON,
-        )
-      )
+      const timers = readTriggers().filter((t) => t.Type === "timer");
+      if (desired
+        ? timers.length !== 1 || timers[0].TriggerName !== desired || cronOf(timers[0]) !== MAINTENANCE_CRON
+        : timers.length !== 0)
         throw Error("维护触发器读回不一致");
-      console.log("cloud-maintenance 定时触发器已核对");
+      console.log(desired ? "cloud-maintenance 定时触发器已核对" : "cloud-maintenance 定时任务已暂停");
     }
 
     if (name === "agent-expiry") {
@@ -270,19 +255,11 @@ try {
       const existing = (detail.data?.Triggers || []).find(
         (t) => t.TriggerName === "agent-order-expiry",
       );
-      const cron = existing?.TriggerDesc?.startsWith("{")
-        ? JSON.parse(existing.TriggerDesc).cron
-        : existing?.TriggerDesc;
-      // 频率以本脚本为准：现有触发器 Cron 不同就先删后建，删除失败则不再创建。
-      if (existing && cron !== EXPIRY_CRON)
+      // 应先应用按业务访问释放锁的数据库迁移，再移除旧触发器。
+      if (existing)
         runTcb(["fn", "trigger", "delete", name, "agent-order-expiry"],
           { cwd: work, stdio: "inherit" },
         );
-      if (!existing || cron !== EXPIRY_CRON)
-        runTcb(["fn", "trigger", "create", name], {
-          cwd: work,
-          stdio: "inherit",
-        });
     }
   }
 } finally {

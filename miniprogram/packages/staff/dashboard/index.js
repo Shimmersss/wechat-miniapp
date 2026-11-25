@@ -48,12 +48,12 @@ createPage({
   },
 
   onPullDownRefresh() {
-    this.load().finally(() => wx.stopPullDownRefresh());
+    this.load(true).finally(() => wx.stopPullDownRefresh());
   },
 
-  load() {
+  load(refresh = false) {
     this.setData({ loading: true, error: '' });
-    return api.dashboard.overview()
+    return api.dashboard.overview({ refresh })
       .then((stats) => {
         const todos = tools.pendingTodos(todoState.withDrafts(stats.todos, this.data.user));
         events.emit('dashboard:todos', { userId: this.data.user.id, total: todoState.total(todos) });

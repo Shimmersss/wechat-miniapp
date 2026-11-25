@@ -96,7 +96,11 @@ function request(options) {
     if (requireSession) await require('./auth').ensureWechatSession();
     const headers = buildHeaders(header);
     try {
-      return await send(headers);
+      const result = await send(headers);
+      if (headers.Authorization && method !== 'GET' && !/^\/(auth|visits)(\/|$)/.test(url)) {
+        events.emit('business:changed');
+      }
+      return result;
     } catch (err) {
       const invalidSession = err.code === 401;
       const sessionUnavailable = err.code === 503 && err.message === '会话服务暂不可用';

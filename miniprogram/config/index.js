@@ -31,8 +31,11 @@ const ENV_CONFIG = {
     useCloud: true,
     cloudHttpBaseUrl: previewCloud.httpBaseUrl || ''
   },
-  // TODO(上线前)：release 仍是占位。正式发布前改成生产网关或云开发，并把域名加进后台白名单。
-  release: { baseUrl: 'https://api.example.com/api/v1', useMock: false }
+  release: {
+    useMock: false,
+    useCloud: true,
+    cloudHttpBaseUrl: previewCloud.httpBaseUrl || ''
+  }
 };
 
 module.exports = {

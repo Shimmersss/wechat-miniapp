@@ -1,4 +1,4 @@
-// 为开发版和体验版生成公开网关配置，不读取服务端密钥。
+// 为开发版、体验版和正式版生成公开网关配置，不读取服务端密钥。
 const { readFileSync, writeFileSync } = require('node:fs');
 const path = require('node:path');
 
@@ -21,4 +21,4 @@ if (/^[a-z0-9-]+$/.test(settings?.envId || '')) {
 }
 writeFileSync(path.join(root, 'miniprogram/config/cloud.local.js'),
   `// 由 scripts/configure-cloud-preview.js 生成。仅含公开网关地址。\nmodule.exports = ${JSON.stringify(config, null, 2)};\n`);
-console.log('已生成开发版和体验版网关配置');
+console.log('已生成小程序 HTTPS 网关配置');

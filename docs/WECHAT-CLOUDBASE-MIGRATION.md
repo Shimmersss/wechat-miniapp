@@ -316,7 +316,8 @@
 - TODO(confirm)：标准版云函数超时与内存是否可调。
 - TODO(confirm)：迁移数据来源——旧测试服务器数据库，还是从空库重新录入。
 - 短信渠道（2026-11-09 用户定案与追加排期）：员工验证码使用**云开发自带短信**默认通道、统一签名，不接腾讯云短信，云函数不放腾讯云 SecretId/SecretKey。用户追加要求与员工块一起实施，当前代码、PG 迁移、手机号能力/默认通道及限额配置、auth 部署已完成，**真实收信与验证码登录验证已通过，2026-11-10 用户已验收**，详见第 3 步第 9 块。服务端经环境网关 `POST /auth/v1/verification`（`+86 手机号`、`target: ANY`）发送，只存服务端 verification_id，再经 `/auth/v1/verification/verify` 核验，最后仍用本系统员工绑定/会话，不注册平台身份用户。图片风控走 `/auth/v1/captcha/data` 与 `/auth/v1/captcha/data/verify`，图片可在小程序显示，本次真实发送未触发图片风控，实际人机作答尚未执行。`SmsVerificationConfig.SmsDayLimit=10` 是单手机号每日上限；本系统另设 `SMS_DAILY_LIMIT=10` 次/日发送尝试预算，不能约束平台公开发送入口，须监控资源点。默认通道 50 点/条沿用先前价格依据，本轮已真实发信一次，未单独核对扣费。公开注册产生的 authenticated 身份不应获得业务数据权限，当前已按实际 PG 授权/存储策略核对，未注册平台用户做 JWT 端到端验证。测试期已切回开发固定码并关闭手机号登录（见第 9 块末条），上线时再改 `SMS_PROVIDER=cloudbase` 并重新开启；开发模式仅在非 production 支持固定码，production 不生效。接口依据：[登录配置](https://docs.cloudbase.net/api-reference/manager/node/login-config)、[修改登录配置](https://cloud.tencent.com/document/api/876/129351)、CloudBase MCP `searchKnowledgeBase(mode="openapi", apiName="auth")` 返回的实际 OpenAPI。
-- TODO(confirm)：代理锁库到期释放频率。开发期为省体验版资源点定为每 10 分钟（`scripts/deploy-cloudfunctions.js` 的 `EXPIRY_CRON`）；正式上线后按所选套餐资源点重新评估，必要时改回更短间隔，改后重新部署 `agent-expiry`。
+- 2026-11-23 代理库存锁改为按业务访问释放。先应用 `20261123010000_agent_expiry_on_access`，再移除 `agent-order-expiry` 触发器。商城、库存、收银及代理订单等入口在自己的数据库事务中处理过期锁，继续按到期时间校验成交。用调整后首个完整账单日的 PostgreSQL 计算用量评估实际节省。
+- 2026-11-25 将备份与清理集中到每天北京时间 04:00（`0 0 4 * * * *`）。维护函数超时 120 秒，定时处理窗口 90 秒，保留断点和完成标记。核验备份查看 `daily/<日期>/complete.json`，核验清理查看 `maintenance/<日期>/gc-complete.json`。11 月 25 日线上定时调用确认两项均完成。
 - 资源点提醒：本计费周期（2026-11-09 起）首日已用约 510/3000 点，其中约 485 点为 PG 计算量，主要来自写真实 PG 的云端验证脚本；后续块验收宜只跑当前块的云端验证，避免体验版额度提前耗尽。
 
 ## 八、依据

@@ -302,7 +302,8 @@ async function run(event, wx) {
     gcMarker = "maintenance/" + targetDay + "/gc-complete.json";
   let backupComplete = !!(await storage.info(bucket, marker)),
     gcComplete = !event.RecheckGC && !!(await storage.info(bucket, gcMarker));
-  const end = Date.now() + 4000;
+  const scheduled = typeof event.Time === "string" && Number.isFinite(Date.parse(event.Time));
+  const end = Date.now() + (scheduled ? 90_000 : 4000);
   let tasks = 0,
     deleted = 0;
   while (Date.now() < end) {
@@ -328,6 +329,8 @@ async function run(event, wx) {
       }
     } else break;
   }
+  if (scheduled && (!backupComplete || !gcComplete))
+    console.warn("[maintenance] incomplete scheduled run", { day: targetDay, backupComplete, gcComplete, tasks, deleted });
   return {
     code: 0,
     data: { day: targetDay, backupComplete, gcComplete, tasks, deleted },

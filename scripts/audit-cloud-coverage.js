@@ -25,7 +25,14 @@ function discover() {
     const mod = { exports: {} };
     vm.runInNewContext(
       fs.readFileSync("miniprogram/api/modules/" + f, "utf8"),
-      { module: mod, require: () => ({ http }) },
+      {
+        module: mod,
+        require(name) {
+          if (name.endsWith("/events")) return { on() {} };
+          if (name.endsWith("/auth")) return { getCachedUser: () => null };
+          return { http };
+        },
+      },
     );
     for (const [name, fn] of Object.entries(mod.exports)) {
       try {

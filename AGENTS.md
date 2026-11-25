@@ -15,7 +15,7 @@
 2. **AppID 不进版本库**：`project.config.json` 固定为占位 `touristappid`，真实 AppID 写在已忽略的 `project.private.config.json`（开发者工具优先读它）。
    本机设置：`./scripts/appid.sh wx…`（用自己微信有开发者权限的那个），`./scripts/appid.sh` 查看，`./scripts/appid.sh clear` 去掉。
    不要把真实 AppID 写进任何被跟踪的文件，`tests/appid.test.js` 会拦截。
-3. **开发版与体验版统一走 HTTPS 网关**（`miniprogram/config/index.js` 的 `develop`：`useMock: false`，`useCloud: true`）。新 AppID 的个人版环境启用员工微信登录，须由管理员预先绑定在职员工。旧测试服务器仍保留短信登录。新机器先运行 `node scripts/configure-cloud-preview.js <网关域名>` 生成忽略的 `cloud.local.js`，未配置会明确报错，不再回退默认云环境。开发者工具尚未放行 request 合法域名时，需设置 `urlCheck: false`；体验版须在微信公众平台正式放行。云函数需配置 `WX_APP_ID` 和 `WX_APP_SECRET` 验证微信登录凭证。
+3. **开发版、体验版和正式版统一走 HTTPS 网关**（`miniprogram/config/index.js` 的 `develop`：`useMock: false`，`useCloud: true`）。新 AppID 的个人版环境启用员工微信登录，须由管理员预先绑定在职员工。旧测试服务器仍保留短信登录。新机器先运行 `node scripts/configure-cloud-preview.js <网关域名>` 生成忽略的 `cloud.local.js`，未配置会明确报错，不再回退默认云环境。开发者工具尚未放行 request 合法域名时，需设置 `urlCheck: false`；体验版和正式版须在微信公众平台正式放行。云函数需配置 `WX_APP_ID` 和 `WX_APP_SECRET` 验证微信登录凭证。
 4. 需要本地 mock 时，把 `develop` 的 `useMock` 改为 `true` 后重新编译，**不要提交这项改动**。mock 模式下才有“我的 → 开发调试”：切换模拟身份、加载测试设备（`docs/role-tests`）；员工登录页也可选择模拟角色。
 5. 本机需要 `project.config.json` 的 `watchOptions.ignore` 排除 `.local/`、`server/node_modules/`、`.git/`：桌面程序占满了 inotify 额度，不排除会卡在初始化文件监听。
 
@@ -34,7 +34,7 @@
 
 - 2026-11-09 定案：后端迁到 CloudBase 国内站，路线为“云函数 + PostgreSQL 共享实例”，方案见 `docs/WECHAT-CLOUDBASE-MIGRATION.md`。环境 ID、AppID、API Key 仅放本机忽略的 `docs/HANDOFF-*.md`。
 - 共享 PG 不能 TCP 直连，只能经网关；小程序不直连 PG，所有读写经云函数，多表事务写成 PG 存储过程。
-- PG 迁移放 `cloudbase/migrations/<14位版本>_<名称>.sql`；云函数放 `cloudfunctions/<名称>/`，共享代码改 `cloudfunctions/common/`（`shared/` 是生成产物，不要手改）；部署用 `node scripts/deploy-cloudfunctions.js --env-id <环境ID> [函数名...]`。目标环境必须与本机私有函数配置中的 `CLOUDBASE_ENV_ID` 一致。开发版与体验版 `useCloud: true` 均经 HTTPS 网关调用云函数。部署目标还必须与本机 `.local/cloudbase/single-env-gateway.json` 的 `envId` 一致；不要往小程序默认关联环境部署。未迁移的路径会明确报错。
+- PG 迁移放 `cloudbase/migrations/<14位版本>_<名称>.sql`；云函数放 `cloudfunctions/<名称>/`，共享代码改 `cloudfunctions/common/`（`shared/` 是生成产物，不要手改）；部署用 `node scripts/deploy-cloudfunctions.js --env-id <环境ID> [函数名...]`。目标环境必须与本机私有函数配置中的 `CLOUDBASE_ENV_ID` 一致。开发版、体验版和正式版 `useCloud: true` 均经 HTTPS 网关调用云函数。部署目标还必须与本机 `.local/cloudbase/single-env-gateway.json` 的 `envId` 一致；不要往小程序默认关联环境部署。未迁移的路径会明确报错。
 - 云托管（容器）方案已放弃，不要再加 Dockerfile 或容器部署。迁移完成前现有 `server/` 继续服务旧测试服务器。
 - `scripts/verify-cloud-*.js` 会在目标库留下验证分类和设备，开头的 `scripts/lib/verification-guard.js` 会拒绝对正式环境（本机私有配置 `NODE_ENV=production` 的环境）运行。已留下的验证数据用 `scripts/cleanup-verification-data.js` 清理：先预览、核对后再 `--apply`，不可恢复。
 
@@ -160,7 +160,7 @@ miniprogram/
 - ~~后端服务~~ 已实现：`server/` 为真实 Fastify + MySQL，有集成测试；测试服务器已部署并有数据库定时备份。正式环境改走微信云开发（见“CloudBase 迁移入口”），生产部署、备份与恢复演练随迁移完成。
 - 正式微信凭据：`WX_APP_ID`、`WX_APP_SECRET`（`server/.env`），缺配置时静默登录与小程序码返回明确错误，不伪造。
 - 腾讯云短信：`SMS_APP_ID`、`SMS_SIGN`、`SMS_TEMPLATE_ID`，缺配置时发送验证码返回 503（设置 `OTP_DEV_CODE` 的非生产环境除外）。
-- request 合法域名与 HTTPS 后端地址；`miniprogram/config/index.js` 的 `trial`/`release` 仍是 `example.com` 占位。
+- 正式发布前核对微信公众平台的 request 和 uploadFile 合法域名与当前 HTTPS 网关配置一致。
 - `getwxacodeunlimit` 小程序码（服务端 `server/src/wechat-code.js` 已实现，需正式凭据 + 已发布页面）。
 
 ## 完成标准
