@@ -1,21 +1,15 @@
 const { createPage } = require('../../utils/page');
-const config = require('../../config/index');
 const auth = require('../../utils/auth');
 const { ROUTES } = require('../../utils/router');
 const { isStaff, isAgent } = require('../../utils/permission');
 const { ROLE_LABELS } = require('../../constants/roles');
 const theme = require('../../utils/theme');
 
-const MOCK_ROLES = ['customer', 'peer', 'agent', 'boss', 'manager', 'purchaser', 'warehouse', 'sales', 'engineer', 'finance'];
-
 createPage({
   data: {
     roleLabel: '',
     staff: false,
     agent: false,
-    devMode: config.useMock,
-    mockRoles: MOCK_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] })),
-    mockRoleIndex: 0,
     // 主题切换：system 跟随系统，light / dark 写死
     themeOptions: [
       { value: 'light', label: '浅色' },
@@ -37,8 +31,7 @@ createPage({
       user,
       roleLabel: ROLE_LABELS[role],
       staff: isStaff(user),
-      agent: isAgent(user),
-      mockRoleIndex: Math.max(0, MOCK_ROLES.indexOf(role))
+      agent: isAgent(user)
     });
   },
 
@@ -56,24 +49,6 @@ createPage({
     if (value === this.data.themePreference) return;
     theme.set(value);
     this.setData({ themePreference: theme.getPreference() });
-  },
-
-  /** 仅 mock 模式：切换身份以验证不同角色看到的价格与字段 */
-  onMockRoleChange(e) {
-    if (!config.useMock) return;
-    const role = MOCK_ROLES[Number(e.detail.value)];
-    wx.setStorageSync(require('../../mock/index').ROLE_KEY, role);
-    auth.silentLogin().then(() => {
-      this.refresh();
-      this.$toast(`已切换为${ROLE_LABELS[role]}`);
-    });
-  },
-
-  /** 仅 mock 模式：加载 docs/role-tests 用的预置设备与单据，重新编译后需再点一次 */
-  onLoadTestSeed() {
-    if (!config.useMock) return;
-    const result = require('../../mock/index').loadTestSeed();
-    this.$toast(result.loaded ? `已加载，共 ${result.units} 台设备` : '测试设备已在库中');
   },
 
   onLogout() {

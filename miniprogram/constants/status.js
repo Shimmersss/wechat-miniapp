@@ -16,7 +16,8 @@ const UNIT_STATUS = {
   repairing: { label: '维修中', tone: 'blue', sellable: false },
   loaned_out: { label: '出借中', tone: 'orange', sellable: false },
   borrowed_in: { label: '借入在库', tone: 'gold', sellable: false }, // 可售需单独授权
-  returned: { label: '已归还', tone: 'gray', sellable: false }
+  returned: { label: '已归还', tone: 'gray', sellable: false },
+  voided: { label: '已删除', tone: 'gray', sellable: false }
 };
 
 /**

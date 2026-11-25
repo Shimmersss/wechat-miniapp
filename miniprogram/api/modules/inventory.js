@@ -6,6 +6,8 @@ module.exports = {
   list: (params) => http.get('/units', params),
   /** 单台档案；有借还权限且设备在未完结借还单中时带 loan{id,no,type} */
   detail: (id) => http.get(`/units/${id}`),
+  /** { reason } → { id, deleted }；仅老板可作废未关联业务单据的独立入库设备 */
+  remove: (id, data) => http.del(`/units/${id}`, data, { loading: true }),
   /** 改价 { retail?, wholesale?, agentBase?, reason, priceVersion } → 最新员工单机视图；需改价与库存权限，写审计 */
   updatePrice: (id, data) => http.patch(`/units/${id}/price`, data, { loading: true }),
   /** 分享开关 { showInShop, sharePeer, shareAgent } */
@@ -20,6 +22,8 @@ module.exports = {
   recheckForm: (id) => http.get(`/units/${id}/recheck-form`),
   /** { result:'pass'|'fail', reason, inspectionVersion, attributes:仅改动字段 } → 最新员工单机视图；型号/串码/货源不可修改 */
   recheck: (id, data) => http.post(`/units/${id}/recheck`, data, { loading: true }),
+  /** { reason, restockToken } → { id, status }；已售自有设备按原流水重新入库 */
+  restock: (id, data) => http.post(`/units/${id}/restock`, data, { loading: true }),
   /** { status?: 'open'|'closed'|'cancelled', page?, pageSize? } → 盘点单分页（范围、开单人、应盘/已盘/异常数），默认进行中 */
   stocktakeSessions: (params) => http.get('/stocktake-sessions', params),
   /** { requestKey, statuses?, modelId? | category?, note? } → 盘点单；开单时按范围快照应盘清单，只能选店内状态 */

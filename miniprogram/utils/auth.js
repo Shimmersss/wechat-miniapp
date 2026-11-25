@@ -37,7 +37,7 @@ function wxCode() {
 }
 
 function ensureWechatSession() {
-  if (config.useMock || wx.getStorageSync(storageKeys.token))
+  if (wx.getStorageSync(storageKeys.token))
     return Promise.resolve();
   return silentLogin();
 }
@@ -56,13 +56,13 @@ function silentLogin() {
   return loginPromise;
 }
 
-/** 云开发用微信身份登录，旧测试后端仍接收原短信登录请求 */
+/** 云开发使用员工微信身份登录，旧后端使用短信登录。 */
 async function staffLogin(payload) {
   const revision = ++sessionRevision;
   const api = require('../api/index');
   const code = await wxCode();
   const session = config.staffWechatLogin
-    ? await api.auth.staffWechatLogin({ code, ...(config.useMock ? { mockRole: payload.mockRole } : {}) })
+    ? await api.auth.staffWechatLogin({ code })
     : await api.auth.staffLogin({ ...payload, code });
   if (revision !== sessionRevision) throw new Error('登录操作已失效，请重试');
   return saveSession(session);

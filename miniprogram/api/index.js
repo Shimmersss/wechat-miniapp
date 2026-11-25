@@ -1,6 +1,6 @@
 /**
  * API 聚合入口：页面统一 `const api = require('/api/index')` 后按域调用，如 api.shop.units()
- * 新增接口时在 modules/ 下对应文件添加，并在 mock/index.js 补充 mock 实现。
+ * 新增接口时在 modules/ 下对应文件添加，并实现对应的服务端路由。
  */
 module.exports = {
   file: require('./modules/file'),

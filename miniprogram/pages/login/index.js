@@ -3,7 +3,6 @@ const config = require('../../config/index');
 const auth = require('../../utils/auth');
 const api = require('../../api/index');
 const { ROUTES, redirect } = require('../../utils/router');
-const { ROLE_LABELS, STAFF_ROLES } = require('../../constants/roles');
 const { isPhone } = require('../../utils/validate');
 
 /**
@@ -19,10 +18,7 @@ createPage({
     counting: 0,
     redirect: '',
     staffWechatLogin: config.staffWechatLogin,
-    bindingId: '',
-    devMode: config.useMock,
-    mockRoles: STAFF_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] })),
-    mockRoleIndex: 0
+    bindingId: ''
   },
 
   onLoad(query) {
@@ -41,9 +37,6 @@ createPage({
     this.setData({ [e.currentTarget.dataset.field]: e.detail.value.trim() });
   },
 
-  onMockRoleChange(e) {
-    this.setData({ mockRoleIndex: Number(e.detail.value) });
-  },
 
   sendCode() {
     if (this.data.counting || this.data.sendingCode || this.data.submitting) return;
@@ -74,10 +67,10 @@ createPage({
 
   submit() {
     if (this.data.submitting || this.data.sendingCode) return;
-    const { account, smsCode, staffWechatLogin, devMode, mockRoles, mockRoleIndex } = this.data;
+    const { account, smsCode, staffWechatLogin } = this.data;
     if (!staffWechatLogin && (!isPhone(account) || !/^\d{6}$/.test(smsCode))) return this.$toast('请填写正确的手机号与六位验证码');
     this.setData({ submitting: true, error: '', bindingId: '' });
-    return auth.staffLogin({ account, smsCode, mockRole: devMode ? mockRoles[mockRoleIndex].value : undefined })
+    return auth.staffLogin({ account, smsCode })
       .then((user) => {
         if (this.unloaded) return;
         if (!user.staffNo) {

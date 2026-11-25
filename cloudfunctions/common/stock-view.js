@@ -23,6 +23,7 @@ function unit(row,u) {
   if(receipt.length)r.receiptImages=receipt.map(fileView);
   r.parameters=fields.filter(f=>canSee(u,f.key)&&(!f.visibility.includes('internal')||canSee(u,'internalNote'))&&!(f.key==='receipt'&&!receipt.length)).map(f=>({key:f.key,label:f.label,type:f.type,value:f.type==='image'?attached.filter(x=>x.field_key===f.key&&visible(x)).map(fileView):a[f.key]})).filter(f=>f.value!==undefined);
   r.availableActions=row.status==='recheck'&&u.permissions.includes(PERM.ACCEPTANCE)?['recheck']:[];
+  if(row.canVoid===true && u.role==='boss')r.availableActions.push('void');
   if(row.loan&&u.permissions.includes(PERM.LOAN_MANAGE))r.loan=row.loan;
   if(row.scannedAt!==undefined){r.scannedAt=row.scannedAt;r.scanner=row.scanner||'';}
   return r;
@@ -62,7 +63,12 @@ function sale(row,u,detail=false) {
 function view(action,r,p,u) {
   const paged=(rows)=>({list:rows,total:Number(r.total),page:p.page,pageSize:p.pageSize});
   if(action==='units.list'){const summary={...r.summary};if(!canSee(u,'cost'))delete summary.costTotal;return {...paged(r.rows.map(x=>unit(x,u))),counts:r.counts,summary};}
-  if(['units.get','units.price','units.recheck','sales.lookup'].includes(action))return unit(r,u);
+  if(action==='units.get') {
+    const result=unit(r,u);
+    if(typeof r.restockToken==='string'&&u.permissions.includes(PERM.INBOUND))result.restockToken=r.restockToken;
+    return result;
+  }
+  if(['units.price','units.recheck','sales.lookup'].includes(action))return unit(r,u);
   if(action==='units.recheckForm') {
     if(r.status!=='recheck')fail(409,'设备不在待复检状态');const visible=unit(r,u);
     const fields=(r.template_snapshot.fields||[]).filter(f=>f.key!=='supplier'&&canSee(u,f.key)&&(!f.visibility.includes('internal')||canSee(u,'internalNote')));

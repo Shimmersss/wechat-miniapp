@@ -9,10 +9,8 @@
     "start": "node --env-file-if-exists=.env src/index.js",
     "migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.migration scripts/migrate.js",
     "bootstrap": "node --env-file-if-exists=.env scripts/bootstrap.js",
-    "test": "node --env-file-if-exists=.env --test test/*.test.js",
     "db:start": "node scripts/local-mysql.js",
-    "db:grants": "node scripts/local-grants.js",
-    "test:db": "node scripts/test-database.js"
+    "db:grants": "node scripts/local-grants.js"
   },
   "dependencies": {
     "@fastify/multipart": "^10.1.7",

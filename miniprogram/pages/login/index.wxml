@@ -22,9 +22,6 @@
       <view class="tiny muted">看不清可点击图片更换</view>
     </view>
     </block>
-    <picker wx:if="{{devMode}}" range="{{mockRoles}}" range-key="label" value="{{mockRoleIndex}}" bindchange="onMockRoleChange">
-      <view class="notice">开发模式：以「{{mockRoles[mockRoleIndex].label}}」身份登录（点击切换）</view>
-    </picker>
     <view wx:if="{{error}}" class="notice mt" aria-role="alert">{{error}}</view>
     <button wx:if="{{bindingId}}" class="btn btn-line btn-block mt" bindtap="copyBindingId">复制微信绑定编号</button>
     <button class="btn btn-primary btn-block" bindtap="submit" loading="{{submitting}}" disabled="{{submitting || sendingCode}}">{{staffWechatLogin ? '微信登录员工端' : '登录并绑定微信'}}</button>
