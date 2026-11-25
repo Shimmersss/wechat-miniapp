@@ -1,2 +1,2 @@
-.label { display: flex; flex-direction: column; align-items: center; gap: 16rpx; }
-.qr { width: 240rpx; height: 240rpx; background: var(--c-surface-soft); display: flex; align-items: center; justify-content: center; color: var(--c-muted); }
+.label { display: flex; flex-direction: column; align-items: center; gap: 16rpx; text-align: center; }
+.qr { width: 240rpx; height: 240rpx; }

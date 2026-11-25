@@ -1,15 +1,22 @@
 <wxs src="../../../utils/filters.wxs" module="f" />
 <theme-shell>
 <view class="container">
-  <view class="card label">
+  <view wx:if="{{loading}}" class="notice">正在加载设备标签…</view>
+  <view wx:elif="{{error}}" class="card">
+    <view class="small">{{error}}</view>
+    <button wx:if="{{!label}}" class="btn btn-soft btn-sm mt" bindtap="loadLabel">重试</button>
+  </view>
+  <view wx:elif="{{label}}" class="card label">
     <view class="h3">{{brand.name}}</view>
-    <view class="qr">二维码</view>
-    <view class="h3">{{label.name}} {{label.storage}}<text wx:if="{{label.ram}}"> · 运行内存 {{label.ram}}</text></view>
-    <view class="tiny muted">{{label.grade}} · 零售 ¥{{label.retail}} · {{f.code(label)}}</view>
+    <image class="qr" src="{{qrSrc}}" mode="aspectFit" />
+    <view class="h3">{{label.name}} {{label.storage}}<text wx:if="{{label.ram}}"> · 内存 {{label.ram}}</text></view>
+    <view class="tiny muted">{{label.grade}} · 零售 {{f.maskMoney(label.retail, privacy)}} · {{f.code(label)}}</view>
     <view class="tiny muted">编号 {{label.unitId}}</view>
   </view>
-  <todo-block items="{{['标签模板：型号 / 存储 / 成色 / 零售价 / 二维码', '蓝牙打印机连接与指令', '批量打印']}}" />
+  <view wx:if="{{label}}" class="notice mt">打开 PDF 后，可在右上角保存或分享。打印时选择实际大小或 100% 缩放。</view>
   <view class="footer-space"></view>
-  <view class="footer-bar"><button class="btn btn-primary" bindtap="onPrint">打印标签</button></view>
+  <view class="footer-bar">
+    <button class="btn btn-primary" bindtap="onPrint" loading="{{exporting}}" disabled="{{!label || exporting}}">导出打印 PDF</button>
+  </view>
 </view>
 </theme-shell>
