@@ -16,9 +16,9 @@ const DESCRIPTION_FIELDS = [
 createPage({
   requireStaff: true, permission: PERM.INVENTORY_VIEW,
   data: { id: '', detail: null, loading: false, error: '', mutating: false, album: 'public', detailsEditor: null, canEditDetails: false, priceEditor: null, priceConflict: false, recheckEditor: null, busy: 0,
-    ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false, canRemove: false,
+    ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false, canRemove: false, canRestock: false,
     priceLabels: { retail: '零售价', wholesale: '批发价', agentBase: '代理底价' },
-    docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检', inventory_void: '删除库存设备' },
+    docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检', inventory_void: '删除库存设备', restock: '重新入库', loan_void: '删除借还记录' },
     loanTypeLabels: { loan_out: '出借单', borrow_in: '借入单' }, canLoan: false, canLoanOut: false },
   onLot() { if (this.data.detail && this.data.detail.lotId) this.$go(ROUTES.INVENTORY, { lotId: this.data.detail.lotId }); },
   onLoad(query) { this.setData({ id: query.id, statusMap: UNIT_STATUS }); return this.load(); },
@@ -41,6 +41,8 @@ createPage({
         canLoan: can(this.data.user, PERM.LOAN_MANAGE),
         canLoanOut: can(this.data.user, PERM.LOAN_MANAGE) && (UNIT_TRANSITIONS[detail.status] || {}).loaned_out === 'loan_out' && detail.ownership !== 'borrowed' && !detail.loan,
         canSell: can(this.data.user, PERM.SALES_CREATE) && (UNIT_TRANSITIONS[detail.status] || {}).sold === 'sales_order' && detail.ownership !== 'borrowed',
+        canRestock: can(this.data.user, PERM.INBOUND) && detail.ownership === 'own'
+          && (UNIT_TRANSITIONS[detail.status] || {}).in_stock === 'restock' && typeof detail.restockToken === 'string',
         canRecheck: can(this.data.user, PERM.ACCEPTANCE) && (detail.availableActions || []).includes('recheck') });
       this.loaded = true; await this.loadLedger(true);
     } catch (e) { if (!this.destroyed) this.setData({ error: e.message }); }
@@ -96,6 +98,29 @@ createPage({
   onLoanOut() { if (this.data.canLoanOut && !this.data.mutating) this.$go(ROUTES.LOAN_EDIT, { type: 'loan_out', unitId: this.data.id }); },
   onOpenLoan() { if (this.data.detail.loan) this.$go(ROUTES.LOAN_DETAIL, { id: this.data.detail.loan.id }); },
   onSell() { if (this.data.canSell && !this.data.mutating) this.$go(ROUTES.POS, { unitId: this.data.id }); },
+  async onRestock() {
+    const { id, detail, canRestock, mutating, loading, detailsEditor, priceEditor, recheckEditor } = this.data;
+    if (!canRestock || mutating || loading || detailsEditor || priceEditor || recheckEditor) return;
+    this.setData({ mutating: true });
+    try {
+      const { confirmed, reason } = await confirmSensitive({
+        title: '确认重新入库',
+        content: '请确认设备已收回。设备将恢复为在库可售，原销售记录保留。如需退款，请先在原销售单办理。',
+        needReason: true
+      });
+      if (!confirmed || this.destroyed) return;
+      await api.inventory.restock(id, { reason, restockToken: detail.restockToken });
+      events.emit('inventory:changed', { id });
+      if (this.destroyed) return;
+      this.setData({ canRestock: false });
+      await this.load();
+      if (!this.destroyed) this.$toast('设备已重新入库', 'success');
+    } catch (error) {
+      if (!this.destroyed && [404, 409].includes(Number(error.code))) await this.load();
+    } finally {
+      if (!this.destroyed) this.setData({ mutating: false });
+    }
+  },
   onShare() { if (this.data.canShare && this.data.detail.status === 'in_stock') this.$go(ROUTES.SHARE, { unitId: this.data.id }); },
   async onOpenDetails() {
     if (this.data.mutating || this.data.loading || !this.data.canEditDetails

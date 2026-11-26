@@ -66,7 +66,11 @@ function prepare(action, input, params, user) {
     d.lines=d.lines.map(x=>{integer(x.quantity,'采购数量',1,1000);money(x.unitCost);if(x.attributes!==undefined)object(x.attributes,'采购规格');return x;});
     if(d.freight!==undefined)money(d.freight);
   }
-  if(action==='purchase.list' && d.status) choice(d.status,Object.keys(PURCHASE_STATUS),'采购状态');
+  if(action==='purchase.list' && d.status) choice(d.status,Object.keys(PURCHASE_STATUS).filter(s=>s!=='voided'),'采购状态');
+  if(action==='purchase.void') {
+    if(Object.keys(d).some(k=>k!=='reason'))fail(400,'删除参数无效');
+    d.reason=text(d.reason,'删除原因',200);
+  }
   if(action==='purchase.shipment') {
     choice(d.carrier,CARRIERS.map(c=>c.value),'承运商');
     if(typeof d.trackingNo!=='string'||!/^[A-Za-z0-9]{8,40}$/.test(d.trackingNo)) fail(400,'运单号无效');

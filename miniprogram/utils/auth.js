@@ -68,9 +68,22 @@ async function staffLogin(payload) {
   return saveSession(session);
 }
 
-function refreshMe() {
+async function refreshMe() {
   const api = require('../api/index');
-  return api.auth.me().then((user) => saveSession({ user }));
+  await ensureWechatSession();
+  const revision = sessionRevision;
+  const token = wx.getStorageSync(storageKeys.token);
+  let user;
+  try {
+    user = await api.auth.me();
+  } catch (error) {
+    if (Number(error.code) === 401 && sessionRevision === revision + 1 && !wx.getStorageSync(storageKeys.token))
+      return silentLogin();
+    throw error;
+  }
+  if (revision !== sessionRevision || token !== wx.getStorageSync(storageKeys.token))
+    throw new Error('登录状态已变化，请重试');
+  return saveSession({ user });
 }
 
 function logout() {

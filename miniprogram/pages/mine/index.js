@@ -2,6 +2,7 @@ const { createPage } = require('../../utils/page');
 const auth = require('../../utils/auth');
 const { ROUTES } = require('../../utils/router');
 const { isStaff, isAgent } = require('../../utils/permission');
+const { openAgentCenter } = require('../../utils/agent-entry');
 const { ROLE_LABELS } = require('../../constants/roles');
 const theme = require('../../utils/theme');
 
@@ -40,7 +41,8 @@ createPage({
   },
 
   goAgent() {
-    this.$go(this.data.agent ? ROUTES.AGENT_CENTER : ROUTES.AGENT_LANDING);
+    if (this.data.agent) return openAgentCenter(this, () => this.refresh());
+    return this.$go(ROUTES.AGENT_LANDING);
   },
 
   /** 切换主题：换的是 theme-shell 的类名，页面样式一行都不用改 */

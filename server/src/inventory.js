@@ -213,7 +213,51 @@ module.exports = async function inventory(app, { pool, config, route }) {
   }
   route("GET", "/units/:id", async (request) => {
     requirePerm(request, PERM.INVENTORY_VIEW);
-    return unitDetail(pool, await stock.get(pool, request.params.id), request);
+    return transaction(pool, async (db) => {
+      const row = await stock.get(db, request.params.id);
+      const detail = await unitDetail(db, row, request);
+      if (row.status === "sold" && row.ownership === "own" &&
+          request.user.permissions.includes(PERM.INBOUND)) {
+        detail.restockToken = await restockToken(db, row.id);
+      }
+      return detail;
+    });
+  });
+  async function restockToken(db, unitId, lock = false) {
+    const latest = await one(
+      db,
+      "SELECT CAST(id AS CHAR) AS token FROM inventory_ledger WHERE unit_id=? ORDER BY id DESC LIMIT 1" +
+        (lock ? " FOR SHARE" : ""),
+      [unitId],
+    );
+    return latest?.token || "";
+  }
+  route("POST", "/units/:id/restock", async (request) => {
+    requirePerm(request, PERM.INVENTORY_VIEW);
+    requirePerm(request, PERM.INBOUND);
+    const { reason: input, restockToken: expected } = request.body || {};
+    const reason = text(input, "重新入库原因", 500);
+    if (typeof expected !== "string" || !/^\d{0,20}$/.test(expected))
+      fail(400, "设备流水标识无效");
+    return transaction(pool, async (db) => {
+      const row = await stock.get(db, request.params.id, true);
+      if (row.status !== "sold" || row.ownership !== "own")
+        fail(409, "只有自有已售设备可以重新入库，请刷新后核对");
+      if (expected !== await restockToken(db, row.id, true))
+        fail(409, "设备流水已更新，请刷新后核对");
+      const shareFlags = JSON.stringify({ showInShop: false, sharePeer: false, shareAgent: false });
+      await db.execute(
+        "UPDATE units SET status='in_stock',share_flags=?,price_version=price_version+1 WHERE id=?",
+        [shareFlags, row.id],
+      );
+      await stock.ledger(db, request, row.id, "sold", "in_stock", "restock", row.id, reason);
+      await audit(db, request, "已售设备重新入库", row.id, {
+        before: { status: "sold" },
+        after: { status: "in_stock" },
+        reason,
+      });
+      return { id: row.id, status: "in_stock" };
+    });
   });
   route("PATCH", "/units/:id/price", async (request) => {
     requirePerm(request, PERM.PRICE_EDIT);

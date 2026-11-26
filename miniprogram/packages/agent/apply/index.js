@@ -1,6 +1,6 @@
 const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
-const { ROUTES } = require('../../../utils/router');
+const { openAgentCenter } = require('../../../utils/agent-entry');
 const { isPhone, firstError, showFieldError } = require('../../../utils/validate');
 
 /**
@@ -46,5 +46,5 @@ createPage({
       this.setData({ error: e.message });
     } finally { this.setData({ saving: false }); }
   },
-  onCenter() { this.$go(ROUTES.AGENT_CENTER); }
+  onCenter() { return openAgentCenter(this, () => this.load()); }
 });

@@ -31,7 +31,7 @@ const UNIT_TRANSITIONS = {
   abnormal: { returned: 'return_to_supplier', accepting: 'reinspect' },
   in_stock: { sold: 'sales_order', locked: 'agent_order', repairing: 'repair_order', loaned_out: 'loan_out' },
   locked: { sold: 'order_confirm', in_stock: 'lock_release' },
-  sold: { recheck: 'refund' },
+  sold: { recheck: 'refund', in_stock: 'restock' },
   recheck: { in_stock: 'recheck_pass' },
   repairing: { recheck: 'repair_done' },
   loaned_out: { recheck: 'loan_return' },
@@ -44,7 +44,8 @@ const PURCHASE_STATUS = {
   arrived: { label: '到货待验收', tone: 'orange' },
   accepting: { label: '验收中', tone: 'orange' },
   completed: { label: '验收完成', tone: 'green' },
-  exception: { label: '验收异常', tone: 'red' }
+  exception: { label: '验收异常', tone: 'red' },
+  voided: { label: '已删除', tone: 'gray' }
 };
 
 const CARRIERS = [
@@ -74,7 +75,8 @@ const LOAN_STATUS = {
   active: { label: '进行中', tone: 'orange' },
   overdue: { label: '已逾期', tone: 'red' },
   returned_recheck: { label: '归还待复检', tone: 'blue' },
-  closed: { label: '已完结', tone: 'green' }
+  closed: { label: '已完结', tone: 'green' },
+  voided: { label: '已删除', tone: 'gray' }
 };
 
 const SALES_STATUS = {

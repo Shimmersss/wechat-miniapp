@@ -36,7 +36,7 @@ view, text, button, input, textarea, scroll-view { box-sizing: border-box; }
 }
 .container::before {
   content: "";
-  position: absolute; left: -80rpx; right: -80rpx; top: -80rpx; height: 900rpx;
+  position: absolute; left: 0; right: 0; top: -80rpx; height: 900rpx;
   z-index: -1; pointer-events: none;
   background:
     radial-gradient(380rpx 320rpx at 14% 22%, var(--c-aura-1), transparent 70%),

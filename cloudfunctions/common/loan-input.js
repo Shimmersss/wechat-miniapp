@@ -16,6 +16,11 @@ function prepare(action,input,id,user){
   if(d.status&&!['active','overdue','returned_recheck','closed'].includes(d.status))fail(400,'借还状态无效');
   if(d.keyword)d.keyword=text(d.keyword,'搜索',100);return d;
  }
+ if(action==='void'){
+  allowed(input,['reason']);
+  d.reason=text(d.reason,'删除原因',200);
+  return d;
+ }
  allowed(input,action==='create'?['requestKey','type','unitIds','devices','counterparty','phone','dueAt','remark','reason','photos','deposit','overdueFee','compensation']:['requestKey','version','reason',action==='return'?'items':'unitIds']);
  for(const k of ['deposit','overdueFee','compensation'])if(d[k]!==undefined&&d[k]!==null&&d[k]!==''&&Number(d[k])!==0)fail(400,'首期不收押金、逾期费与损坏赔偿，请勿填写金额');
  d.signature=hash(JSON.stringify(canonical(action==='create'?{actor:user.id,...input}:{action,actor:user.id,...input})));

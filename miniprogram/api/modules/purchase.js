@@ -21,5 +21,7 @@ module.exports = {
    */
   submitAcceptance: (id, data) => http.post(`/purchase-orders/${id}/acceptance`, data, { loading: true }),
   /** { action:'return'|'dispute'|'reinspect', reason, unit?（复验通过时的单台模板参数与三价） } → { resolved, unitId?, purchaseStatus } */
-  resolveAcceptance: (id, data) => http.post(`/acceptances/${id}/resolve`, data, { loading: true })
+  resolveAcceptance: (id, data) => http.post(`/acceptances/${id}/resolve`, data, { loading: true }),
+  /** { reason } → { id, deleted }；仅老板可删除采购单，保留审计记录 */
+  remove: (id, data) => http.del(`/purchase-orders/${id}`, data, { loading: true })
 };

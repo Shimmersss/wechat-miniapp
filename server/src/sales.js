@@ -582,6 +582,13 @@ module.exports = async function (
         .sort((a, b) => a.i.unit_id.localeCompare(b.i.unit_id))) {
         const u = await stock.get(db, p.i.unit_id, true);
         if (u.status !== "sold") fail(409, "原销售设备状态不符");
+        const latestSale = await one(
+          db,
+          "SELECT doc_id FROM inventory_ledger WHERE unit_id=? AND doc_type='sales_order' AND to_status='sold' ORDER BY id DESC LIMIT 1 FOR SHARE",
+          [u.id],
+        );
+        if (latestSale && latestSale.doc_id !== o.id)
+          fail(409, "设备已再次售出，请核对对应销售单");
         p.unit = u;
       }
       const target = id();

@@ -57,6 +57,7 @@
       </view>
     </section-card>
 
+    <button wx:if="{{canRemove && user.role === 'boss'}}" class="btn btn-danger btn-block mb" bindtap="onRemove" disabled="{{loading || saving || uploading || pending || editor}}">删除借还记录</button>
     <view class="footer-space"></view>
     <view wx:if="{{pending}}" class="footer-bar"><button class="btn btn-primary" bindtap="onRetry" loading="{{saving}}" disabled="{{saving}}">结果未确认，原样重试</button></view>
     <view wx:elif="{{editor}}" class="footer-bar"><button class="btn btn-soft" bindtap="onCloseReturn" disabled="{{saving || uploading}}">取消</button><button class="btn btn-primary" bindtap="onSubmitReturn" loading="{{saving}}" disabled="{{saving || uploading}}">确认归还</button></view>

@@ -29,8 +29,8 @@ function buildHeaders(extra) {
   return headers;
 }
 
-function handleError(err, showError) {
-  if (err.code === 401) {
+function handleError(err, showError, authorization) {
+  if (err.code === 401 && authorization === `Bearer ${wx.getStorageSync(storageKeys.token)}`) {
     wx.removeStorageSync(storageKeys.token);
     events.emit('auth:expired');
   }
@@ -54,11 +54,12 @@ function request(options) {
   const data = method === 'GET' ? clean(rawData) : rawData;
   if (loading) wx.showLoading({ title: '加载中', mask: true });
 
+  let authorization;
   const done = (promise) =>
     promise
       .catch(async (err) => {
         const apiErr = err instanceof ApiError ? err : await transportError(err);
-        handleError(apiErr, showError);
+        handleError(apiErr, showError, authorization);
         throw apiErr;
       })
       .finally(() => loading && wx.hideLoading());
@@ -91,6 +92,7 @@ function request(options) {
   return done((async () => {
     if (requireSession) await require('./auth').ensureWechatSession();
     const headers = buildHeaders(header);
+    authorization = headers.Authorization;
     try {
       const result = await send(headers);
       if (headers.Authorization && method !== 'GET' && !/^\/(auth|visits)(\/|$)/.test(url)) {
@@ -101,7 +103,8 @@ function request(options) {
       const invalidSession = err.code === 401;
       const sessionUnavailable = err.code === 503 && err.message === '会话服务暂不可用';
       if (!optionalSession || !headers.Authorization || (!invalidSession && !sessionUnavailable)) throw err;
-      if (invalidSession && headers.Authorization === `Bearer ${wx.getStorageSync(storageKeys.token)}`) handleError(err, false);
+      if (invalidSession) handleError(err, false, authorization);
+      authorization = undefined;
       const { Authorization, ...guestHeaders } = headers;
       return send(guestHeaders);
     }

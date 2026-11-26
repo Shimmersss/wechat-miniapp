@@ -15,6 +15,7 @@ function add(method,path,action,permissions) {
     const user=await requireUser(ctx);
     if(!user.staffNo)fail(403,'仅员工可执行该操作');
     if(action==='units.void' && user.role!=='boss')fail(403,'仅老板账号可以删除库存设备');
+    if(action==='purchase.void' && user.role!=='boss')fail(403,'仅老板账号可以删除采购单');
     for(const group of permissions.map(x=>Array.isArray(x)?x:[x])) if(!group.some(p=>user.permissions.includes(p)))fail(403,'无权限执行该操作');
     if(action.startsWith('suppliers.')||action==='purchase.create'||action==='purchase.update'||(action==='purchase.list'&&ctx.data.supplierId)) {
       if(!user.permissions.includes(PERM.SUPPLIER_VIEW)||!canSee(user,'supplier'))fail(403,'无权限查看供应商');
@@ -56,6 +57,7 @@ add('GET','/purchase-orders','purchase.list',[[PERM.PURCHASE_MANAGE,PERM.ACCEPTA
 add('POST','/purchase-orders','purchase.create',[PERM.PURCHASE_MANAGE,PERM.SUPPLIER_VIEW]);
 add('PUT','/purchase-orders/:id','purchase.update',[PERM.PURCHASE_MANAGE,PERM.SUPPLIER_VIEW]);
 add('GET','/purchase-orders/:id','purchase.get',[[PERM.PURCHASE_MANAGE,PERM.ACCEPTANCE]]);
+add('DELETE','/purchase-orders/:id','purchase.void',[[PERM.PURCHASE_MANAGE,PERM.ACCEPTANCE]]);
 add('POST','/purchase-orders/:id/shipments','purchase.shipment',[PERM.PURCHASE_MANAGE]);
 add('GET','/purchase-orders/:id/acceptance','purchase.acceptance',[PERM.ACCEPTANCE]);
 add('POST','/purchase-orders/:id/acceptance','acceptance.submit',[PERM.ACCEPTANCE]);
