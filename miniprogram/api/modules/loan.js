@@ -12,5 +12,7 @@ module.exports={
  /** {requestKey,version,reason,items:[{unitId,condition,damage?,photos:[{fileId}]}]} → 部分/全部归还；出借回待复检，借入冲销；凭证必须internal */
  markReturned:(id,data)=>http.post(`/loans/${id}/return`,data,{loading:true}),
  /** {requestKey,version,reason,unitIds} → 核验已有库存复检流水后完结对应出借；不能用pass:true跳过实际模板复检，不改变库存状态 */
- recheck:(id,data)=>http.post(`/loans/${id}/recheck`,data,{loading:true})
+ recheck:(id,data)=>http.post(`/loans/${id}/recheck`,data,{loading:true}),
+ /** { reason } → { id, deleted }；仅老板可删除借还记录，按状态还原设备并保留流水与审计 */
+ remove:(id,data)=>http.del(`/loans/${id}`,data,{loading:true})
 };

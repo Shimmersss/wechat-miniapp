@@ -66,7 +66,11 @@ function prepare(action, input, params, user) {
     d.lines=d.lines.map(x=>{integer(x.quantity,'采购数量',1,1000);money(x.unitCost);if(x.attributes!==undefined)object(x.attributes,'采购规格');return x;});
     if(d.freight!==undefined)money(d.freight);
   }
-  if(action==='purchase.list' && d.status) choice(d.status,Object.keys(PURCHASE_STATUS),'采购状态');
+  if(action==='purchase.list' && d.status) choice(d.status,Object.keys(PURCHASE_STATUS).filter(s=>s!=='voided'),'采购状态');
+  if(action==='purchase.void') {
+    if(Object.keys(d).some(k=>k!=='reason'))fail(400,'删除参数无效');
+    d.reason=text(d.reason,'删除原因',200);
+  }
   if(action==='purchase.shipment') {
     choice(d.carrier,CARRIERS.map(c=>c.value),'承运商');
     if(typeof d.trackingNo!=='string'||!/^[A-Za-z0-9]{8,40}$/.test(d.trackingNo)) fail(400,'运单号无效');
@@ -109,6 +113,18 @@ function prepare(action, input, params, user) {
     const keys=['retail','wholesale','agentBase'].filter(k=>d[k]!==undefined);
     if(!keys.length||Object.keys(d).some(k=>!['retail','wholesale','agentBase','reason','priceVersion'].includes(k)))fail(400,'改价参数无效');
     keys.forEach(k=>d[k]=money(d[k])); text(d.reason,'改价原因',500);
+  }
+  if (action === 'units.edit') {
+    const allowed = ['editVersion', 'reason', 'cost', 'condition', 'attributes', 'peerDesc', 'customerDesc', 'internalNote'];
+    if (Object.keys(d).some(key => !allowed.includes(key)) || !/^[a-f0-9]{64}$/.test(d.editVersion || ''))
+      fail(400, '设备编辑参数无效');
+    d.reason = text(d.reason, '修改原因', 500);
+    if (d.cost !== undefined) d.cost = money(d.cost);
+    if (d.condition !== undefined) choice(d.condition, ['used', 'new'], '新旧状态');
+    if (d.attributes !== undefined) object(d.attributes, '机况参数');
+    for (const [key, label] of [['peerDesc', '同行描述'], ['customerDesc', '顾客描述'], ['internalNote', '内部备注']]) {
+      if (d[key] !== undefined) d[key] = text(typeof d[key] === 'string' ? d[key].trim() : d[key], label, 4000, true);
+    }
   }
   if(action==='units.void') {
     if(Object.keys(d).some(k=>k!=='reason'))fail(400,'删除参数无效');

@@ -2,24 +2,30 @@ const { createPage } = require('../../../utils/page');
 const api = require('../../../api/index');
 const { ROUTES } = require('../../../utils/router');
 const { PERM } = require('../../../constants/roles');
-const { UNIT_STATUS, UNIT_TRANSITIONS } = require('../../../constants/status');
+const { UNIT_STATUS, UNIT_TRANSITIONS, CONDITION_TYPE, CONDITION_TYPE_DEVICE } = require('../../../constants/status');
 const { can } = require('../../../utils/permission');
 const { confirmSensitive } = require('../../../utils/confirm');
 const { validateValues } = require('../../../utils/template');
 const events = require('../../../utils/events');
+const DESCRIPTION_FIELDS = [
+  { key: 'peerDesc', label: '同行描述' },
+  { key: 'customerDesc', label: '顾客描述' },
+  { key: 'internalNote', label: '内部备注' }
+];
+
 createPage({
   requireStaff: true, permission: PERM.INVENTORY_VIEW,
-  data: { id: '', detail: null, loading: false, error: '', mutating: false, album: 'public', priceEditor: null, priceConflict: false, recheckEditor: null, busy: 0,
-    ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false, canRemove: false,
+  data: { id: '', detail: null, loading: false, error: '', mutating: false, album: 'public', detailsEditor: null, canEditDetails: false, priceEditor: null, priceConflict: false, recheckEditor: null, busy: 0,
+    ledger: [], ledgerPage: 0, ledgerMore: true, ledgerLoading: false, ledgerError: '', canPrice: false, canShare: false, canLabel: false, canRecheck: false, canRepair: false, canRemove: false, canRestock: false,
     priceLabels: { retail: '零售价', wholesale: '批发价', agentBase: '代理底价' },
-    docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检', inventory_void: '删除库存设备' },
+    docLabels: { inbound: '独立入库', acceptance: '采购验收', recheck: '库存复检', inventory_void: '删除库存设备', restock: '重新入库', loan_void: '删除借还记录' },
     loanTypeLabels: { loan_out: '出借单', borrow_in: '借入单' }, canLoan: false, canLoanOut: false },
   onLot() { if (this.data.detail && this.data.detail.lotId) this.$go(ROUTES.INVENTORY, { lotId: this.data.detail.lotId }); },
   onLoad(query) { this.setData({ id: query.id, statusMap: UNIT_STATUS }); return this.load(); },
-  onShow() { if (this.loaded && !this.data.mutating && !this.data.priceEditor && !this.data.recheckEditor) this.load(); },
+  onShow() { if (this.loaded && !this.data.mutating && !this.data.priceEditor && !this.data.recheckEditor && !this.data.detailsEditor) this.load(); },
   onUnload() { this.destroyed = true; },
   onPullDownRefresh() {
-    if (this.data.priceEditor || this.data.recheckEditor || this.data.mutating) { this.$toast('请先保存或关闭当前编辑'); wx.stopPullDownRefresh(); return; }
+    if (this.data.priceEditor || this.data.recheckEditor || this.data.detailsEditor || this.data.mutating) { this.$toast('请先保存或关闭当前编辑'); wx.stopPullDownRefresh(); return; }
     this.load().finally(() => wx.stopPullDownRefresh());
   },
   async load() {
@@ -28,11 +34,15 @@ createPage({
       const detail = await api.inventory.detail(this.data.id);
       if (this.destroyed) return;
       this.setData({ detail, canPrice: can(this.data.user, PERM.PRICE_EDIT), canShare: can(this.data.user, PERM.SHARE), canLabel: can(this.data.user, PERM.LABEL_PRINT),
+        canEditDetails: detail.status === 'in_stock' && detail.ownership === 'own'
+          && (can(this.data.user, PERM.INBOUND) || (detail.cost !== undefined && can(this.data.user, PERM.PRICE_EDIT))),
         canRemove: this.data.user?.role === 'boss' && (detail.availableActions || []).includes('void'),
         canRepair: can(this.data.user, PERM.REPAIR_HANDLE) && detail.status === 'in_stock' && detail.ownership !== 'borrowed',
         canLoan: can(this.data.user, PERM.LOAN_MANAGE),
         canLoanOut: can(this.data.user, PERM.LOAN_MANAGE) && (UNIT_TRANSITIONS[detail.status] || {}).loaned_out === 'loan_out' && detail.ownership !== 'borrowed' && !detail.loan,
         canSell: can(this.data.user, PERM.SALES_CREATE) && (UNIT_TRANSITIONS[detail.status] || {}).sold === 'sales_order' && detail.ownership !== 'borrowed',
+        canRestock: can(this.data.user, PERM.INBOUND) && detail.ownership === 'own'
+          && (UNIT_TRANSITIONS[detail.status] || {}).in_stock === 'restock' && typeof detail.restockToken === 'string',
         canRecheck: can(this.data.user, PERM.ACCEPTANCE) && (detail.availableActions || []).includes('recheck') });
       this.loaded = true; await this.loadLedger(true);
     } catch (e) { if (!this.destroyed) this.setData({ error: e.message }); }
@@ -60,8 +70,8 @@ createPage({
   },
   onLabel() { if (this.data.canLabel) this.$go(ROUTES.INVENTORY_LABEL, { id: this.data.id }); },
   async onRemove() {
-    const { id, detail, canRemove, loading, mutating, priceEditor, recheckEditor } = this.data;
-    if (!canRemove || this.data.user?.role !== 'boss' || loading || mutating || priceEditor || recheckEditor) return;
+    const { id, detail, canRemove, loading, mutating, priceEditor, recheckEditor, detailsEditor } = this.data;
+    if (!canRemove || this.data.user?.role !== 'boss' || loading || mutating || priceEditor || recheckEditor || detailsEditor) return;
     this.setData({ mutating: true });
     try {
       const confirmation = await confirmSensitive({
@@ -88,9 +98,97 @@ createPage({
   onLoanOut() { if (this.data.canLoanOut && !this.data.mutating) this.$go(ROUTES.LOAN_EDIT, { type: 'loan_out', unitId: this.data.id }); },
   onOpenLoan() { if (this.data.detail.loan) this.$go(ROUTES.LOAN_DETAIL, { id: this.data.detail.loan.id }); },
   onSell() { if (this.data.canSell && !this.data.mutating) this.$go(ROUTES.POS, { unitId: this.data.id }); },
+  async onRestock() {
+    const { id, detail, canRestock, mutating, loading, detailsEditor, priceEditor, recheckEditor } = this.data;
+    if (!canRestock || mutating || loading || detailsEditor || priceEditor || recheckEditor) return;
+    this.setData({ mutating: true });
+    try {
+      const { confirmed, reason } = await confirmSensitive({
+        title: '确认重新入库',
+        content: '请确认设备已收回。设备将恢复为在库可售，原销售记录保留。如需退款，请先在原销售单办理。',
+        needReason: true
+      });
+      if (!confirmed || this.destroyed) return;
+      await api.inventory.restock(id, { reason, restockToken: detail.restockToken });
+      events.emit('inventory:changed', { id });
+      if (this.destroyed) return;
+      this.setData({ canRestock: false });
+      await this.load();
+      if (!this.destroyed) this.$toast('设备已重新入库', 'success');
+    } catch (error) {
+      if (!this.destroyed && [404, 409].includes(Number(error.code))) await this.load();
+    } finally {
+      if (!this.destroyed) this.setData({ mutating: false });
+    }
+  },
   onShare() { if (this.data.canShare && this.data.detail.status === 'in_stock') this.$go(ROUTES.SHARE, { unitId: this.data.id }); },
+  async onOpenDetails() {
+    if (this.data.mutating || this.data.loading || !this.data.canEditDetails
+      || this.data.detailsEditor || this.data.priceEditor || this.data.recheckEditor) return;
+    this.setData({ mutating: true });
+    try {
+      const form = await api.inventory.editForm(this.data.id);
+      const descriptionFields = DESCRIPTION_FIELDS.filter(field => form[field.key] !== undefined);
+      const conditionOptions = this.data.detail.category === 'phone' ? CONDITION_TYPE : CONDITION_TYPE_DEVICE;
+      this.setData({
+        detailsEditor: { ...form, descriptionFields, conditionOptions, changes: {}, dirty: [], conflict: false, attributes: { ...form.values } }
+      });
+    } catch (error) { this.$toast(error.message); }
+    finally { this.setData({ mutating: false }); }
+  },
+  onDetailsValue(e) {
+    const { detailsEditor, mutating } = this.data;
+    if (mutating || !detailsEditor || detailsEditor.conflict) return;
+    const { key, value } = e.currentTarget.dataset;
+    this.setData({ ['detailsEditor.changes.' + key]: value === undefined ? e.detail.value : value });
+  },
+  onDetailsAttribute(e) {
+    const { detailsEditor, mutating } = this.data;
+    if (mutating || !detailsEditor || detailsEditor.conflict) return;
+    const { key, value } = e.detail;
+    this.setData({
+      ['detailsEditor.attributes.' + key]: value,
+      'detailsEditor.dirty': [...new Set([...detailsEditor.dirty, key])]
+    });
+  },
+  onCloseDetails() { if (!this.data.mutating) this.setData({ detailsEditor: null }); },
+  async onSaveDetails() {
+    const { detailsEditor: editor, mutating } = this.data;
+    if (mutating || !editor || editor.conflict) return;
+    const changes = Object.fromEntries(Object.entries(editor.changes)
+      .filter(([key, value]) => key === 'cost' || value !== editor[key]));
+    if ('cost' in changes) {
+      if (!/^\d{1,12}(\.\d{1,2})?$/.test(String(changes.cost).trim())) return this.$toast('成本须为非负金额，最多两位小数');
+      if (Number(changes.cost) === Number(editor.cost)) delete changes.cost;
+    }
+    const fields = editor.fields.filter(field => editor.dirty.includes(field.key)
+      && editor.attributes[field.key] !== editor.values[field.key]);
+    const error = validateValues(fields, editor.attributes);
+    if (error) return this.$toast(error);
+    if (fields.length) changes.attributes = Object.fromEntries(fields.map(field => [field.key, editor.attributes[field.key]]));
+    if (!Object.keys(changes).length) return this.$toast('设备资料未修改');
+    this.setData({ mutating: true });
+    try {
+      const confirm = await confirmSensitive({
+        title: '确认修改库存设备资料',
+        content: '将记录修改前后的内容。修改成本会使尚未提交的旧报价失效。',
+        needReason: true
+      });
+      if (!confirm.confirmed || this.destroyed) return;
+      const { id } = await api.inventory.updateDetails(this.data.id,
+        { ...changes, editVersion: editor.editVersion, reason: confirm.reason });
+      events.emit('inventory:changed', { id });
+      if (this.destroyed) return;
+      this.setData({ detailsEditor: null });
+      this.$toast('设备资料已保存', 'success');
+      await this.load();
+    } catch (error) {
+      if (Number(error.code) === 409) this.setData({ 'detailsEditor.conflict': true });
+      this.$toast(error.message);
+    } finally { if (!this.destroyed) this.setData({ mutating: false }); }
+  },
   onEditPrice() {
-    if (this.data.mutating || this.data.recheckEditor || !this.data.canPrice || this.data.detail.status !== 'in_stock') return;
+    if (this.data.mutating || this.data.recheckEditor || this.data.detailsEditor || !this.data.canPrice || this.data.detail.status !== 'in_stock') return;
     const values = {}, keys = ['retail', 'wholesale', 'agentBase'].filter(key => this.data.detail[key] !== undefined);
     keys.forEach(key => { values[key] = String(this.data.detail[key]); });
     this.setData({ priceEditor: { values, keys, priceVersion: this.data.detail.priceVersion }, priceConflict: false });
@@ -125,7 +223,7 @@ createPage({
     finally { this.setData({ mutating: false }); }
   },
   async onOpenRecheck() {
-    if (this.data.mutating || !this.data.canRecheck || this.data.priceEditor) return;
+    if (this.data.mutating || !this.data.canRecheck || this.data.priceEditor || this.data.detailsEditor) return;
     this.setData({ mutating: true });
     try { const form = await api.inventory.recheckForm(this.data.id); this.setData({ recheckEditor: { ...form, dirty: [], result: '', conflict: false } }); }
     catch (e) { this.$toast(e.message); } finally { this.setData({ mutating: false }); }

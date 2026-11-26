@@ -29,8 +29,8 @@ function buildHeaders(extra) {
   return headers;
 }
 
-function handleError(err, showError) {
-  if (err.code === 401) {
+function handleError(err, showError, authorization) {
+  if (err.code === 401 && authorization === `Bearer ${wx.getStorageSync(storageKeys.token)}`) {
     wx.removeStorageSync(storageKeys.token);
     events.emit('auth:expired');
   }
@@ -54,11 +54,12 @@ function request(options) {
   const data = method === 'GET' ? clean(rawData) : rawData;
   if (loading) wx.showLoading({ title: '加载中', mask: true });
 
+  let authorization;
   const done = (promise) =>
     promise
       .catch(async (err) => {
         const apiErr = err instanceof ApiError ? err : await transportError(err);
-        handleError(apiErr, showError);
+        handleError(apiErr, showError, authorization);
         throw apiErr;
       })
       .finally(() => loading && wx.hideLoading());
@@ -91,6 +92,7 @@ function request(options) {
   return done((async () => {
     if (requireSession) await require('./auth').ensureWechatSession();
     const headers = buildHeaders(header);
+    authorization = headers.Authorization;
     try {
       const result = await send(headers);
       if (headers.Authorization && method !== 'GET' && !/^\/(auth|visits)(\/|$)/.test(url)) {
@@ -101,7 +103,8 @@ function request(options) {
       const invalidSession = err.code === 401;
       const sessionUnavailable = err.code === 503 && err.message === '会话服务暂不可用';
       if (!optionalSession || !headers.Authorization || (!invalidSession && !sessionUnavailable)) throw err;
-      if (invalidSession && headers.Authorization === `Bearer ${wx.getStorageSync(storageKeys.token)}`) handleError(err, false);
+      if (invalidSession) handleError(err, false, authorization);
+      authorization = undefined;
       const { Authorization, ...guestHeaders } = headers;
       return send(guestHeaders);
     }
@@ -229,9 +232,9 @@ async function upload(options) {
   }
 }
 
-function sendUpload({ filePath, scope = 'public', bizType = '', mediaType, posterId }) {
+function sendUpload({ filePath, scope = 'public', bizType = '', mediaType, posterId, size }) {
   if (config.useCloud) {
-    return uploadCloud({ filePath, scope, bizType, mediaType, posterId });
+    return uploadCloud({ filePath, scope, bizType, mediaType, posterId, size });
   }
   return new Promise((resolve, reject) => {
     wx.uploadFile({
@@ -253,14 +256,51 @@ function sendUpload({ filePath, scope = 'public', bizType = '', mediaType, poste
 }
 
 /** 暂存签名只允许写本次对象；正式登记成功后才向页面返回文件。 */
-async function uploadCloud({ filePath, scope, bizType, mediaType, posterId }) {
+async function uploadCloud({ filePath, scope, bizType, mediaType, posterId, size }) {
   const fs = wx.getFileSystemManager();
-  let bytes = await new Promise((resolve, reject) => fs.readFile({ filePath, success: r => resolve(r.data), fail: reject }));
-  if (!bytes || Object.prototype.toString.call(bytes) !== '[object ArrayBuffer]' || !bytes.byteLength || bytes.byteLength > 32 * 1024 * 1024)
-    throw new ApiError(413, '文件须为1～32MB');
-  const requestKey = 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  const intent = await request({ url: '/files/upload-intent', method: 'POST', data: { scope, size: bytes.byteLength, bizType, requestKey, ...(mediaType ? { mediaType } : {}), ...(posterId ? { posterId } : {}) }, showError: false });
-  if (intent.file) return intent.file;
+  const readBytes = () => new Promise((resolve, reject) => fs.readFile({ filePath, success: r => resolve(r.data), fail: reject }));
+  const isValidBytes = (data) => !!data && Object.prototype.toString.call(data) === '[object ArrayBuffer]' && data.byteLength && data.byteLength <= 32 * 1024 * 1024;
+  const knownSize = Number.isInteger(size) && size > 0 && size <= 32 * 1024 * 1024;
+  const newKey = () => 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  const requestKey = newKey();
+  const postIntent = (byteSize, key = requestKey) => request({
+    url: '/files/upload-intent',
+    method: 'POST',
+    data: { scope, size: byteSize, bizType, requestKey: key, ...(mediaType ? { mediaType } : {}), ...(posterId ? { posterId } : {}) },
+    showError: false
+  });
+
+  let intent;
+  let bytes;
+  if (knownSize && size <= 5 * 1024 * 1024) {
+    // 小于等于 5MB（图片/封面）：读盘与 /upload-intent 并发，减少一次串行等待；guarded 避免 intent 提前报错时读盘产生未捕获异常。
+    const readPromise = readBytes();
+    readPromise.catch(() => {});
+    intent = await postIntent(size);
+    if (intent.file) return intent.file;
+    bytes = await readPromise;
+    if (!isValidBytes(bytes)) throw new ApiError(413, '文件须为1～32MB');
+    if (bytes.byteLength !== size) {
+      intent = await postIntent(bytes.byteLength, newKey());
+      if (intent.file) return intent.file;
+    }
+  } else if (knownSize) {
+    // 大于 5MB（视频）：先申请 upload-intent 再读盘，失败时不占用 20MB+ 内存。
+    intent = await postIntent(size);
+    if (intent.file) return intent.file;
+    bytes = await readBytes();
+    if (!isValidBytes(bytes)) throw new ApiError(413, '文件须为1～32MB');
+    if (bytes.byteLength !== size) {
+      intent = await postIntent(bytes.byteLength, newKey());
+      if (intent.file) return intent.file;
+    }
+  } else {
+    bytes = await readBytes();
+    if (!isValidBytes(bytes)) throw new ApiError(413, '文件须为1～32MB');
+    intent = await postIntent(bytes.byteLength);
+    if (intent.file) return intent.file;
+  }
+
   // signed PUT 不携带员工令牌，更不携带存储密钥。上传失败不会继续登记。
   await new Promise((resolve, reject) => wx.request({
     url: intent.uploadUrl, method: 'PUT', data: bytes,

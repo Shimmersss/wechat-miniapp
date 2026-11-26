@@ -38,6 +38,7 @@
         <view wx:if="{{canAccept && (item.resolution === 'none' || item.resolution === 'dispute')}}" class="row-start gap-sm mt"><button class="btn btn-line btn-sm" data-id="{{item.id}}" data-action="return" bindtap="onResolve" disabled="{{saving}}">登记退货</button><button class="btn btn-line btn-sm" data-id="{{item.id}}" data-action="dispute" bindtap="onResolve" disabled="{{saving}}">争议</button><button class="btn btn-soft btn-sm" data-id="{{item.id}}" bindtap="onReinspect" disabled="{{saving}}">复验入库</button></view>
       </view>
     </section-card>
+    <button wx:if="{{canRemove && user.role === 'boss'}}" class="btn btn-danger btn-block mb" bindtap="onRemove" disabled="{{loading || saving || shipmentEditor}}">删除采购单</button>
     <view class="footer-space"></view><view wx:if="{{canAccept && (detail.status === 'arrived' || detail.status === 'accepting' || detail.status === 'exception')}}" class="footer-bar"><button class="btn btn-primary" bindtap="onAccept">逐台到货验收</button></view>
   </block>
 </view>

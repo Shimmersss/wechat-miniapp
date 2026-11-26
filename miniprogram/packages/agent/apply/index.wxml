@@ -8,7 +8,7 @@
   </view>
   <view wx:elif="{{me.status === 'active'}}" class="card center">
     <view class="h2">你已经是夏目数码代理</view>
-    <button class="btn btn-primary btn-block mt" bindtap="onCenter">进入代理中心</button>
+    <button class="btn btn-primary btn-block mt" bindtap="onCenter" loading="{{checkingAgent}}" disabled="{{checkingAgent}}">进入代理中心</button>
   </view>
   <view wx:elif="{{me.status === 'disabled'}}" class="card center"><view class="h2">代理资格已停用</view><view class="small muted mt">如有疑问请联系门店。</view></view>
   <block wx:elif="{{!loading}}">

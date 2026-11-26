@@ -47,7 +47,7 @@
   <!-- 本页是 tabBar 页，底部已被自定义 tabBar 常驻占用（104rpx + 安全区）。
        不能再叠一层 position:fixed 的 footer-bar，否则按钮会被 tabBar 压住。
        改为把主按钮放回内容流末尾，并留出 tabBar 高度，滚到底自然可见。 -->
-  <button class="btn btn-primary btn-block apply-cta" bindtap="onPrimaryTap">
+  <button class="btn btn-primary btn-block apply-cta" bindtap="onPrimaryTap" loading="{{checkingAgent}}" disabled="{{checkingAgent}}">
     {{agentStatus === 'active' ? '进入代理中心' : agentStatus === 'pending' ? '已提交，等待审核' : agentStatus === 'rejected' ? '重新申请' : agentStatus === 'disabled' ? '代理资格已停用' : '申请成为代理'}}
   </button>
   <view class="tabbar-space"></view>

@@ -35,6 +35,7 @@ function purchase(row,u) {
   if(canSee(u,'cost')){r.amount=Number(row.amount);r.freight=Number(row.freight);}
   if(row.lines)r.lines=row.lines.map(l=>({id:l.id,modelId:l.model_id,modelName:l.name,templateId:l.template_id,attributes:l.expected_attributes,quantity:l.quantity,received:l.received_count,accepted:l.accepted_count,rejected:l.rejected_count,remaining:l.quantity-l.received_count,...(canSee(u,'cost')?{unitCost:Number(l.unit_cost)}:{})}));
   if(row.exceptions)r.exceptions=row.exceptions.map(a=>({id:a.id,lineId:a.purchase_line_id,modelId:a.model_id,modelName:a.name,imeiMasked:mask(a.imei1),serialMasked:maskSerial(a.serial_no),noSerialReason:a.no_serial_reason||null,...(canSee(u,'fullImei')?{imei1:a.imei1,imei2:a.imei2,serialNo:a.serial_no}:{}),reason:a.reason,resolution:a.resolution,observedModel:a.attributes?._observedModel||''}));
+  if(row.canVoid===true && u.role==='boss')r.canVoid=true;
   return r;
 }
 function record(row,u,detail=true) {

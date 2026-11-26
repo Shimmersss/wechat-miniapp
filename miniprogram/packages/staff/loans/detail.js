@@ -10,7 +10,7 @@ const { date } = require('../../../utils/format');
 let sequence = 0;
 const key = (kind) => 'loan_' + kind + '_' + Date.now() + '_' + ++sequence + '_' + Math.random().toString(36).slice(2);
 const ITEM_STATUS = { active: '未归还', returned_recheck: '已归还 · 待复检', closed: '已完结' };
-const ACTIONS = { create: '建单交接', return: '登记归还', recheck: '复检后完结' };
+const ACTIONS = { create: '建单交接', return: '登记归还', recheck: '复检后完结', void: '删除借还记录' };
 
 /**
  * 借还单详情：逐台登记归还（外观功能结论 + 内部交接照片），
@@ -20,7 +20,7 @@ const ACTIONS = { create: '建单交接', return: '登记归还', recheck: '复�
 createPage({
   requireStaff: true,
   permission: PERM.LOAN_MANAGE,
-  data: { id: '', detail: null, loading: false, error: '', editor: null, saving: false, uploading: false, pending: null },
+  data: { id: '', detail: null, loading: false, error: '', editor: null, saving: false, uploading: false, pending: null, canRemove: false },
 
   onLoad(query = {}) {
     this.setData({ id: query.id || '', statusMap: LOAN_STATUS, typeMap: LOAN_TYPE });
@@ -48,7 +48,7 @@ createPage({
         photos: photos.filter((p) => p.eventId === e.id)
       }));
       detail.openCount = detail.items.filter((i) => i.status === 'active').length;
-      this.setData({ detail });
+      this.setData({ detail, canRemove: this.data.user?.role === 'boss' && !!detail.canVoid });
       this.loaded = true;
     } catch (e) { if (!this.destroyed) this.setData({ error: e.message }); }
     finally { if (!this.destroyed) this.setData({ loading: false }); }
@@ -122,6 +122,36 @@ createPage({
       if (code >= 400 && code < 500) { this.setData({ pending: null }); if (code === 409) await this.load(); if (!this.destroyed) this.setData({ error: e.message }); }
       else this.setData({ error: e.message });
     } finally { if (!this.destroyed) this.setData({ saving: false }); }
+  },
+  async onRemove() {
+    const { id, detail, canRemove, loading, editor } = this.data;
+    if (!canRemove || this.data.user?.role !== 'boss' || loading || this.locked() || editor) return;
+    this.setData({ saving: true });
+    try {
+      const hasActive = (detail.items || []).some((i) => i.status === 'active');
+      const content = detail.type === 'loan_out' && hasActive
+        ? (detail.no || '这张出借单') + '将从借还列表移除，未归还自有设备将恢复为在库可售（分享开关保持关闭），流水与审计记录会保留。'
+        : detail.type === 'borrow_in' && hasActive
+          ? (detail.no || '这张借入单') + '将从借还列表移除，本单新登记的借入设备将被作废并释放原串码，流水与审计记录会保留。'
+          : (detail.no || '这张借还单') + '将从借还列表移除，相关库存流水与审计记录会保留。';
+      const confirmation = await confirmSensitive({
+        title: '确认删除借还记录',
+        content,
+        needReason: true,
+        confirmText: '删除'
+      });
+      if (!confirmation.confirmed || this.destroyed) return;
+      await api.loan.remove(id, { reason: confirmation.reason });
+      events.emit('inventory:changed', { loanId: id });
+      if (this.destroyed) return;
+      this.setData({ detail: null, canRemove: false });
+      this.$toast('借还记录已删除', 'success');
+      wx.navigateBack({ fail: () => wx.redirectTo({ url: ROUTES.LOANS }) });
+    } catch (error) {
+      if (!this.destroyed && [404, 409].includes(Number(error.code))) await this.load();
+    } finally {
+      if (!this.destroyed) this.setData({ saving: false });
+    }
   },
   onPreview(e) { wx.previewImage({ urls: [e.currentTarget.dataset.url], current: e.currentTarget.dataset.url }); }
 });

@@ -11,6 +11,6 @@ module.exports = {
   smsCaptcha: () => http.post('/auth/sms-captcha', {}, { showError: false }),
   /** 发送员工二次验证短信；可带 captchaToken/captchaCode */
   sendSmsCode: (data) => http.post('/auth/sms-code', data),
-  me: () => http.get('/auth/me'),
+  me: () => http.get('/auth/me', undefined, { showError: false }),
   logout: () => http.post('/auth/logout', {}, { showError: false })
 };

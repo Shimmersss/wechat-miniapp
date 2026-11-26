@@ -1,6 +1,7 @@
 const { createPage } = require('../../utils/page');
 const api = require('../../api/index');
 const { ROUTES } = require('../../utils/router');
+const { openAgentCenter } = require('../../utils/agent-entry');
 
 /** 代理招募页（需求 16）：顾客端直接可见，申请后跳转申请表；已是代理则进入代理中心 */
 createPage({
@@ -26,15 +27,17 @@ createPage({
     ]
   },
 
-  onShow() {
-    api.agent
+  onShow() { return this.loadAgentStatus(); },
+
+  loadAgentStatus() {
+    return api.agent
       .me()
       .then((res) => this.setData({ agentStatus: res.status }))
       .catch(() => null);
   },
 
   onPrimaryTap() {
-    if (this.data.agentStatus === 'active') return this.$go(ROUTES.AGENT_CENTER);
+    if (this.data.agentStatus === 'active') return openAgentCenter(this, () => this.loadAgentStatus());
     if (this.data.agentStatus === 'pending') return this.$toast('申请审核中，请耐心等待');
     if (this.data.agentStatus === 'disabled') return this.$toast('代理资格已停用，请联系门店');
     return this.$go(ROUTES.AGENT_APPLY);

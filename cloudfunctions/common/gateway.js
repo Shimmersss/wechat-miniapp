@@ -94,7 +94,7 @@ function httpResponse(result) {
  * ctx: { openid, data, headers, requestId }
  */
 function createHandler(routes) {
-  async function dispatch(event, context, openid, transport = "wechat") {
+  async function dispatch(event, context, openid, transport = "wechat", sessionRow = null) {
     const started = Date.now();
     const method = String(event?.method || "GET").toUpperCase();
     const path = String(event?.path || "");
@@ -119,6 +119,7 @@ function createHandler(routes) {
       const data = await route[2]({
         openid,
         transport,
+        sessionRow,
         params,
         data: event.data || {},
         headers: event.headers || {},
@@ -165,7 +166,8 @@ function createHandler(routes) {
       (request.path === "/auth/wx-login" || request.path === "/auth/staff-wechat-login");
     try {
       const h = freshLogin ? "" : tokenHash(headers);
-      const openid = h ? await rpc("api_http_session_openid", { p_token_hash: h }) : "";
+      const sessionRow = h ? await rpc("api_http_session_user", { p_token_hash: h }) : null;
+      const openid = sessionRow?.user?.openid || "";
       if (!freshLogin && headers.authorization && !openid)
         return httpResponse({ code: 401, data: null, message: "请先登录" });
       return httpResponse(await dispatch({
@@ -173,7 +175,7 @@ function createHandler(routes) {
         path: request.path,
         data: request.data,
         headers,
-      }, context, openid || "", "https"));
+      }, context, openid, "https", sessionRow));
     } catch {
       return httpResponse({ code: 503, data: null, message: "会话服务暂不可用" });
     }

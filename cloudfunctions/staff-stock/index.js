@@ -15,12 +15,16 @@ function add(method,path,action,permissions) {
     const user=await requireUser(ctx);
     if(!user.staffNo)fail(403,'仅员工可执行该操作');
     if(action==='units.void' && user.role!=='boss')fail(403,'仅老板账号可以删除库存设备');
+    if(action==='purchase.void' && user.role!=='boss')fail(403,'仅老板账号可以删除采购单');
     for(const group of permissions.map(x=>Array.isArray(x)?x:[x])) if(!group.some(p=>user.permissions.includes(p)))fail(403,'无权限执行该操作');
     if(action.startsWith('suppliers.')||action==='purchase.create'||action==='purchase.update'||(action==='purchase.list'&&ctx.data.supplierId)) {
       if(!user.permissions.includes(PERM.SUPPLIER_VIEW)||!canSee(user,'supplier'))fail(403,'无权限查看供应商');
     }
     const {d,p}=prepare(action,ctx.data,ctx.params,user);
     if (action === 'models.identify') return rpc('api_imei_model_lookup', { p_imei: d.imei });
+    if (action === 'units.editForm' || action === 'units.edit') {
+      return rpc('api_stock_unit_edit', { p_id: p.id, p_data: action === 'units.edit' ? d : null, p_user: user, p_request_id: ctx.requestId });
+    }
     if (action === 'units.restock') {
       return rpc('api_stock_restock',{p_id:p.id,p_data:d,p_user:user,p_request_id:ctx.requestId});
     }
@@ -53,6 +57,7 @@ add('GET','/purchase-orders','purchase.list',[[PERM.PURCHASE_MANAGE,PERM.ACCEPTA
 add('POST','/purchase-orders','purchase.create',[PERM.PURCHASE_MANAGE,PERM.SUPPLIER_VIEW]);
 add('PUT','/purchase-orders/:id','purchase.update',[PERM.PURCHASE_MANAGE,PERM.SUPPLIER_VIEW]);
 add('GET','/purchase-orders/:id','purchase.get',[[PERM.PURCHASE_MANAGE,PERM.ACCEPTANCE]]);
+add('DELETE','/purchase-orders/:id','purchase.void',[[PERM.PURCHASE_MANAGE,PERM.ACCEPTANCE]]);
 add('POST','/purchase-orders/:id/shipments','purchase.shipment',[PERM.PURCHASE_MANAGE]);
 add('GET','/purchase-orders/:id/acceptance','purchase.acceptance',[PERM.ACCEPTANCE]);
 add('POST','/purchase-orders/:id/acceptance','acceptance.submit',[PERM.ACCEPTANCE]);
@@ -70,6 +75,9 @@ add('GET','/units','units.list',inv);
 add('PATCH','/units/share-flags','units.flags.batch',[PERM.SHARE,...inv]);
 add('GET','/units/:id','units.get',inv);
 add('DELETE','/units/:id','units.void',inv);
+const editUnit = [...inv, [PERM.INBOUND, PERM.PRICE_EDIT]];
+add('GET','/units/:id/edit-form','units.editForm',editUnit);
+add('PATCH','/units/:id/details','units.edit',editUnit);
 add('PATCH','/units/:id/price','units.price',[PERM.PRICE_EDIT,...inv]);
 add('PATCH','/units/:id/share-flags','units.flags',[PERM.SHARE,...inv]);
 add('GET','/units/:id/ledger','units.ledger',inv);
