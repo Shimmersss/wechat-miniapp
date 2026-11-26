@@ -43,6 +43,14 @@ function userView(row) {
 
 /** 有有效会话返回用户视图，否则 null */
 async function currentUser(ctx) {
+  if (
+    ctx.transport === "https" &&
+    ctx.openid &&
+    ctx.sessionRow &&
+    ctx.sessionRow.user?.openid === ctx.openid
+  ) {
+    return userView(ctx.sessionRow);
+  }
   const h = tokenHash(ctx.headers);
   if (!h || !ctx.openid) return null;
   const row = await rpc("api_session_user", {

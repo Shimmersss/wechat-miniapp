@@ -77,6 +77,7 @@ async function refreshFiles(groups, getFile) {
         const latest = await getFile(file.fileId);
         if (!latest?.url) throw Error('文件预览地址为空');
         file.url = latest.url;
+        if (latest.thumbUrl) file.thumbUrl = latest.thumbUrl;
       } catch (error) {
         failed = true;
       }
